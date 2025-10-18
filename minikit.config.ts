@@ -1,4 +1,45 @@
-import type { MiniAppManifest } from '@coinbase/onchainkit/minikit';
+// import type { MiniAppManifest } from '@coinbase/onchainkit/minikit';
+
+// Placeholder interface for MiniAppManifest
+interface MiniAppManifest {
+  accountAssociation: {
+    header: string;
+    payload: string;
+    signature: string;
+  };
+  frame: {
+    version: string;
+    imageUrl: string;
+    button: {
+      title: string;
+      action: {
+        type: string;
+        name: string;
+        url: string;
+        splashImageUrl: string;
+        splashBackgroundColor: string;
+      };
+    };
+  };
+  miniapp: {
+    version: string;
+    name: string;
+    subtitle: string;
+    description: string;
+    iconUrl: string;
+    splashImageUrl: string;
+    splashBackgroundColor: string;
+    homeUrl: string;
+    webhookUrl: string;
+    screenshotUrls: string[];
+    primaryCategory: string;
+    tags: string[];
+    heroImageUrl: string;
+    ogTitle: string;
+    ogDescription: string;
+    ogImageUrl: string;
+  };
+}
 
 const ROOT_URL = process.env.NEXT_PUBLIC_URL || 'https://league.seershub.com';
 
