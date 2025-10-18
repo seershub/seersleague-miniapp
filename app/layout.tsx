@@ -34,11 +34,10 @@ export const metadata: Metadata = {
     'fc:frame:button:1:action': 'link',
     'fc:frame:button:1:target': 'https://league.seershub.com',
     'fc:miniapp': JSON.stringify({
-      "version": "1",
+      "version": "next",
       "imageUrl": "https://league.seershub.com/og-image.png",
-      "aspectRatio": "3:2",
       "button": {
-        "title": "Launch SeersLeague",
+        "title": "Play Now",
         "action": {
           "type": "launch_miniapp",
           "name": "SeersLeague",

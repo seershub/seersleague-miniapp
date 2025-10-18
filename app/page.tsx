@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { WalletConnect } from '@/components/WalletConnect';
 import { useMiniKit } from '@/components/MiniKitProvider';
+import { sdk } from '@farcaster/miniapp-sdk';
 
 interface Match {
   id: string;
@@ -21,6 +22,18 @@ export default function Home() {
   
   // Check chain ID and fetch matches
   useEffect(() => {
+    // Initialize Farcaster MiniApp SDK
+    const initializeSDK = async () => {
+      try {
+        await sdk.actions.ready();
+        console.log('Farcaster MiniApp SDK ready!');
+      } catch (error) {
+        console.error('SDK initialization error:', error);
+      }
+    };
+
+    initializeSDK();
+
     // Initialize Base SDK when MiniKit is ready
     if (isReady) {
       console.log('MiniKit ready!');
