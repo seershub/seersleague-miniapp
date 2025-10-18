@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import { Inter } from 'next/font/google';
 import './globals.css';
 import { Providers } from './providers';
+import { MiniKitProvider } from '@/components/MiniKitProvider';
 
 const inter = Inter({ subsets: ['latin'] });
 
@@ -33,16 +34,15 @@ export const metadata: Metadata = {
     'fc:frame:button:1:action': 'link',
     'fc:frame:button:1:target': 'https://league.seershub.com',
     'fc:miniapp': JSON.stringify({
-      "version": "next",
+      "version": "1",
       "imageUrl": "https://league.seershub.com/og-image.png",
+      "aspectRatio": "3:2",
       "button": {
         "title": "Launch SeersLeague",
         "action": {
-          "type": "launch_frame",
+          "type": "launch_miniapp",
           "name": "SeersLeague",
-          "url": "https://league.seershub.com",
-          "splashImageUrl": "https://league.seershub.com/splash.png",
-          "splashBackgroundColor": "#0052FF"
+          "url": "https://league.seershub.com"
         }
       }
     }),
@@ -57,9 +57,11 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={inter.className}>
-        <Providers>
-          {children}
-        </Providers>
+        <MiniKitProvider>
+          <Providers>
+            {children}
+          </Providers>
+        </MiniKitProvider>
       </body>
     </html>
   );

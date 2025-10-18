@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { WalletConnect } from '@/components/WalletConnect';
+import { useMiniKit } from '@/components/MiniKitProvider';
 
 interface Match {
   id: string;
@@ -16,12 +17,16 @@ export default function Home() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [chainId, setChainId] = useState<string | null>(null);
+  const { isReady } = useMiniKit();
   
   // Check chain ID and fetch matches
   useEffect(() => {
-    // Initialize Base SDK (placeholder)
-    if (typeof window !== 'undefined' && (window as any).base) {
-      console.log('Base SDK ready!');
+    // Initialize Base SDK when MiniKit is ready
+    if (isReady) {
+      console.log('MiniKit ready!');
+      if (typeof window !== 'undefined' && (window as any).base) {
+        console.log('Base SDK ready!');
+      }
     }
 
     // Check if we're in Base App context
