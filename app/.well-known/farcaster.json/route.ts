@@ -8,16 +8,15 @@ export async function GET() {
       signature: "pAp2aFOxDH9FSC+2WJmg/3i9ggjzmmnNJia1SLSuw5dgoKbHgZF7l8wf4x6SfPCPo5INcaW3l6Ninp+Bio1Nihs="
     },
     frame: {
-      version: "next",
+      version: "1",
       imageUrl: "https://league.seershub.com/og-image.png",
+      aspectRatio: "3:2",
       button: {
         title: "Launch SeersLeague",
         action: {
           type: "launch_frame",
           name: "SeersLeague",
-          url: "https://league.seershub.com",
-          splashImageUrl: "https://league.seershub.com/splash.png",
-          splashBackgroundColor: "#0052FF"
+          url: "https://league.seershub.com"
         }
       }
     },
@@ -38,7 +37,7 @@ export async function GET() {
         "https://league.seershub.com/screenshots/leaderboard.png"
       ],
       
-      primaryCategory: "social",
+      primaryCategory: "sports",
       tags: ["sports", "predictions", "competition", "base", "daily"],
       
       heroImageUrl: "https://league.seershub.com/hero.png",
