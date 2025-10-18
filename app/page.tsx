@@ -15,9 +15,26 @@ export default function Home() {
   const [matches, setMatches] = useState<Match[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [chainId, setChainId] = useState<string | null>(null);
   
-  // Fetch today's matches
+  // Check chain ID and fetch matches
   useEffect(() => {
+    // Check if we're in Base App context
+    if (typeof window !== 'undefined') {
+      // Check for Base App context
+      if ((window as any).ethereum) {
+        (window as any).ethereum.request({ method: 'eth_chainId' })
+          .then((id: string) => {
+            setChainId(id);
+            console.log('Current chain ID:', id);
+            if (id !== '0x2105') {
+              console.warn('Not on Base Mainnet! Current chain:', id, 'Expected: 0x2105');
+            }
+          })
+          .catch(console.error);
+      }
+    }
+
     async function fetchMatches() {
       try {
         setLoading(true);
@@ -53,6 +70,13 @@ export default function Home() {
         <header className="mb-8 text-center">
           <h1 className="text-4xl font-bold mb-2">⚽ SeersLeague</h1>
           <p className="text-gray-300">Daily Football Predictions on Base</p>
+          {chainId && chainId !== '0x2105' && (
+            <div className="mt-4 p-3 bg-yellow-900 border border-yellow-600 rounded-lg">
+              <p className="text-yellow-200 text-sm">
+                ⚠️ Not on Base Mainnet! Current chain: {chainId} (Expected: 0x2105)
+              </p>
+            </div>
+          )}
         </header>
 
         {/* Wallet Status */}
