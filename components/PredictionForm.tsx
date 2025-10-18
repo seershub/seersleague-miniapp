@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { useAccount, useReadContract, useWriteContract, useWaitForTransactionReceipt } from 'wagmi';
+// import { useAccount, useReadContract, useWriteContract, useWaitForTransactionReceipt } from 'wagmi';
 import { Match } from '@/lib/matches';
 import { MatchCard } from './MatchCard';
 import { PaymentModal } from './PaymentModal';
@@ -13,24 +13,19 @@ interface PredictionFormProps {
 }
 
 export function PredictionForm({ matches }: PredictionFormProps) {
-  const { address, isConnected } = useAccount();
+  // const { address, isConnected } = useAccount();
+  const address = null; // Placeholder for now
+  const isConnected = false; // Placeholder for now
   const [predictions, setPredictions] = useState<(1 | 2 | 3)[]>(new Array(5).fill(0) as (1 | 2 | 3)[]);
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   
-  // Get user stats to check free trial and today's predictions
-  const { data: userStats } = useReadContract({
-    address: CONTRACTS.SEERSLEAGUE,
-    abi: SEERSLEAGUE_ABI,
-    functionName: 'getUserStats',
-    args: address ? [address] : undefined,
-    query: {
-      enabled: !!address,
-    }
-  });
+  // Get user stats to check free trial and today's predictions - placeholder for now
+  const userStats = null; // Placeholder for now
   
-  const { writeContract, data: hash } = useWriteContract();
-  const { isLoading: isPending } = useWaitForTransactionReceipt({ hash });
+  // const { writeContract, data: hash } = useWriteContract();
+  // const { isLoading: isPending } = useWaitForTransactionReceipt({ hash });
+  const isPending = false; // Placeholder for now
   
   const handleOutcomeSelect = (matchIndex: number, outcome: 1 | 2 | 3) => {
     const newPredictions = [...predictions];
@@ -76,14 +71,8 @@ export function PredictionForm({ matches }: PredictionFormProps) {
     try {
       setIsSubmitting(true);
       
-      const matchIds = matches.map(match => parseInt(match.id));
-      
-      await writeContract({
-        address: CONTRACTS.SEERSLEAGUE,
-        abi: SEERSLEAGUE_ABI,
-        functionName: 'submitPredictions',
-        args: [matchIds, predictions],
-      });
+      // Placeholder for now - will be implemented with Farcaster Mini App SDK
+      await new Promise(resolve => setTimeout(resolve, 1000));
       
       toast.success('Predictions submitted successfully! 🎉');
       
