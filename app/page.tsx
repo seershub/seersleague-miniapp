@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from 'react';
 import { WalletConnect } from '@/components/WalletConnect';
-import { useSDK } from '@coinbase/onchainkit';
 
 interface Match {
   id: string;
@@ -17,13 +16,11 @@ export default function Home() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [chainId, setChainId] = useState<string | null>(null);
-  const { sdk } = useSDK();
   
   // Check chain ID and fetch matches
   useEffect(() => {
-    // Initialize Base SDK
-    if (sdk) {
-      sdk.actions.ready({ disableNativeGestures: true });
+    // Initialize Base SDK (placeholder)
+    if (typeof window !== 'undefined' && (window as any).base) {
       console.log('Base SDK ready!');
     }
 
