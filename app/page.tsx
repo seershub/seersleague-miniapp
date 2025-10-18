@@ -1,11 +1,9 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useAccount } from 'wagmi';
 import { WalletConnect } from '@/components/WalletConnect';
 
 export default function Home() {
-  const { address, isConnected } = useAccount();
   const [matches, setMatches] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -30,7 +28,7 @@ export default function Home() {
         setError(null);
       } catch (err) {
         console.error('Error fetching matches:', err);
-        setError(err.message);
+        setError(err instanceof Error ? err.message : 'Unknown error occurred');
       } finally {
         setLoading(false);
       }
@@ -51,19 +49,10 @@ export default function Home() {
 
         {/* Wallet Status */}
         <div className="mb-6 p-4 bg-blue-900/30 rounded-lg">
-          {isConnected ? (
-            <div className="text-center">
-              <p className="text-sm text-gray-400">Connected</p>
-              <p className="font-mono text-sm">
-                {address?.slice(0, 6)}...{address?.slice(-4)}
-              </p>
-            </div>
-          ) : (
-            <div className="text-center">
-              <p className="text-sm text-gray-400 mb-2">Not Connected</p>
-              <WalletConnect />
-            </div>
-          )}
+          <div className="text-center">
+            <p className="text-sm text-gray-400 mb-2">Mini App Mode</p>
+            <WalletConnect />
+          </div>
         </div>
 
         {/* Matches Section */}
@@ -127,7 +116,6 @@ export default function Home() {
         {/* Debug Info */}
         <div className="mt-8 p-4 bg-gray-900 rounded text-xs">
           <p className="text-gray-400 mb-1">Debug Info:</p>
-          <p>Connected: {isConnected ? 'Yes' : 'No'}</p>
           <p>Matches: {matches.length}</p>
           <p>Loading: {loading ? 'Yes' : 'No'}</p>
           <p>Error: {error || 'None'}</p>

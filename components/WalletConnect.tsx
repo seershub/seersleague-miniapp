@@ -1,21 +1,13 @@
 'use client';
 
-import { useConnect, useAccount } from 'wagmi';
+import { useAccount } from 'wagmi';
 
 export function WalletConnect() {
-  const { connect, connectors } = useConnect();
   const { isConnected } = useAccount();
 
   const handleConnect = () => {
-    try {
-      // Use the first available connector (usually injected wallet)
-      const connector = connectors[0];
-      if (connector) {
-        connect({ connector });
-      }
-    } catch (error) {
-      console.error('Connection error:', error);
-    }
+    // For now, just show a message
+    alert('Wallet connection will be available in the mini app!');
   };
 
   if (isConnected) {
