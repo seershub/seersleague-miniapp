@@ -3,9 +3,9 @@ import { NextResponse } from 'next/server';
 export async function GET() {
   const manifest = {
     accountAssociation: {
-      header: "", // Will generate at base.org/build after deployment
-      payload: "",
-      signature: ""
+      header: "eyJmaWQiOjEzNzk1NDUsInR5cGUiOiJjdXN0b2R5Iiwia2V5IjoiMHg0ZGIwRmNjNTc5YkUwMDcxNmI4M2FjNDA4NTA0ODc3YTNiMjJmNmUzIn0",
+      payload: "eyJkb21haW4iOiJsZWFndWUuc2VlcnNodWIuY29tIn0",
+      signature: "pAp2aFOxDH9FSC+2WJmg/3i9ggjzmmnNJia1SLSuw5dgoKbHgZF7l8wf4x6SfPCPo5INcaW3l6Ninp+Bio1Nihs="
     },
     frame: {
       version: "next",
