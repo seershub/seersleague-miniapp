@@ -1,9 +1,10 @@
 'use client';
 
-import { useAccount } from 'wagmi';
+// import { useAccount } from 'wagmi';
 
 export function WalletConnect() {
-  const { isConnected } = useAccount();
+  // const { isConnected } = useAccount();
+  const isConnected = false;
 
   const handleConnect = () => {
     // For now, just show a message
