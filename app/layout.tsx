@@ -32,7 +32,20 @@ export const metadata: Metadata = {
     'fc:frame:button:1': 'Launch App',
     'fc:frame:button:1:action': 'link',
     'fc:frame:button:1:target': 'https://league.seershub.com',
-    'fc:miniapp': 'https://league.seershub.com/.well-known/farcaster.json',
+    'fc:miniapp': JSON.stringify({
+      "version": "next",
+      "imageUrl": "https://league.seershub.com/og-image.png",
+      "button": {
+        "title": "Launch SeersLeague",
+        "action": {
+          "type": "launch_frame",
+          "name": "SeersLeague",
+          "url": "https://league.seershub.com",
+          "splashImageUrl": "https://league.seershub.com/splash.png",
+          "splashBackgroundColor": "#0052FF"
+        }
+      }
+    }),
   },
 };
 
