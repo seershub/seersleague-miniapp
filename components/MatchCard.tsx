@@ -5,7 +5,7 @@ import Image from 'next/image';
 
 interface MatchCardProps {
   match: Match;
-  selectedOutcome?: number;
+  selectedOutcome?: 1 | 2 | 3 | 0;
   onOutcomeSelect: (outcome: 1 | 2 | 3) => void;
   disabled?: boolean;
 }

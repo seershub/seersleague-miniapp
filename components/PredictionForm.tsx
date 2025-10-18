@@ -16,7 +16,7 @@ export function PredictionForm({ matches }: PredictionFormProps) {
   // const { address, isConnected } = useAccount();
   const address = null; // Placeholder for now
   const isConnected = false; // Placeholder for now
-  const [predictions, setPredictions] = useState<(1 | 2 | 3)[]>(new Array(5).fill(0) as (1 | 2 | 3)[]);
+  const [predictions, setPredictions] = useState<(1 | 2 | 3 | 0)[]>(new Array(5).fill(0));
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   
