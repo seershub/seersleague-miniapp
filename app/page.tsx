@@ -3,8 +3,16 @@
 import { useEffect, useState } from 'react';
 import { WalletConnect } from '@/components/WalletConnect';
 
+interface Match {
+  id: string;
+  homeTeam: string;
+  awayTeam: string;
+  league: string;
+  kickoff: string;
+}
+
 export default function Home() {
-  const [matches, setMatches] = useState([]);
+  const [matches, setMatches] = useState<Match[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   
