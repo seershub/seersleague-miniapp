@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # SeersLeague Mini App
 
 Daily prediction mini app on Farcaster & Base - 5 matches, on-chain competition
@@ -35,3 +36,7 @@ npm run dev
 ## License
 
 MIT License - see LICENSE file for details.
+=======
+# seersleague-miniapp
+Daily prediction mini app on Farcaster &amp; Base - 5 matches, on-chain competition
+>>>>>>> 11042d6d5b868030130ceb2c0e5f0abe746807f6
