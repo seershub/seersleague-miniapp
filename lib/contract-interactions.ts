@@ -1,4 +1,4 @@
-import { parseUnits, formatUnits } from 'viem';
+// import { parseUnits, formatUnits } from 'viem';
 import { SEERSLEAGUE_ABI, USDC_ABI } from './contracts/abi';
 
 // Re-export ABIs for components
@@ -10,8 +10,8 @@ export const CONTRACTS = {
   USDC: '0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913' as `0x${string}`,
 } as const;
 
-// Entry fee: 1 USDC (6 decimals)
-export const ENTRY_FEE = parseUnits('1', 6);
+// Entry fee: 1 USDC (6 decimals) - placeholder for now
+export const ENTRY_FEE = BigInt(1000000); // 1 USDC = 1,000,000 units
 
 export interface UserStats {
   correctPredictions: number;
@@ -58,17 +58,17 @@ export function calculateAccuracy(userStats: UserStats): number {
 }
 
 /**
- * Format USDC amount for display
+ * Format USDC amount for display - placeholder for now
  */
 export function formatUSDC(amount: bigint): string {
-  return formatUnits(amount, 6);
+  return (Number(amount) / 1000000).toFixed(6);
 }
 
 /**
- * Parse USDC amount from string
+ * Parse USDC amount from string - placeholder for now
  */
 export function parseUSDC(amount: string): bigint {
-  return parseUnits(amount, 6);
+  return BigInt(Math.floor(parseFloat(amount) * 1000000));
 }
 
 /**

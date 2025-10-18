@@ -1,16 +1,19 @@
-import { createConfig, http } from 'wagmi';
-import { base } from 'wagmi/chains';
+// Wagmi config - disabled for now, will be re-enabled with Farcaster Mini App SDK
+// import { createConfig, http } from 'wagmi';
+// import { base } from 'wagmi/chains';
 
-export const config = createConfig({
-  chains: [base],
-  connectors: [],
-  transports: {
-    [base.id]: http()
-  }
-});
+// export const config = createConfig({
+//   chains: [base],
+//   connectors: [],
+//   transports: {
+//     [base.id]: http()
+//   }
+// });
 
-declare module 'wagmi' {
-  interface Register {
-    config: typeof config;
-  }
-}
+// declare module 'wagmi' {
+//   interface Register {
+//     config: typeof config;
+//   }
+// }
+
+export const config = {};
