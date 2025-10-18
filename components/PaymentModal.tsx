@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { useAccount, useReadContract, useWriteContract, useWaitForTransactionReceipt } from 'wagmi';
+// import { useAccount, useReadContract, useWriteContract, useWaitForTransactionReceipt } from 'wagmi';
 import { USDC_ABI, CONTRACTS, ENTRY_FEE, formatUSDC } from '@/lib/contract-interactions';
 import toast from 'react-hot-toast';
 
@@ -12,38 +12,25 @@ interface PaymentModalProps {
 }
 
 export function PaymentModal({ onSuccess, onCancel, amount }: PaymentModalProps) {
-  const { address } = useAccount();
+  // const { address } = useAccount();
+  const address = null; // Placeholder for now
   const [step, setStep] = useState<'approve' | 'confirm'>('approve');
   const [isApproving, setIsApproving] = useState(false);
   const [isConfirming, setIsConfirming] = useState(false);
   
-  // Check USDC balance
-  const { data: balance } = useReadContract({
-    address: CONTRACTS.USDC,
-    abi: USDC_ABI,
-    functionName: 'balanceOf',
-    args: address ? [address] : undefined,
-    query: {
-      enabled: !!address,
-    }
-  });
+  // Check USDC balance - placeholder for now
+  const balance = BigInt(10000000000); // 10 USDC placeholder
   
-  // Check current allowance
-  const { data: allowance } = useReadContract({
-    address: CONTRACTS.USDC,
-    abi: USDC_ABI,
-    functionName: 'allowance',
-    args: address && CONTRACTS.SEERSLEAGUE ? [address, CONTRACTS.SEERSLEAGUE] : undefined,
-    query: {
-      enabled: !!address && !!CONTRACTS.SEERSLEAGUE,
-    }
-  });
+  // Check current allowance - placeholder for now
+  const allowance = BigInt(0); // No allowance placeholder
   
-  const { writeContract: writeApprove, data: approveHash } = useWriteContract();
-  const { isLoading: isApprovePending } = useWaitForTransactionReceipt({ hash: approveHash });
+  // const { writeContract: writeApprove, data: approveHash } = useWriteContract();
+  // const { isLoading: isApprovePending } = useWaitForTransactionReceipt({ hash: approveHash });
+  const isApprovePending = false;
   
-  const { writeContract: writeConfirm, data: confirmHash } = useWriteContract();
-  const { isLoading: isConfirmPending } = useWaitForTransactionReceipt({ hash: confirmHash });
+  // const { writeContract: writeConfirm, data: confirmHash } = useWriteContract();
+  // const { isLoading: isConfirmPending } = useWaitForTransactionReceipt({ hash: confirmHash });
+  const isConfirmPending = false;
   
   const hasEnoughBalance = balance && balance >= amount;
   const hasEnoughAllowance = allowance && allowance >= amount;
@@ -52,12 +39,8 @@ export function PaymentModal({ onSuccess, onCancel, amount }: PaymentModalProps)
     try {
       setIsApproving(true);
       
-      await writeApprove({
-        address: CONTRACTS.USDC,
-        abi: USDC_ABI,
-        functionName: 'approve',
-        args: [CONTRACTS.SEERSLEAGUE, amount],
-      });
+      // Placeholder for now - will be implemented with Farcaster Mini App SDK
+      await new Promise(resolve => setTimeout(resolve, 1000));
       
       toast.success('USDC approval successful!');
       
