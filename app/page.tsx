@@ -6,7 +6,7 @@ import { WalletConnect } from '@/components/WalletConnect';
 export default function Home() {
   const [matches, setMatches] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+  const [error, setError] = useState<string | null>(null);
   
   // Fetch today's matches
   useEffect(() => {
