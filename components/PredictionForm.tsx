@@ -6,6 +6,7 @@ import { MatchCard } from './MatchCard';
 import { PaymentModal } from './PaymentModal';
 import { CONTRACTS, SEERSLEAGUE_ABI, ENTRY_FEE, hasFreeTrial, hasPredictedToday, UserStats } from '@/lib/contract-interactions';
 import { useMiniKit } from './MiniKitProvider';
+import { encodeFunctionData } from 'viem';
 import toast from 'react-hot-toast';
 
 interface PredictionFormProps {
@@ -128,18 +129,36 @@ export function PredictionForm({ matches }: PredictionFormProps) {
       // Get current day (simplified - in real app would use proper day calculation)
       const currentDay = Math.floor(Date.now() / (1000 * 60 * 60 * 24));
       
-      // For now, simulate a successful transaction
-      // In real implementation, would call submitPredictions(uint256 day, uint8[] predictions)
-      console.log('Submitting predictions:', {
+      // Real on-chain transaction
+      console.log('Submitting predictions to contract:', {
         day: currentDay,
         predictions: predictionsBytes,
         address
       });
       
-      // Simulate contract call
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      // Get match IDs from actual matches
+      const matchIds = matches.map(match => parseInt(match.id));
       
-      toast.success('Predictions submitted successfully! 🎉');
+      // Encode function call data for submitPredictions(uint256 day, uint32[] matchIds, uint8[] predictions)
+      const encodedData = encodeFunctionData({
+        abi: SEERSLEAGUE_ABI,
+        functionName: 'submitPredictions',
+        args: [BigInt(currentDay), matchIds, predictions]
+      });
+      
+      // Send transaction
+      const txHash = await sdk.wallet.ethProvider.request({
+        method: 'eth_sendTransaction',
+        params: [{
+          to: CONTRACTS.SEERSLEAGUE,
+          data: encodedData,
+          from: address,
+          value: '0x0' // No ETH value, only USDC if needed
+        }]
+      });
+      
+      console.log('Transaction submitted:', txHash);
+      toast.success(`Predictions submitted! Transaction: ${txHash.slice(0, 10)}...`);
       
       // Update user stats
       setUserStats(prev => prev ? {
