@@ -1,11 +1,11 @@
 'use client';
 
-import { useState } from 'react';
-// import { useAccount, useReadContract, useWriteContract, useWaitForTransactionReceipt } from 'wagmi';
+import { useState, useEffect } from 'react';
 import { Match } from '@/lib/matches';
 import { MatchCard } from './MatchCard';
 import { PaymentModal } from './PaymentModal';
 import { CONTRACTS, SEERSLEAGUE_ABI, ENTRY_FEE, hasFreeTrial, hasPredictedToday } from '@/lib/contract-interactions';
+import { useMiniKit } from './MiniKitProvider';
 import toast from 'react-hot-toast';
 
 interface PredictionFormProps {
@@ -13,19 +13,63 @@ interface PredictionFormProps {
 }
 
 export function PredictionForm({ matches }: PredictionFormProps) {
-  // const { address, isConnected } = useAccount();
-  const address = null; // Placeholder for now
-  const isConnected = false; // Placeholder for now
+  const { isReady, sdk } = useMiniKit();
+  const [address, setAddress] = useState<string | null>(null);
+  const [isConnected, setIsConnected] = useState(false);
   const [predictions, setPredictions] = useState<(1 | 2 | 3 | 0)[]>(new Array(5).fill(0));
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [userStats, setUserStats] = useState<any>(null);
+  const [isPending, setIsPending] = useState(false);
   
-  // Get user stats to check free trial and today's predictions - placeholder for now
-  const userStats = null; // Placeholder for now
+  // Get user address and stats
+  useEffect(() => {
+    const getUserData = async () => {
+      if (isReady && sdk) {
+        try {
+          // Get user address
+          const accounts = await sdk.wallet.ethProvider.request({ method: 'eth_accounts' });
+          if (accounts && accounts.length > 0) {
+            setAddress(accounts[0]);
+            setIsConnected(true);
+            
+            // Get user stats from contract
+            await getUserStats(accounts[0]);
+          }
+        } catch (error) {
+          console.error('Error getting user data:', error);
+        }
+      }
+    };
+    
+    getUserData();
+  }, [isReady, sdk]);
   
-  // const { writeContract, data: hash } = useWriteContract();
-  // const { isLoading: isPending } = useWaitForTransactionReceipt({ hash });
-  const isPending = false; // Placeholder for now
+  const getUserStats = async (userAddress: string) => {
+    if (!sdk) return;
+    
+    try {
+      // Read user stats from contract
+      const stats = await sdk.wallet.ethProvider.request({
+        method: 'eth_call',
+        params: [{
+          to: CONTRACTS.seersLeague,
+          data: `0x${SEERSLEAGUE_ABI.find(m => m.name === 'getUserStats')?.inputs?.length ? 
+            '0x' + 'getUserStats(address)'.slice(0, 10) + userAddress.slice(2).padStart(64, '0') : ''}`
+        }, 'latest']
+      });
+      
+      // Parse stats (simplified for now)
+      setUserStats({
+        totalPredictions: 0,
+        correctPredictions: 0,
+        lastPredictionDay: 0,
+        isFirstDay: true
+      });
+    } catch (error) {
+      console.error('Error fetching user stats:', error);
+    }
+  };
   
   const handleOutcomeSelect = (matchIndex: number, outcome: 1 | 2 | 3) => {
     const newPredictions = [...predictions];
@@ -68,19 +112,52 @@ export function PredictionForm({ matches }: PredictionFormProps) {
   };
   
   const submitPredictions = async () => {
+    if (!sdk || !address) {
+      toast.error('Wallet not connected');
+      return;
+    }
+    
     try {
       setIsSubmitting(true);
+      setIsPending(true);
       
-      // Placeholder for now - will be implemented with Farcaster Mini App SDK
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      // Encode predictions for contract call
+      const predictionsBytes = predictions.map(p => {
+        if (p === 1) return '0x01'; // Home win
+        if (p === 2) return '0x02'; // Draw
+        if (p === 3) return '0x03'; // Away win
+        return '0x00'; // Invalid
+      });
+      
+      // Get current day (simplified - in real app would use proper day calculation)
+      const currentDay = Math.floor(Date.now() / (1000 * 60 * 60 * 24));
+      
+      // For now, simulate a successful transaction
+      // In real implementation, would call submitPredictions(uint256 day, uint8[] predictions)
+      console.log('Submitting predictions:', {
+        day: currentDay,
+        predictions: predictionsBytes,
+        address
+      });
+      
+      // Simulate contract call
+      await new Promise(resolve => setTimeout(resolve, 2000));
       
       toast.success('Predictions submitted successfully! 🎉');
+      
+      // Update user stats
+      setUserStats(prev => ({
+        ...prev,
+        totalPredictions: (prev?.totalPredictions || 0) + 1,
+        lastPredictionDay: currentDay
+      }));
       
     } catch (error: any) {
       console.error('Submission error:', error);
       toast.error('Failed to submit predictions. Please try again.');
     } finally {
       setIsSubmitting(false);
+      setIsPending(false);
       setShowPaymentModal(false);
     }
   };

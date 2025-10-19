@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { WalletConnect } from '@/components/WalletConnect';
+import { PredictionForm } from '@/components/PredictionForm';
 import { useMiniKit } from '@/components/MiniKitProvider';
 import { sdk } from '@farcaster/miniapp-sdk';
 
@@ -132,39 +133,7 @@ export default function Home() {
           )}
           
           {!loading && matches.length > 0 && (
-            <div className="space-y-4">
-              {matches.map((match) => (
-                <div 
-                  key={match.id} 
-                  className="bg-gray-800 rounded-lg p-4 hover:bg-gray-750 transition"
-                >
-                  <div className="text-sm text-gray-400 mb-2">
-                    {match.league}
-                  </div>
-                  <div className="flex justify-between items-center mb-2">
-                    <span className="font-semibold">{match.homeTeam}</span>
-                    <span className="text-gray-400">vs</span>
-                    <span className="font-semibold">{match.awayTeam}</span>
-                  </div>
-                  <div className="text-xs text-gray-500">
-                    {new Date(match.kickoff).toLocaleString()}
-                  </div>
-                  
-                  {/* Prediction Buttons */}
-                  <div className="grid grid-cols-3 gap-2 mt-3">
-                    <button className="bg-green-600 hover:bg-green-700 py-2 rounded text-sm">
-                      Home
-                    </button>
-                    <button className="bg-yellow-600 hover:bg-yellow-700 py-2 rounded text-sm">
-                      Draw
-                    </button>
-                    <button className="bg-red-600 hover:bg-red-700 py-2 rounded text-sm">
-                      Away
-                    </button>
-                  </div>
-                </div>
-              ))}
-            </div>
+            <PredictionForm matches={matches} />
           )}
         </section>
 
