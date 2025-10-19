@@ -75,6 +75,8 @@ export function PredictionForm({ matches }: PredictionFormProps) {
   };
   
   const handleSubmit = async () => {
+    console.log('Submit attempt:', { isConnected, address, isFormValid });
+    
     if (!isConnected || !address) {
       toast.error('Please connect your wallet first');
       return;
@@ -91,10 +93,10 @@ export function PredictionForm({ matches }: PredictionFormProps) {
       return;
     }
     
-    // Validate at least one prediction is made
+    // Validate exactly 5 predictions are made (contract requirement)
     const selectedPredictions = predictions.filter(p => p !== 0);
-    if (selectedPredictions.length === 0) {
-      toast.error('Please select at least one prediction');
+    if (selectedPredictions.length !== 5) {
+      toast.error('Please select predictions for all 5 matches');
       return;
     }
     
@@ -137,19 +139,9 @@ export function PredictionForm({ matches }: PredictionFormProps) {
         address
       });
       
-      // Get only selected predictions
-      const selectedIndices: number[] = [];
-      const selectedPredictions: number[] = [];
-      
-      predictions.forEach((prediction, index) => {
-        if (prediction !== 0) {
-          selectedIndices.push(index);
-          selectedPredictions.push(prediction);
-        }
-      });
-      
-      // Get match IDs for selected predictions only
-      const matchIds = selectedIndices.map(index => parseInt(matches[index].id));
+      // Get all 5 predictions (contract requirement)
+      const matchIds = matches.map(match => parseInt(match.id));
+      const selectedPredictions = predictions; // All 5 predictions
       
       // Encode function call data for submitPredictions(uint32[] matchIds, uint8[] outcomes)
       const encodedData = encodeFunctionData({
@@ -205,7 +197,7 @@ export function PredictionForm({ matches }: PredictionFormProps) {
     }
   };
   
-  const isFormValid = predictions.some(p => p !== 0);
+  const isFormValid = predictions.every(p => p !== 0);
   const isFreeTrial = userStats ? hasFreeTrial(userStats) : false;
   const alreadyPredicted = userStats ? hasPredictedToday(userStats) : false;
   
@@ -279,6 +271,7 @@ export function PredictionForm({ matches }: PredictionFormProps) {
           onClick={handleSubmit}
           disabled={!isFormValid || isSubmitting || isPending}
           className="btn-primary px-8 py-3 text-lg disabled:opacity-50"
+          title={`Form valid: ${isFormValid}, Submitting: ${isSubmitting}, Pending: ${isPending}`}
         >
           {isSubmitting || isPending ? (
             <div className="flex items-center space-x-2">
@@ -294,7 +287,7 @@ export function PredictionForm({ matches }: PredictionFormProps) {
         
         {!isFormValid && (
           <p className="text-sm text-gray-400 mt-2">
-            Please select at least one prediction (up to 5 matches)
+            Please select predictions for all 5 matches
           </p>
         )}
       </div>
