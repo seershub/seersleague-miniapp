@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { Match } from '@/lib/matches';
 import { MatchCard } from './MatchCard';
 import { PaymentModal } from './PaymentModal';
-import { CONTRACTS, SEERSLEAGUE_ABI, ENTRY_FEE, hasFreeTrial, hasPredictedToday, UserStats } from '@/lib/contract-interactions';
+import { CONTRACTS, SEERSLEAGUE_ABI, PREDICTION_FEE, UserStats } from '@/lib/contract-interactions';
 import { useMiniKit } from './MiniKitProvider';
 import { encodeFunctionData } from 'viem';
 import toast from 'react-hot-toast';
@@ -17,7 +17,8 @@ export function PredictionForm({ matches }: PredictionFormProps) {
   const { isReady, sdk } = useMiniKit();
   const [address, setAddress] = useState<string | null>(null);
   const [isConnected, setIsConnected] = useState(false);
-  const [predictions, setPredictions] = useState<(1 | 2 | 3 | 0)[]>(new Array(5).fill(0));
+  const [selectedMatches, setSelectedMatches] = useState<number[]>([]);
+  const [predictions, setPredictions] = useState<{[matchId: number]: 1 | 2 | 3}>({});
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [userStats, setUserStats] = useState<UserStats | null>(null);
@@ -58,20 +59,36 @@ export function PredictionForm({ matches }: PredictionFormProps) {
       setUserStats({
         correctPredictions: 0,
         totalPredictions: 0,
+        freePredictionsUsed: 0,
         currentStreak: 0,
-        longestStreak: 0,
-        lastPredictionDate: 0,
-        hasUsedFreeTrial: false
+        longestStreak: 0
       });
     } catch (error) {
       console.error('Error fetching user stats:', error);
     }
   };
   
-  const handleOutcomeSelect = (matchIndex: number, outcome: 1 | 2 | 3) => {
-    const newPredictions = [...predictions];
-    newPredictions[matchIndex] = outcome;
-    setPredictions(newPredictions);
+  const toggleMatchSelection = (matchId: number) => {
+    setSelectedMatches(prev => {
+      if (prev.includes(matchId)) {
+        // Remove match
+        const newSelected = prev.filter(id => id !== matchId);
+        const newPredictions = { ...predictions };
+        delete newPredictions[matchId];
+        setPredictions(newPredictions);
+        return newSelected;
+      } else {
+        // Add match
+        return [...prev, matchId];
+      }
+    });
+  };
+
+  const handleOutcomeSelect = (matchId: number, outcome: 1 | 2 | 3) => {
+    setPredictions(prev => ({
+      ...prev,
+      [matchId]: outcome
+    }));
   };
   
   const handleSubmit = async () => {
@@ -87,27 +104,30 @@ export function PredictionForm({ matches }: PredictionFormProps) {
       return;
     }
     
-    // Check if already predicted today
-    if (hasPredictedToday(userStats)) {
-      toast.error('You already submitted predictions today!');
+    // Validate at least one match is selected
+    if (selectedMatches.length === 0) {
+      toast.error('Please select at least one match to predict');
       return;
     }
     
-    // Validate exactly 5 predictions are made (contract requirement)
-    const selectedPredictions = predictions.filter(p => p !== 0);
-    if (selectedPredictions.length !== 5) {
-      toast.error('Please select predictions for all 5 matches');
+    // Validate all selected matches have predictions
+    const selectedPredictions = selectedMatches.filter(matchId => predictions[matchId]);
+    if (selectedPredictions.length !== selectedMatches.length) {
+      toast.error('Please select outcomes for all selected matches');
       return;
     }
     
-    const isFreeTrial = hasFreeTrial(userStats);
+    // Calculate payment needed
+    const remainingFreePredictions = Math.max(0, 5 - userStats.freePredictionsUsed);
+    const predictionsToPayFor = Math.max(0, selectedMatches.length - remainingFreePredictions);
+    const totalFee = predictionsToPayFor * PREDICTION_FEE;
     
-    if (isFreeTrial) {
-      // Submit directly for free trial
-      await submitPredictions();
-    } else {
-      // Show payment modal for paid users
+    if (totalFee > 0) {
+      // Show payment modal for paid predictions
       setShowPaymentModal(true);
+    } else {
+      // Submit directly for free predictions
+      await submitPredictions();
     }
   };
   
@@ -121,33 +141,22 @@ export function PredictionForm({ matches }: PredictionFormProps) {
       setIsSubmitting(true);
       setIsPending(true);
       
-      // Encode predictions for contract call
-      const predictionsBytes = predictions.map(p => {
-        if (p === 1) return '0x01'; // Home win
-        if (p === 2) return '0x02'; // Draw
-        if (p === 3) return '0x03'; // Away win
-        return '0x00'; // Invalid
-      });
-      
-      // Get current day (simplified - in real app would use proper day calculation)
-      const currentDay = Math.floor(Date.now() / (1000 * 60 * 60 * 24));
+      // Prepare match IDs and outcomes for selected matches only
+      const matchIds = selectedMatches;
+      const outcomes = selectedMatches.map(matchId => predictions[matchId]);
       
       // Real on-chain transaction
       console.log('Submitting predictions to contract:', {
-        day: currentDay,
-        predictions: predictionsBytes,
+        matchIds,
+        outcomes,
         address
       });
       
-      // Get all 5 predictions (contract requirement)
-      const matchIds = matches.map(match => parseInt(match.id));
-      const selectedPredictions = predictions; // All 5 predictions
-      
-      // Encode function call data for submitPredictions(uint32[] matchIds, uint8[] outcomes)
+      // Encode function call data for submitPredictions(uint256[] matchIds, uint8[] outcomes)
       const encodedData = encodeFunctionData({
         abi: SEERSLEAGUE_ABI,
         functionName: 'submitPredictions',
-        args: [matchIds, selectedPredictions]
+        args: [matchIds, outcomes]
       });
       
       // Debug contract address and environment
@@ -182,10 +191,13 @@ export function PredictionForm({ matches }: PredictionFormProps) {
       // Update user stats
       setUserStats(prev => prev ? {
         ...prev,
-        totalPredictions: prev.totalPredictions + 1,
-        lastPredictionDate: currentDay,
-        hasUsedFreeTrial: true
+        totalPredictions: prev.totalPredictions + selectedMatches.length,
+        freePredictionsUsed: Math.min(prev.freePredictionsUsed + selectedMatches.length, 5)
       } : null);
+      
+      // Clear selections
+      setSelectedMatches([]);
+      setPredictions({});
       
     } catch (error: any) {
       console.error('Submission error:', error);
@@ -197,9 +209,10 @@ export function PredictionForm({ matches }: PredictionFormProps) {
     }
   };
   
-  const isFormValid = predictions.every(p => p !== 0);
-  const isFreeTrial = userStats ? hasFreeTrial(userStats) : false;
-  const alreadyPredicted = userStats ? hasPredictedToday(userStats) : false;
+  const isFormValid = selectedMatches.length > 0 && selectedMatches.every(matchId => predictions[matchId]);
+  const remainingFreePredictions = userStats ? Math.max(0, 5 - userStats.freePredictionsUsed) : 5;
+  const predictionsToPayFor = Math.max(0, selectedMatches.length - remainingFreePredictions);
+  const totalFee = predictionsToPayFor * PREDICTION_FEE;
   
   if (!isConnected) {
     return (
@@ -209,60 +222,72 @@ export function PredictionForm({ matches }: PredictionFormProps) {
     );
   }
   
-  if (alreadyPredicted) {
-    return (
-      <div className="card text-center py-8">
-        <div className="text-4xl mb-4">✅</div>
-        <h3 className="text-xl font-bold mb-2">Predictions Submitted!</h3>
-        <p className="text-gray-400 mb-4">
-          You've already submitted your predictions for today.
-        </p>
-        <p className="text-sm text-gray-500">
-          Check back tomorrow for new matches!
-        </p>
-      </div>
-    );
-  }
-  
   return (
     <div className="space-y-6">
-      {/* Free Trial Notice */}
-      {isFreeTrial && (
-        <div className="card bg-green-900 bg-opacity-20 border-green-700">
+      {/* Free Predictions Info */}
+      <div className="card bg-blue-900 bg-opacity-20 border-blue-700">
+        <div className="flex items-center justify-between">
           <div className="flex items-center space-x-2">
-            <span className="text-green-400">🎉</span>
-            <span className="font-semibold text-green-400">First Day FREE!</span>
+            <span className="text-blue-400">🎯</span>
+            <span className="font-semibold text-blue-400">Flexible Predictions</span>
           </div>
-          <p className="text-sm text-green-300 mt-1">
-            Enjoy your free trial. Future days will cost $1 USDC.
-          </p>
+          <span className="text-sm text-blue-300">
+            {remainingFreePredictions} free predictions left
+          </span>
         </div>
-      )}
+        <p className="text-sm text-blue-300 mt-1">
+          Select any matches you want to predict. First 5 predictions are free, then 0.5 USDC per match.
+        </p>
+      </div>
       
-      {/* Payment Notice */}
-      {!isFreeTrial && (
-        <div className="card bg-blue-900 bg-opacity-20 border-blue-700">
-          <div className="flex items-center space-x-2">
-            <span className="text-blue-400">💰</span>
-            <span className="font-semibold text-blue-400">Entry Fee: $1 USDC</span>
+      {/* Payment Summary */}
+      {selectedMatches.length > 0 && (
+        <div className="card bg-green-900 bg-opacity-20 border-green-700">
+          <div className="flex items-center justify-between">
+            <span className="font-semibold text-green-400">Selected Matches: {selectedMatches.length}</span>
+            <span className="text-green-300">
+              {predictionsToPayFor > 0 ? `Fee: ${(totalFee / 1000000).toFixed(1)} USDC` : 'FREE'}
+            </span>
           </div>
-          <p className="text-sm text-blue-300 mt-1">
-            Submit your predictions to compete for daily prizes.
-          </p>
         </div>
       )}
       
       {/* Match Cards */}
       <div className="space-y-4">
-        {matches.map((match, index) => (
-          <MatchCard
-            key={match.id}
-            match={match}
-            selectedOutcome={predictions[index] || undefined}
-            onOutcomeSelect={(outcome) => handleOutcomeSelect(index, outcome)}
-            disabled={isSubmitting || isPending}
-          />
-        ))}
+        {matches.map((match) => {
+          const matchId = parseInt(match.id);
+          const isSelected = selectedMatches.includes(matchId);
+          const selectedOutcome = predictions[matchId];
+          
+          return (
+            <div key={match.id} className="relative">
+              {/* Match Selection Checkbox */}
+              <div className="flex items-center space-x-3 mb-3">
+                <input
+                  type="checkbox"
+                  id={`match-${matchId}`}
+                  checked={isSelected}
+                  onChange={() => toggleMatchSelection(matchId)}
+                  disabled={isSubmitting || isPending}
+                  className="w-5 h-5 text-blue-600 bg-gray-700 border-gray-600 rounded focus:ring-blue-500"
+                />
+                <label htmlFor={`match-${matchId}`} className="text-sm font-medium text-gray-300">
+                  Select this match for prediction
+                </label>
+              </div>
+              
+              {/* Match Card */}
+              {isSelected && (
+                <MatchCard
+                  match={match}
+                  selectedOutcome={selectedOutcome}
+                  onOutcomeSelect={(outcome) => handleOutcomeSelect(matchId, outcome)}
+                  disabled={isSubmitting || isPending}
+                />
+              )}
+            </div>
+          );
+        })}
       </div>
       
       {/* Submit Button */}
@@ -280,14 +305,14 @@ export function PredictionForm({ matches }: PredictionFormProps) {
             </div>
           ) : (
             <>
-              {isFreeTrial ? 'Submit FREE Predictions' : 'Submit Predictions ($1 USDC)'}
+              {totalFee > 0 ? `Submit Predictions (${(totalFee / 1000000).toFixed(1)} USDC)` : 'Submit FREE Predictions'}
             </>
           )}
         </button>
         
         {!isFormValid && (
           <p className="text-sm text-gray-400 mt-2">
-            Please select predictions for all 5 matches
+            Please select at least one match and choose outcomes
           </p>
         )}
       </div>
@@ -297,7 +322,7 @@ export function PredictionForm({ matches }: PredictionFormProps) {
         <PaymentModal
           onSuccess={submitPredictions}
           onCancel={() => setShowPaymentModal(false)}
-          amount={ENTRY_FEE}
+          amount={totalFee}
         />
       )}
     </div>

@@ -8,61 +8,72 @@ import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 
 /**
  * @title SeersLeague
- * @notice Daily football prediction competition with free trial
- * @dev First 5 predictions free, then $1 USDC per day
+ * @notice Flexible football prediction competition with per-match pricing
+ * @dev First 5 predictions free, then 0.5 USDC per match
  */
 contract SeersLeague is Ownable, Pausable, ReentrancyGuard {
     // Base Mainnet USDC
     IERC20 public constant USDC = IERC20(0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913);
     
-    // Entry fee: $1 USDC (6 decimals)
-    uint256 public constant ENTRY_FEE = 1_000_000; // 1 USDC
+    // Per-match fee: 0.5 USDC (6 decimals)
+    uint256 public constant PREDICTION_FEE = 500_000; // 0.5 USDC
+    
+    // Total free predictions per user
+    uint256 public constant TOTAL_FREE_PREDICTIONS = 5;
     
     // Treasury address for collected fees
     address public treasury;
     
+    struct Match {
+        uint256 id;
+        uint256 startTime;    // UNIX timestamp when match starts
+        uint256 homeScore;
+        uint256 awayScore;
+        bool isRecorded;
+        bool exists;
+    }
+    
     struct Prediction {
-        uint32 matchId;
+        uint256 matchId;
         uint8 outcome;        // 1=Home, 2=Draw, 3=Away
-        uint32 timestamp;
+        uint256 timestamp;
     }
     
     struct UserStats {
-        uint16 correctPredictions;
-        uint16 totalPredictions;
-        uint16 currentStreak;
-        uint16 longestStreak;
-        uint32 lastPredictionDate;     // YYYYMMDD format
-        bool hasUsedFreeTrial;         // Track if user used free 5 predictions
-    }
-    
-    struct DailyPool {
-        uint256 totalFees;
-        uint256 participantCount;
-        bool distributed;
+        uint256 correctPredictions;
+        uint256 totalPredictions;
+        uint256 freePredictionsUsed;  // Track used free predictions
+        uint256 currentStreak;
+        uint256 longestStreak;
     }
     
     // Mappings
     mapping(address => UserStats) public userStats;
-    mapping(address => mapping(uint32 => Prediction)) public predictions;
-    mapping(uint32 => DailyPool) public dailyPools;  // date => pool info
+    mapping(address => mapping(uint256 => Prediction)) public predictions;
+    mapping(uint256 => Match) public matches;
     
     // Events
     event PredictionsSubmitted(
         address indexed user, 
-        uint32[] matchIds, 
-        bool freeTrial,
+        uint256[] matchIds, 
+        uint256 predictionsCount,
+        uint256 freeUsed,
         uint256 feePaid
+    );
+    
+    event MatchRegistered(
+        uint256 indexed matchId,
+        uint256 startTime
     );
     
     event ResultRecorded(
         address indexed user, 
-        uint32 matchId, 
+        uint256 matchId, 
         bool correct
     );
     
     event PrizesDistributed(
-        uint32 indexed date,
+        address[] winners,
         uint256 totalAmount,
         uint256 recipientCount
     );
@@ -75,67 +86,116 @@ contract SeersLeague is Ownable, Pausable, ReentrancyGuard {
     }
     
     /**
-     * @notice Submit 5 daily predictions
-     * @param matchIds Array of 5 match IDs
-     * @param outcomes Array of 5 outcomes (1/2/3)
-     * @dev First time free, subsequent days require USDC payment
+     * @notice Submit flexible number of predictions
+     * @param matchIds Array of match IDs
+     * @param outcomes Array of outcomes (1/2/3)
+     * @dev First 5 predictions free, then 0.5 USDC per match
      */
     function submitPredictions(
-        uint32[] calldata matchIds,
+        uint256[] calldata matchIds,
         uint8[] calldata outcomes
     ) external nonReentrant whenNotPaused {
-        require(matchIds.length == 5, "Must predict exactly 5 matches");
-        require(outcomes.length == 5, "Must provide 5 outcomes");
+        require(matchIds.length > 0, "Must submit at least one prediction");
+        require(matchIds.length == outcomes.length, "Data mismatch");
         
-        UserStats storage stats = userStats[msg.sender];
-        uint32 today = _getTodayDate();
+        UserStats storage userStatsData = userStats[msg.sender];
+        uint256 predictionsInBatch = matchIds.length;
+        uint256 predictionsToPayFor = 0;
+        uint256 freeUsed = 0;
         
-        // Check if already predicted today
-        require(stats.lastPredictionDate != today, "Already predicted today");
-        
-        // Handle payment
-        bool isFreeTrial = !stats.hasUsedFreeTrial;
-        
-        if (!isFreeTrial) {
-            // Collect $1 USDC entry fee
-            require(
-                USDC.transferFrom(msg.sender, treasury, ENTRY_FEE),
-                "USDC transfer failed"
-            );
+        // Calculate free vs paid predictions
+        if (userStatsData.freePredictionsUsed < TOTAL_FREE_PREDICTIONS) {
+            uint256 freePredictionsAvailable = TOTAL_FREE_PREDICTIONS - userStatsData.freePredictionsUsed;
             
-            // Track daily pool
-            dailyPools[today].totalFees += ENTRY_FEE;
-            dailyPools[today].participantCount++;
+            if (predictionsInBatch <= freePredictionsAvailable) {
+                // All predictions are free
+                freeUsed = predictionsInBatch;
+                userStatsData.freePredictionsUsed += predictionsInBatch;
+                predictionsToPayFor = 0;
+            } else {
+                // Some free, some paid
+                freeUsed = freePredictionsAvailable;
+                predictionsToPayFor = predictionsInBatch - freePredictionsAvailable;
+                userStatsData.freePredictionsUsed = TOTAL_FREE_PREDICTIONS;
+            }
         } else {
-            // Mark free trial as used
-            stats.hasUsedFreeTrial = true;
+            // No free predictions left
+            predictionsToPayFor = predictionsInBatch;
         }
         
-        // Store predictions
-        for (uint256 i = 0; i < 5; i++) {
+        // Handle payment
+        uint256 totalFee = 0;
+        if (predictionsToPayFor > 0) {
+            totalFee = predictionsToPayFor * PREDICTION_FEE;
+            require(
+                USDC.transferFrom(msg.sender, treasury, totalFee),
+                "USDC transfer failed"
+            );
+        }
+        
+        // Store predictions with security checks
+        for (uint256 i = 0; i < predictionsInBatch; i++) {
+            uint256 currentMatchId = matchIds[i];
             require(outcomes[i] >= 1 && outcomes[i] <= 3, "Invalid outcome");
             require(
-                predictions[msg.sender][matchIds[i]].timestamp == 0,
+                predictions[msg.sender][currentMatchId].timestamp == 0,
                 "Match already predicted"
             );
             
-            predictions[msg.sender][matchIds[i]] = Prediction({
-                matchId: matchIds[i],
+            Match storage matchData = matches[currentMatchId];
+            
+            // --- SECURITY LOCKS ---
+            require(matchData.exists, "Match is not registered");
+            require(block.timestamp < matchData.startTime, "Prediction deadline passed");
+            require(!matchData.isRecorded, "Match results already recorded");
+            // --- SECURITY LOCKS ---
+            
+            predictions[msg.sender][currentMatchId] = Prediction({
+                matchId: currentMatchId,
                 outcome: outcomes[i],
-                timestamp: uint32(block.timestamp)
+                timestamp: block.timestamp
             });
         }
         
         // Update user stats
-        stats.totalPredictions += 5;
-        stats.lastPredictionDate = today;
+        userStatsData.totalPredictions += predictionsInBatch;
         
         emit PredictionsSubmitted(
             msg.sender, 
             matchIds, 
-            isFreeTrial,
-            isFreeTrial ? 0 : ENTRY_FEE
+            predictionsInBatch,
+            freeUsed,
+            totalFee
         );
+    }
+    
+    /**
+     * @notice Register matches for prediction (owner only)
+     * @param matchIds Array of match IDs
+     * @param startTimes Array of match start times (UNIX timestamp)
+     * @dev Only callable by owner to register matches from API
+     */
+    function registerMatches(
+        uint256[] calldata matchIds, 
+        uint256[] calldata startTimes
+    ) external onlyOwner {
+        require(matchIds.length == startTimes.length, "Data mismatch");
+        
+        for (uint256 i = 0; i < matchIds.length; i++) {
+            // Only register if not already registered and match is in future
+            if (!matches[matchIds[i]].exists && startTimes[i] > block.timestamp) {
+                matches[matchIds[i]] = Match({
+                    id: matchIds[i],
+                    startTime: startTimes[i],
+                    homeScore: 0,
+                    awayScore: 0,
+                    isRecorded: false,
+                    exists: true
+                });
+                
+                emit MatchRegistered(matchIds[i], startTimes[i]);
+            }
+        }
     }
     
     /**
@@ -146,7 +206,7 @@ contract SeersLeague is Ownable, Pausable, ReentrancyGuard {
      */
     function recordResult(
         address user,
-        uint32 matchId,
+        uint256 matchId,
         bool correct
     ) external onlyOwner {
         require(
@@ -178,7 +238,7 @@ contract SeersLeague is Ownable, Pausable, ReentrancyGuard {
      */
     function batchRecordResults(
         address[] calldata users,
-        uint32[] calldata matchIds,
+        uint256[] calldata matchIds,
         bool[] calldata corrects
     ) external onlyOwner {
         require(
@@ -209,17 +269,14 @@ contract SeersLeague is Ownable, Pausable, ReentrancyGuard {
     
     /**
      * @notice Distribute prizes to winners (owner only)
-     * @param date Date of competition (YYYYMMDD)
      * @param winners Array of winner addresses
      * @param amounts Array of prize amounts
      */
     function distributePrizes(
-        uint32 date,
         address[] calldata winners,
         uint256[] calldata amounts
     ) external onlyOwner nonReentrant {
         require(winners.length == amounts.length, "Length mismatch");
-        require(!dailyPools[date].distributed, "Already distributed");
         
         uint256 totalDistribution;
         
@@ -231,9 +288,7 @@ contract SeersLeague is Ownable, Pausable, ReentrancyGuard {
             totalDistribution += amounts[i];
         }
         
-        dailyPools[date].distributed = true;
-        
-        emit PrizesDistributed(date, totalDistribution, winners.length);
+        emit PrizesDistributed(winners, totalDistribution, winners.length);
     }
     
     /**
@@ -250,7 +305,7 @@ contract SeersLeague is Ownable, Pausable, ReentrancyGuard {
     /**
      * @notice Get user's prediction for a match
      */
-    function getUserPrediction(address user, uint32 matchId)
+    function getUserPrediction(address user, uint256 matchId)
         external
         view
         returns (Prediction memory)
@@ -259,14 +314,14 @@ contract SeersLeague is Ownable, Pausable, ReentrancyGuard {
     }
     
     /**
-     * @notice Get daily pool information
+     * @notice Get match information
      */
-    function getDailyPool(uint32 date)
+    function getMatch(uint256 matchId)
         external
         view
-        returns (DailyPool memory)
+        returns (Match memory)
     {
-        return dailyPools[date];
+        return matches[matchId];
     }
     
     /**
@@ -279,7 +334,22 @@ contract SeersLeague is Ownable, Pausable, ReentrancyGuard {
     {
         UserStats memory stats = userStats[user];
         if (stats.totalPredictions == 0) return 0;
-        return (uint256(stats.correctPredictions) * 100) / stats.totalPredictions;
+        return (stats.correctPredictions * 100) / stats.totalPredictions;
+    }
+    
+    /**
+     * @notice Get user's remaining free predictions
+     */
+    function getRemainingFreePredictions(address user)
+        external
+        view
+        returns (uint256)
+    {
+        UserStats memory stats = userStats[user];
+        if (stats.freePredictionsUsed >= TOTAL_FREE_PREDICTIONS) {
+            return 0;
+        }
+        return TOTAL_FREE_PREDICTIONS - stats.freePredictionsUsed;
     }
     
     /**
@@ -305,10 +375,4 @@ contract SeersLeague is Ownable, Pausable, ReentrancyGuard {
         _unpause();
     }
     
-    /**
-     * @dev Get today's date in YYYYMMDD format
-     */
-    function _getTodayDate() private view returns (uint32) {
-        return uint32(block.timestamp / 86400);
-    }
 }

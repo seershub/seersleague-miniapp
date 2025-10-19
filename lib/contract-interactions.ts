@@ -1,5 +1,6 @@
 // import { parseUnits, formatUnits } from 'viem';
-import { SEERSLEAGUE_ABI, USDC_ABI } from './contracts/abi';
+import { SEERSLEAGUE_ABI } from './contracts/abi-new';
+import { USDC_ABI } from './contracts/abi';
 
 // Re-export ABIs for components
 export { SEERSLEAGUE_ABI, USDC_ABI };
@@ -10,16 +11,15 @@ export const CONTRACTS = {
   USDC: '0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913' as `0x${string}`,
 } as const;
 
-// Entry fee: 1 USDC (6 decimals) - placeholder for now
-export const ENTRY_FEE = BigInt(1000000); // 1 USDC = 1,000,000 units
+// Per-match fee: 0.5 USDC (6 decimals)
+export const PREDICTION_FEE = BigInt(500000); // 0.5 USDC = 500,000 units
 
 export interface UserStats {
   correctPredictions: number;
   totalPredictions: number;
+  freePredictionsUsed: number;
   currentStreak: number;
   longestStreak: number;
-  lastPredictionDate: number;
-  hasUsedFreeTrial: boolean;
 }
 
 export interface Prediction {
@@ -35,18 +35,19 @@ export interface DailyPool {
 }
 
 /**
- * Check if user has free trial available
+ * Check if user has remaining free predictions
  */
-export function hasFreeTrial(userStats: UserStats): boolean {
-  return !userStats.hasUsedFreeTrial;
+export function getRemainingFreePredictions(userStats: UserStats): number {
+  return Math.max(0, 5 - userStats.freePredictionsUsed);
 }
 
 /**
- * Check if user already predicted today
+ * Calculate fee for predictions
  */
-export function hasPredictedToday(userStats: UserStats): boolean {
-  const today = Math.floor(Date.now() / 86400000); // Days since epoch
-  return userStats.lastPredictionDate === today;
+export function calculatePredictionFee(userStats: UserStats, predictionCount: number): bigint {
+  const remainingFree = getRemainingFreePredictions(userStats);
+  const paidPredictions = Math.max(0, predictionCount - remainingFree);
+  return BigInt(paidPredictions) * PREDICTION_FEE;
 }
 
 /**
@@ -128,12 +129,13 @@ export const contractUtils = {
  * Error messages for common contract interactions
  */
 export const CONTRACT_ERRORS = {
-  ALREADY_PREDICTED_TODAY: 'Already predicted today',
   INSUFFICIENT_USDC_BALANCE: 'Insufficient USDC balance',
   USDC_APPROVAL_FAILED: 'USDC approval failed',
   USDC_TRANSFER_FAILED: 'USDC transfer failed',
   INVALID_OUTCOME: 'Invalid outcome (must be 1, 2, or 3)',
-  MUST_PREDICT_5_MATCHES: 'Must predict exactly 5 matches',
+  MATCH_NOT_REGISTERED: 'Match is not registered',
+  PREDICTION_DEADLINE_PASSED: 'Prediction deadline passed',
+  MATCH_RESULTS_RECORDED: 'Match results already recorded',
   CONTRACT_PAUSED: 'Contract is paused',
   NO_PREDICTION_FOUND: 'No prediction found for this match',
 } as const;
@@ -144,8 +146,14 @@ export const CONTRACT_ERRORS = {
 export function parseContractError(error: any): string {
   const message = error?.message || error?.toString() || 'Unknown error';
   
-  if (message.includes('Already predicted today')) {
-    return 'You already submitted predictions today!';
+  if (message.includes('Match is not registered')) {
+    return 'This match is not available for prediction.';
+  }
+  if (message.includes('Prediction deadline passed')) {
+    return 'This match has already started. Predictions are no longer accepted.';
+  }
+  if (message.includes('Match results already recorded')) {
+    return 'Results for this match have already been recorded.';
   }
   if (message.includes('Insufficient')) {
     return 'Insufficient USDC balance. Please add more USDC to your wallet.';
@@ -155,9 +163,6 @@ export function parseContractError(error: any): string {
   }
   if (message.includes('Invalid outcome')) {
     return 'Please select an outcome for all matches.';
-  }
-  if (message.includes('Must predict exactly 5')) {
-    return 'Please predict exactly 5 matches.';
   }
   if (message.includes('paused')) {
     return 'The platform is temporarily paused. Please try again later.';
