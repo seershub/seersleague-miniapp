@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { Match } from '@/lib/matches';
 import { MatchCard } from './MatchCard';
 import { PaymentModal } from './PaymentModal';
-import { CONTRACTS, SEERSLEAGUE_ABI, ENTRY_FEE, hasFreeTrial, hasPredictedToday } from '@/lib/contract-interactions';
+import { CONTRACTS, SEERSLEAGUE_ABI, ENTRY_FEE, hasFreeTrial, hasPredictedToday, UserStats } from '@/lib/contract-interactions';
 import { useMiniKit } from './MiniKitProvider';
 import toast from 'react-hot-toast';
 
@@ -19,12 +19,7 @@ export function PredictionForm({ matches }: PredictionFormProps) {
   const [predictions, setPredictions] = useState<(1 | 2 | 3 | 0)[]>(new Array(5).fill(0));
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [userStats, setUserStats] = useState<{
-    totalPredictions: number;
-    correctPredictions: number;
-    lastPredictionDay: number;
-    isFirstDay: boolean;
-  } | null>(null);
+  const [userStats, setUserStats] = useState<UserStats | null>(null);
   const [isPending, setIsPending] = useState(false);
   
   // Get user address and stats
@@ -60,10 +55,12 @@ export function PredictionForm({ matches }: PredictionFormProps) {
       
       // Parse stats (simplified for now)
       setUserStats({
-        totalPredictions: 0,
         correctPredictions: 0,
-        lastPredictionDay: 0,
-        isFirstDay: true
+        totalPredictions: 0,
+        currentStreak: 0,
+        longestStreak: 0,
+        lastPredictionDate: 0,
+        hasUsedFreeTrial: false
       });
     } catch (error) {
       console.error('Error fetching user stats:', error);
@@ -145,11 +142,12 @@ export function PredictionForm({ matches }: PredictionFormProps) {
       toast.success('Predictions submitted successfully! 🎉');
       
       // Update user stats
-      setUserStats(prev => ({
+      setUserStats(prev => prev ? {
         ...prev,
-        totalPredictions: (prev?.totalPredictions || 0) + 1,
-        lastPredictionDay: currentDay
-      }));
+        totalPredictions: prev.totalPredictions + 1,
+        lastPredictionDate: currentDay,
+        hasUsedFreeTrial: true
+      } : null);
       
     } catch (error: any) {
       console.error('Submission error:', error);
