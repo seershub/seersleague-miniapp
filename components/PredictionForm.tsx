@@ -139,11 +139,11 @@ export function PredictionForm({ matches }: PredictionFormProps) {
       // Get match IDs from actual matches
       const matchIds = matches.map(match => parseInt(match.id));
       
-      // Encode function call data for submitPredictions(uint256 day, uint32[] matchIds, uint8[] predictions)
+      // Encode function call data for submitPredictions(uint32[] matchIds, uint8[] outcomes)
       const encodedData = encodeFunctionData({
         abi: SEERSLEAGUE_ABI,
         functionName: 'submitPredictions',
-        args: [BigInt(currentDay), matchIds, predictions]
+        args: [matchIds, predictions]
       });
       
       // Send transaction
