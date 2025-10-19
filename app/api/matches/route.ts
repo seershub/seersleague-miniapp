@@ -14,6 +14,16 @@ const LEAGUE_IDS = {
   EPL: '4328',
   BUNDESLIGA_2: '4336',
   CHAMPIONSHIP: '4329',
+  TURKISH_SUPER_LIG: '4338', // Türkiye Süper Ligi
+  EREDIVISIE: '4333', // Hollanda
+  PRIMEIRA_LIGA: '4334', // Portekiz
+  RUSSIAN_PREMIER: '4335', // Rusya
+  BELGIAN_PRO: '4336', // Belçika
+  SCOTTISH_PREMIER: '4337', // İskoçya
+  MLS: '4338', // ABD
+  LIGA_MX: '4339', // Meksika
+  BRAZILIAN_SERIE_A: '4340', // Brezilya
+  ARGENTINE_PRIMERA: '4341', // Arjantin
 };
 
 interface Match {
@@ -34,6 +44,8 @@ export async function GET() {
     const dateStr = today.toISOString().split('T')[0];
     
     console.log('=== FETCHING MATCHES FOR DATE:', dateStr, '===');
+    console.log('=== CURRENT TIME:', new Date().toISOString(), '===');
+    console.log('=== API KEY:', API_KEY, '===');
     
     const allMatches: Match[] = [];
     
@@ -57,7 +69,7 @@ export async function GET() {
           console.log(`URL: ${url}`);
           
           const response = await fetch(url, {
-            next: { revalidate: 300 } // Cache 5 minutes for testing
+            cache: 'no-store' // No cache for testing
           });
           
           if (!response.ok) {
@@ -153,7 +165,7 @@ export async function GET() {
           console.log(`Fetching ${league.name} matches for today:`, todayUrl);
           
           const response = await fetch(todayUrl, {
-            next: { revalidate: 3600 }
+            cache: 'no-store'
           });
           
           if (response.ok) {
@@ -191,7 +203,7 @@ export async function GET() {
             console.log(`Fetching ${league.name} matches for ${futureDateStr}:`, futureUrl);
             
             const futureResponse = await fetch(futureUrl, {
-              next: { revalidate: 3600 }
+              cache: 'no-store'
             });
             
             if (futureResponse.ok) {
