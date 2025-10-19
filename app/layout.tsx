@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import './globals.css';
+import { MiniKitProvider } from '@/components/MiniKitProvider';
 
 export const metadata: Metadata = {
   title: 'SeersLeague - Daily Football Predictions',
@@ -31,7 +32,11 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body>{children}</body>
+      <body>
+        <MiniKitProvider>
+          {children}
+        </MiniKitProvider>
+      </body>
     </html>
   );
 }
