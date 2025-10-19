@@ -7,7 +7,7 @@ export { SEERSLEAGUE_ABI, USDC_ABI };
 
 // Contract addresses (Base Mainnet)
 export const CONTRACTS = {
-  SEERSLEAGUE: (process.env.NEXT_PUBLIC_CONTRACT_ADDRESS || '0x5FbDB2315678afecb367f032d93F642f64180aa3') as `0x${string}`,
+  SEERSLEAGUE: (process.env.NEXT_PUBLIC_CONTRACT_ADDRESS || '0x6b0720D001f65967358a31e319F63D3833217632') as `0x${string}`,
   USDC: '0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913' as `0x${string}`,
 } as const;
 
