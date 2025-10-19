@@ -136,6 +136,9 @@ export function PredictionForm({ matches }: PredictionFormProps) {
       return;
     }
     
+    // Show loading toast immediately
+    const loadingToast = toast.loading('Tahminler gönderiliyor...');
+    
     try {
       setIsSubmitting(true);
       setIsPending(true);
@@ -168,6 +171,7 @@ export function PredictionForm({ matches }: PredictionFormProps) {
       });
       
       if (!CONTRACTS.SEERSLEAGUE || CONTRACTS.SEERSLEAGUE.length < 42) {
+        toast.dismiss(loadingToast);
         toast.error('Contract address not configured. Please check environment variables.');
         console.error('Contract address missing:', CONTRACTS.SEERSLEAGUE);
         return;
@@ -185,23 +189,120 @@ export function PredictionForm({ matches }: PredictionFormProps) {
       });
       
       console.log('Transaction submitted:', txHash);
-      toast.success(`Predictions submitted! Transaction: ${txHash.slice(0, 10)}...`);
       
-      // Update user stats
-      const predictionCount = Object.keys(predictions).length;
-      setUserStats(prev => prev ? {
-        ...prev,
-        totalPredictions: prev.totalPredictions + predictionCount,
-        freePredictionsUsed: Math.min(prev.freePredictionsUsed + predictionCount, 5)
-      } : null);
+      // Update loading toast to show transaction submitted
+      toast.dismiss(loadingToast);
+      toast.success(`İşlem bloğa gönderildi... Hash: ${txHash.slice(0, 10)}...`);
       
-      // Clear selections
-      setSelectedMatches([]);
-      setPredictions({});
+      // Wait for transaction receipt
+      let receipt = null;
+      let attempts = 0;
+      const maxAttempts = 30; // 30 attempts * 2 seconds = 60 seconds max wait
+      
+      while (!receipt && attempts < maxAttempts) {
+        try {
+          receipt = await sdk.wallet.ethProvider.request({
+            method: 'eth_getTransactionReceipt',
+            params: [txHash]
+          });
+          
+          if (!receipt) {
+            await new Promise(resolve => setTimeout(resolve, 2000)); // Wait 2 seconds
+            attempts++;
+          }
+        } catch (error) {
+          console.error('Error checking transaction receipt:', error);
+          await new Promise(resolve => setTimeout(resolve, 2000));
+          attempts++;
+        }
+      }
+      
+      if (receipt) {
+        // Check transaction status
+        if (receipt.status === '0x1' || receipt.status === '0x01') {
+          // Success!
+          toast.success(
+            <div>
+              <div className="font-bold text-green-600">✅ Başarılı!</div>
+              <div className="text-sm text-gray-600 mt-1">Tahminleriniz kaydedildi.</div>
+              <a 
+                href={`https://basescan.org/tx/${txHash}`} 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="text-blue-600 hover:text-blue-800 underline text-sm mt-1 inline-block"
+              >
+                İşlemi Görüntüle →
+              </a>
+            </div>,
+            { duration: 8000 }
+          );
+          
+          // Update user stats
+          const predictionCount = Object.keys(predictions).length;
+          setUserStats(prev => prev ? {
+            ...prev,
+            totalPredictions: prev.totalPredictions + predictionCount,
+            freePredictionsUsed: Math.min(prev.freePredictionsUsed + predictionCount, 5)
+          } : null);
+          
+          // Clear selections
+          setSelectedMatches([]);
+          setPredictions({});
+        } else {
+          // Transaction failed
+          toast.error(
+            <div>
+              <div className="font-bold text-red-600">❌ İşlem Başarısız</div>
+              <div className="text-sm text-gray-600 mt-1">Transaction reverted on chain</div>
+              <a 
+                href={`https://basescan.org/tx/${txHash}`} 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="text-blue-600 hover:text-blue-800 underline text-sm mt-1 inline-block"
+              >
+                İşlemi Görüntüle →
+              </a>
+            </div>,
+            { duration: 8000 }
+          );
+        }
+      } else {
+        // Timeout waiting for receipt
+        toast.error('İşlem zaman aşımına uğradı. Lütfen Basescan\'dan kontrol edin.', { duration: 6000 });
+      }
       
     } catch (error: any) {
       console.error('Submission error:', error);
-      toast.error('Failed to submit predictions. Please try again.');
+      
+      // Dismiss loading toast
+      toast.dismiss(loadingToast);
+      
+      // Show specific error messages
+      let errorMessage = 'Failed to submit predictions. Please try again.';
+      
+      if (error.message) {
+        if (error.message.includes('User rejected') || error.message.includes('User denied')) {
+          errorMessage = 'İşlem kullanıcı tarafından reddedildi.';
+        } else if (error.message.includes('Prediction deadline passed')) {
+          errorMessage = 'Bu maçın tahmin süresi dolmuş.';
+        } else if (error.message.includes('Match is not registered')) {
+          errorMessage = 'Bu maç henüz kayıtlı değil.';
+        } else if (error.message.includes('Match results already recorded')) {
+          errorMessage = 'Bu maçın sonuçları zaten kaydedilmiş.';
+        } else if (error.message.includes('Insufficient USDC balance')) {
+          errorMessage = 'Yetersiz USDC bakiyesi.';
+        } else {
+          errorMessage = `Hata: ${error.message}`;
+        }
+      }
+      
+      toast.error(
+        <div>
+          <div className="font-bold text-red-600">❌ Hata!</div>
+          <div className="text-sm text-gray-600 mt-1">{errorMessage}</div>
+        </div>,
+        { duration: 6000 }
+      );
     } finally {
       setIsSubmitting(false);
       setIsPending(false);
