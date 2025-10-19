@@ -158,6 +158,21 @@ export function PredictionForm({ matches }: PredictionFormProps) {
         args: [matchIds, selectedPredictions]
       });
       
+      // Debug contract address and environment
+      console.log('Contract address:', CONTRACTS.SEERSLEAGUE);
+      console.log('Environment check:', {
+        contractAddress: process.env.NEXT_PUBLIC_CONTRACT_ADDRESS,
+        contractsSeersLeague: CONTRACTS.SEERSLEAGUE,
+        isUndefined: CONTRACTS.SEERSLEAGUE === undefined,
+        isString: typeof CONTRACTS.SEERSLEAGUE === 'string'
+      });
+      
+      if (!CONTRACTS.SEERSLEAGUE || CONTRACTS.SEERSLEAGUE === 'undefined' || CONTRACTS.SEERSLEAGUE === undefined) {
+        toast.error('Contract address not configured. Please check environment variables.');
+        console.error('Contract address missing:', CONTRACTS.SEERSLEAGUE);
+        return;
+      }
+      
       // Send transaction
       const txHash = await sdk.wallet.ethProvider.request({
         method: 'eth_sendTransaction',
