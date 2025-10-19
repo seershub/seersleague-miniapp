@@ -13,10 +13,29 @@ export function WalletConnect() {
     const checkConnection = async () => {
       try {
         if (isReady && sdk) {
-          // For now, assume we're in Farcaster context if SDK is ready
-          setIsConnected(true);
-          setUserAddress('Farcaster User');
-          console.log('Wallet connected via Farcaster Mini App');
+          // Check if we have access to wallet provider
+          if (sdk.wallet && sdk.wallet.ethProvider) {
+            try {
+              const accounts = await sdk.wallet.ethProvider.request({ 
+                method: 'eth_accounts' 
+              });
+              if (accounts && accounts.length > 0) {
+                setIsConnected(true);
+                setUserAddress(accounts[0]);
+                console.log('Wallet connected:', accounts[0]);
+              } else {
+                setIsConnected(false);
+                setUserAddress(null);
+              }
+            } catch (error) {
+              console.log('No wallet connection found');
+              setIsConnected(false);
+              setUserAddress(null);
+            }
+          } else {
+            setIsConnected(false);
+            setUserAddress(null);
+          }
         } else {
           setIsConnected(false);
           setUserAddress(null);
@@ -36,13 +55,18 @@ export function WalletConnect() {
 
   const handleConnect = async () => {
     try {
-      if (sdk) {
-        // In Farcaster Mini App context, wallet is automatically connected
-        setIsConnected(true);
-        setUserAddress('Farcaster User');
-        console.log('Wallet connected via Farcaster Mini App');
+      if (sdk && sdk.wallet && sdk.wallet.ethProvider) {
+        // Request account access
+        const accounts = await sdk.wallet.ethProvider.request({ 
+          method: 'eth_requestAccounts' 
+        });
+        if (accounts && accounts.length > 0) {
+          setIsConnected(true);
+          setUserAddress(accounts[0]);
+          console.log('Wallet connected:', accounts[0]);
+        }
       } else {
-        alert('Mini App SDK not ready. Please try again.');
+        alert('Wallet provider not available. Please open in Base App.');
       }
     } catch (error) {
       console.error('Connection error:', error);
@@ -68,8 +92,8 @@ export function WalletConnect() {
           <p className="text-gray-400 mb-2">
             Ready to make predictions and compete for prizes!
           </p>
-          <p className="text-sm text-gray-500">
-            User ID: {userAddress}
+          <p className="text-sm text-gray-500 font-mono">
+            {userAddress ? `${userAddress.slice(0, 6)}...${userAddress.slice(-4)}` : 'Connected'}
           </p>
         </div>
       </div>
@@ -82,7 +106,7 @@ export function WalletConnect() {
         <div className="text-4xl mb-2">🔗</div>
         <h3 className="text-xl font-bold mb-2">Connect Your Wallet</h3>
         <p className="text-gray-400 mb-4">
-          Open this app in Farcaster to automatically connect your wallet!
+          Connect your wallet to start making predictions and competing for prizes!
         </p>
       </div>
       
@@ -94,7 +118,7 @@ export function WalletConnect() {
       </button>
       
       <p className="text-xs text-gray-500 mt-3">
-        Powered by Farcaster Mini Apps
+        Powered by Base & Farcaster Mini Apps
       </p>
     </div>
   );
