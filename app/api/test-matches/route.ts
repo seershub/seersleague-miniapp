@@ -19,8 +19,9 @@ export async function GET() {
     const response1 = await fetch(testUrl1);
     
     let data1;
+    let text1 = '';
     try {
-      const text1 = await response1.text();
+      text1 = await response1.text();
       console.log('Response 1 text:', text1.substring(0, 500));
       data1 = JSON.parse(text1);
     } catch (parseError) {
@@ -42,8 +43,9 @@ export async function GET() {
     const response2 = await fetch(testUrl2);
     
     let data2;
+    let text2 = '';
     try {
-      const text2 = await response2.text();
+      text2 = await response2.text();
       console.log('Response 2 text:', text2.substring(0, 500));
       data2 = JSON.parse(text2);
     } catch (parseError) {
@@ -64,8 +66,9 @@ export async function GET() {
     const response3 = await fetch(testUrl3);
     
     let data3;
+    let text3 = '';
     try {
-      const text3 = await response3.text();
+      text3 = await response3.text();
       console.log('Response 3 text:', text3.substring(0, 500));
       data3 = JSON.parse(text3);
     } catch (parseError) {
@@ -86,8 +89,9 @@ export async function GET() {
     const response4 = await fetch(testUrl4);
     
     let data4;
+    let text4 = '';
     try {
-      const text4 = await response4.text();
+      text4 = await response4.text();
       console.log('Response 4 text:', text4.substring(0, 500));
       data4 = JSON.parse(text4);
     } catch (parseError) {
@@ -108,8 +112,9 @@ export async function GET() {
     const response5 = await fetch(testUrl5);
     
     let data5;
+    let text5 = '';
     try {
-      const text5 = await response5.text();
+      text5 = await response5.text();
       console.log('Response 5 text:', text5.substring(0, 500));
       data5 = JSON.parse(text5);
     } catch (parseError) {
@@ -130,8 +135,9 @@ export async function GET() {
     const response6 = await fetch(testUrl6);
     
     let data6;
+    let text6 = '';
     try {
-      const text6 = await response6.text();
+      text6 = await response6.text();
       console.log('Response 6 text:', text6.substring(0, 500));
       data6 = JSON.parse(text6);
     } catch (parseError) {
