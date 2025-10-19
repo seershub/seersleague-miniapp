@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 // import { useAccount, useReadContract, useWriteContract, useWaitForTransactionReceipt } from 'wagmi';
-import { USDC_ABI, CONTRACTS, ENTRY_FEE, formatUSDC } from '@/lib/contract-interactions';
+import { USDC_ABI, CONTRACTS, formatUSDC } from '@/lib/contract-interactions';
 import toast from 'react-hot-toast';
 
 interface PaymentModalProps {
