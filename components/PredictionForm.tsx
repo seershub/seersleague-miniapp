@@ -49,15 +49,9 @@ export function PredictionForm({ matches }: PredictionFormProps) {
     if (!sdk) return;
     
     try {
-      // Read user stats from contract
-      const stats = await sdk.wallet.ethProvider.request({
-        method: 'eth_call',
-        params: [{
-          to: CONTRACTS.SEERSLEAGUE,
-          data: `0x${SEERSLEAGUE_ABI.find(m => m.name === 'getUserStats')?.inputs?.length ? 
-            '0x' + 'getUserStats(address)'.slice(0, 10) + userAddress.slice(2).padStart(64, '0') : ''}`
-        }, 'latest']
-      });
+      // For now, simulate user stats since we don't have real contract integration yet
+      // In real implementation, would call getUserStats(address) function
+      console.log('Fetching user stats for:', userAddress);
       
       // Parse stats (simplified for now)
       setUserStats({
