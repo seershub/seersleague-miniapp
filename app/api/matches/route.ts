@@ -137,87 +137,92 @@ export async function GET() {
     if (featured.length === 0) {
       console.log('No matches found, trying alternative approach...');
       
-      // Try to get upcoming matches using better endpoints
-      try {
-        // First try: Next events in Premier League
-        const nextEventsUrl = `${SPORTS_DB_BASE}/${API_KEY}/eventsnextleague.php?id=4328`;
-        console.log('Fetching next events:', nextEventsUrl);
-        
-        const response1 = await fetch(nextEventsUrl, {
-          next: { revalidate: 3600 }
-        });
-        
-        if (response1.ok) {
-          const data1 = await response1.json();
+      // Try multiple leagues with working endpoint (eventsday.php)
+      const leaguesToTry = [
+        { id: '4328', name: 'Premier League' },
+        { id: '4335', name: 'La Liga' },
+        { id: '4331', name: 'Bundesliga' },
+        { id: '4332', name: 'Serie A' },
+        { id: '4334', name: 'Ligue 1' }
+      ];
+      
+      for (const league of leaguesToTry) {
+        try {
+          // Try today's matches
+          const todayUrl = `${SPORTS_DB_BASE}/${API_KEY}/eventsday.php?d=${dateStr}&l=${league.id}`;
+          console.log(`Fetching ${league.name} matches for today:`, todayUrl);
           
-          if (data1.events && Array.isArray(data1.events)) {
-            const upcomingMatches = data1.events
-              .slice(0, 5) // Take first 5
-              .map((event: any) => ({
-                id: event.idEvent,
-                homeTeam: event.strHomeTeam,
-                awayTeam: event.strAwayTeam,
-                league: event.strLeague,
-                kickoff: event.dateEvent + 'T' + (event.strTime || '15:00:00'),
-                venue: event.strVenue || 'TBA',
-                homeTeamBadge: event.strHomeTeamBadge || '/default-badge.png',
-                awayTeamBadge: event.strAwayTeamBadge || '/default-badge.png',
-                status: event.strStatus,
-              }));
+          const response = await fetch(todayUrl, {
+            next: { revalidate: 3600 }
+          });
+          
+          if (response.ok) {
+            const data = await response.json();
             
-            if (upcomingMatches.length > 0) {
-              console.log('Found next events:', upcomingMatches.length);
-              return NextResponse.json(upcomingMatches);
+            if (data.events && Array.isArray(data.events) && data.events.length > 0) {
+              const upcomingMatches = data.events
+                .slice(0, 5) // Take first 5
+                .map((event: any) => ({
+                  id: event.idEvent,
+                  homeTeam: event.strHomeTeam,
+                  awayTeam: event.strAwayTeam,
+                  league: event.strLeague,
+                  kickoff: event.dateEvent + 'T' + (event.strTime || '15:00:00'),
+                  venue: event.strVenue || 'TBA',
+                  homeTeamBadge: event.strHomeTeamBadge || '/default-badge.png',
+                  awayTeamBadge: event.strAwayTeamBadge || '/default-badge.png',
+                  status: event.strStatus,
+                }));
+              
+              if (upcomingMatches.length > 0) {
+                console.log(`Found ${league.name} matches:`, upcomingMatches.length);
+                return NextResponse.json(upcomingMatches);
+              }
             }
           }
-        }
-        
-        // Second try: Season events
-        const seasonUrl = `${SPORTS_DB_BASE}/${API_KEY}/eventsseason.php?id=4328&s=2024-2025`;
-        console.log('Fetching season events:', seasonUrl);
-        
-        const response2 = await fetch(seasonUrl, {
-          next: { revalidate: 3600 }
-        });
-        
-        if (response2.ok) {
-          const data2 = await response2.json();
           
-          if (data2.events && Array.isArray(data2.events)) {
-            const upcomingMatches = data2.events
-              .filter((event: any) => {
-                const eventDate = new Date(event.dateEvent);
-                const today = new Date();
-                const weekFromNow = new Date();
-                weekFromNow.setDate(today.getDate() + 7);
+          // Try next 7 days
+          for (let i = 1; i <= 7; i++) {
+            const futureDate = new Date();
+            futureDate.setDate(today.getDate() + i);
+            const futureDateStr = futureDate.toISOString().split('T')[0];
+            
+            const futureUrl = `${SPORTS_DB_BASE}/${API_KEY}/eventsday.php?d=${futureDateStr}&l=${league.id}`;
+            console.log(`Fetching ${league.name} matches for ${futureDateStr}:`, futureUrl);
+            
+            const futureResponse = await fetch(futureUrl, {
+              next: { revalidate: 3600 }
+            });
+            
+            if (futureResponse.ok) {
+              const futureData = await futureResponse.json();
+              
+              if (futureData.events && Array.isArray(futureData.events) && futureData.events.length > 0) {
+                const upcomingMatches = futureData.events
+                  .slice(0, 5) // Take first 5
+                  .map((event: any) => ({
+                    id: event.idEvent,
+                    homeTeam: event.strHomeTeam,
+                    awayTeam: event.strAwayTeam,
+                    league: event.strLeague,
+                    kickoff: event.dateEvent + 'T' + (event.strTime || '15:00:00'),
+                    venue: event.strVenue || 'TBA',
+                    homeTeamBadge: event.strHomeTeamBadge || '/default-badge.png',
+                    awayTeamBadge: event.strAwayTeamBadge || '/default-badge.png',
+                    status: event.strStatus,
+                  }));
                 
-                return eventDate >= today && 
-                       eventDate <= weekFromNow && 
-                       (event.strStatus === 'Not Started' || 
-                        event.strStatus === 'NS' ||
-                        event.strStatus === 'Scheduled');
-              })
-              .slice(0, 5)
-              .map((event: any) => ({
-                id: event.idEvent,
-                homeTeam: event.strHomeTeam,
-                awayTeam: event.strAwayTeam,
-                league: event.strLeague,
-                kickoff: event.dateEvent + 'T' + (event.strTime || '15:00:00'),
-                venue: event.strVenue || 'TBA',
-                homeTeamBadge: event.strHomeTeamBadge || '/default-badge.png',
-                awayTeamBadge: event.strAwayTeamBadge || '/default-badge.png',
-                status: event.strStatus,
-              }));
-            
-            if (upcomingMatches.length > 0) {
-              console.log('Found season matches:', upcomingMatches.length);
-              return NextResponse.json(upcomingMatches);
+                if (upcomingMatches.length > 0) {
+                  console.log(`Found ${league.name} matches for ${futureDateStr}:`, upcomingMatches.length);
+                  return NextResponse.json(upcomingMatches);
+                }
+              }
             }
           }
+        } catch (error) {
+          console.error(`Error fetching ${league.name} matches:`, error);
+          continue; // Try next league
         }
-      } catch (error) {
-        console.error('Error fetching upcoming matches:', error);
       }
       
       // Final fallback - realistic mock data
