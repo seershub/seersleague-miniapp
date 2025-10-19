@@ -53,7 +53,7 @@ export function PredictionForm({ matches }: PredictionFormProps) {
       const stats = await sdk.wallet.ethProvider.request({
         method: 'eth_call',
         params: [{
-          to: CONTRACTS.seersLeague,
+          to: CONTRACTS.SEERSLEAGUE,
           data: `0x${SEERSLEAGUE_ABI.find(m => m.name === 'getUserStats')?.inputs?.length ? 
             '0x' + 'getUserStats(address)'.slice(0, 10) + userAddress.slice(2).padStart(64, '0') : ''}`
         }, 'latest']
