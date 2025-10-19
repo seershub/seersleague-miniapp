@@ -91,9 +91,10 @@ export function PredictionForm({ matches }: PredictionFormProps) {
       return;
     }
     
-    // Validate all predictions are made
-    if (predictions.some(p => p === 0)) {
-      toast.error('Please select an outcome for all matches');
+    // Validate at least one prediction is made
+    const selectedPredictions = predictions.filter(p => p !== 0);
+    if (selectedPredictions.length === 0) {
+      toast.error('Please select at least one prediction');
       return;
     }
     
@@ -136,14 +137,25 @@ export function PredictionForm({ matches }: PredictionFormProps) {
         address
       });
       
-      // Get match IDs from actual matches
-      const matchIds = matches.map(match => parseInt(match.id));
+      // Get only selected predictions
+      const selectedIndices: number[] = [];
+      const selectedPredictions: number[] = [];
+      
+      predictions.forEach((prediction, index) => {
+        if (prediction !== 0) {
+          selectedIndices.push(index);
+          selectedPredictions.push(prediction);
+        }
+      });
+      
+      // Get match IDs for selected predictions only
+      const matchIds = selectedIndices.map(index => parseInt(matches[index].id));
       
       // Encode function call data for submitPredictions(uint32[] matchIds, uint8[] outcomes)
       const encodedData = encodeFunctionData({
         abi: SEERSLEAGUE_ABI,
         functionName: 'submitPredictions',
-        args: [matchIds, predictions]
+        args: [matchIds, selectedPredictions]
       });
       
       // Send transaction
@@ -152,7 +164,7 @@ export function PredictionForm({ matches }: PredictionFormProps) {
         params: [{
           to: CONTRACTS.SEERSLEAGUE,
           data: encodedData,
-          from: address,
+          from: address as `0x${string}`,
           value: '0x0' // No ETH value, only USDC if needed
         }]
       });
@@ -178,7 +190,7 @@ export function PredictionForm({ matches }: PredictionFormProps) {
     }
   };
   
-  const isFormValid = predictions.every(p => p !== 0);
+  const isFormValid = predictions.some(p => p !== 0);
   const isFreeTrial = userStats ? hasFreeTrial(userStats) : false;
   const alreadyPredicted = userStats ? hasPredictedToday(userStats) : false;
   
@@ -267,7 +279,7 @@ export function PredictionForm({ matches }: PredictionFormProps) {
         
         {!isFormValid && (
           <p className="text-sm text-gray-400 mt-2">
-            Please select an outcome for all 5 matches
+            Please select at least one prediction (up to 5 matches)
           </p>
         )}
       </div>
