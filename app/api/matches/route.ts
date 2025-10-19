@@ -105,53 +105,52 @@ export async function GET() {
     tomorrow.setDate(tomorrow.getDate() + 1)
     const tomorrowStr = tomorrow.toISOString().split('T')[0]
 
-    for (const c of priorityCompetitions) {
-      const url = `${FOOTBALL_DATA_BASE}/competitions/${c.id}/matches?dateFrom=${today}&dateTo=${today}`
-      const res = await fetch(url, { headers: { 'X-Auth-Token': API_KEY } })
-      if (res.ok) {
-        const data = await res.json()
-        if (Array.isArray(data.matches)) {
-          const m = data.matches.map((match: any) => ({
-            id: match.id.toString(),
-            homeTeam: match.homeTeam.name,
-            awayTeam: match.awayTeam.name,
-            league: match.competition.name,
-            kickoff: match.utcDate,
-            venue: match.venue || 'TBA',
-            homeTeamBadge: match.homeTeam.crest || '/default-badge.svg',
-            awayTeamBadge: match.awayTeam.crest || '/default-badge.svg',
-            status: (match.status === 'SCHEDULED' || match.status === 'TIMED') ? 'Not Started' : match.status,
-          }))
-          all.push(...m)
-        }
+    const fetchWithTimeout = async (url: string, headers: Record<string, string>, ms = 2200) => {
+      const ctrl = new AbortController()
+      const id = setTimeout(() => ctrl.abort(), ms)
+      try {
+        const res = await fetch(url, { headers, signal: ctrl.signal })
+        if (!res.ok) return null
+        return await res.json()
+      } catch {
+        return null
+      } finally {
+        clearTimeout(id)
       }
-      await new Promise(r => setTimeout(r, 150))
-      if (all.length >= 5) break
     }
 
+    const mapMatches = (data: any) => {
+      if (!data || !Array.isArray(data.matches)) return [] as any[]
+      return data.matches.map((match: any) => ({
+        id: match.id.toString(),
+        homeTeam: match.homeTeam?.name || 'TBA',
+        awayTeam: match.awayTeam?.name || 'TBA',
+        league: match.competition?.name || 'Unknown',
+        kickoff: match.utcDate,
+        venue: match.venue || 'TBA',
+        homeTeamBadge: match.homeTeam?.crest || '/default-badge.svg',
+        awayTeamBadge: match.awayTeam?.crest || '/default-badge.svg',
+        status: (match.status === 'SCHEDULED' || match.status === 'TIMED') ? 'Not Started' : match.status,
+      }))
+    }
+
+    // Parallel fetch for today
+    const todayUrls = priorityCompetitions.map(c => `${FOOTBALL_DATA_BASE}/competitions/${c.id}/matches?dateFrom=${today}&dateTo=${today}`)
+    const todayRes = await Promise.allSettled(todayUrls.map(u => fetchWithTimeout(u, { 'X-Auth-Token': API_KEY })))
+    for (const r of todayRes) {
+      if (r.status === 'fulfilled' && r.value) {
+        all.push(...mapMatches(r.value))
+      }
+    }
+
+    // If still <5, also parallel fetch tomorrow (timeboxed)
     if (all.length < 5) {
-      for (const c of priorityCompetitions) {
-        const url = `${FOOTBALL_DATA_BASE}/competitions/${c.id}/matches?dateFrom=${tomorrowStr}&dateTo=${tomorrowStr}`
-        const res = await fetch(url, { headers: { 'X-Auth-Token': API_KEY } })
-        if (res.ok) {
-          const data = await res.json()
-          if (Array.isArray(data.matches)) {
-            const m = data.matches.map((match: any) => ({
-              id: match.id.toString(),
-              homeTeam: match.homeTeam.name,
-              awayTeam: match.awayTeam.name,
-              league: match.competition.name,
-              kickoff: match.utcDate,
-              venue: match.venue || 'TBA',
-              homeTeamBadge: match.homeTeam.crest || '/default-badge.svg',
-              awayTeamBadge: match.awayTeam.crest || '/default-badge.svg',
-              status: (match.status === 'SCHEDULED' || match.status === 'TIMED') ? 'Not Started' : match.status,
-            }))
-            all.push(...m)
-          }
+      const tmrUrls = priorityCompetitions.map(c => `${FOOTBALL_DATA_BASE}/competitions/${c.id}/matches?dateFrom=${tomorrowStr}&dateTo=${tomorrowStr}`)
+      const tmrRes = await Promise.allSettled(tmrUrls.map(u => fetchWithTimeout(u, { 'X-Auth-Token': API_KEY })))
+      for (const r of tmrRes) {
+        if (r.status === 'fulfilled' && r.value) {
+          all.push(...mapMatches(r.value))
         }
-        await new Promise(r => setTimeout(r, 150))
-        if (all.length >= 5) break
       }
     }
 

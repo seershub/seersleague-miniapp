@@ -13,7 +13,8 @@ interface HomeProps {
 
 export default function Home({ initialMatches = [] }: HomeProps) {
   const [matches, setMatches] = useState<Match[]>(initialMatches);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(initialMatches.length === 0);
+  const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [chainId, setChainId] = useState<string | null>(null);
   const { isReady } = useMiniKit();
@@ -59,7 +60,12 @@ export default function Home({ initialMatches = [] }: HomeProps) {
     // Always fetch matches and keep them fresh
     const fetchMatches = async () => {
       try {
-        setLoading(true);
+        const isInitial = matches.length === 0 && initialMatches.length === 0;
+        if (isInitial) {
+          setLoading(true);
+        } else {
+          setRefreshing(true);
+        }
         console.log('Fetching matches...');
         const response = await fetch(`/api/matches?t=${Date.now()}`, { cache: 'no-store' });
         if (!response.ok) {
@@ -73,6 +79,7 @@ export default function Home({ initialMatches = [] }: HomeProps) {
         console.error('Error fetching matches:', err);
         setError(err instanceof Error ? err.message : 'Unknown error occurred');
       } finally {
+        setRefreshing(false);
         setLoading(false);
       }
     };
