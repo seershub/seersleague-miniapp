@@ -137,7 +137,7 @@ export function PredictionForm({ matches }: PredictionFormProps) {
     }
     
     // Show loading toast immediately
-    const loadingToast = toast.loading('Tahminler gönderiliyor...');
+    const loadingToast = toast.loading('Submitting predictions...');
     
     try {
       setIsSubmitting(true);
@@ -147,12 +147,101 @@ export function PredictionForm({ matches }: PredictionFormProps) {
       const matchIds = Object.keys(predictions).map(id => BigInt(parseInt(id)));
       const outcomes = Object.keys(predictions).map(matchId => predictions[parseInt(matchId)]);
       
-      // Real on-chain transaction
+      // Calculate total fee needed
+      const predictionCount = Object.keys(predictions).length;
+      const remainingFreePredictions = userStats ? Math.max(0, 5 - userStats.freePredictionsUsed) : 5;
+      const predictionsToPayFor = Math.max(0, predictionCount - remainingFreePredictions);
+      const totalFee = BigInt(predictionsToPayFor) * PREDICTION_FEE;
+      
       console.log('Submitting predictions to contract:', {
         matchIds,
         outcomes,
-        address
+        address,
+        predictionCount,
+        remainingFreePredictions,
+        predictionsToPayFor,
+        totalFee: totalFee.toString()
       });
+      
+      // If payment is required, first approve USDC
+      if (totalFee > 0) {
+        toast.dismiss(loadingToast);
+        const approvalToast = toast.loading('Approving USDC payment...');
+        
+        try {
+          // Encode USDC approve function
+          const approveData = encodeFunctionData({
+            abi: [
+              {
+                "inputs": [
+                  {"internalType": "address", "name": "spender", "type": "address"},
+                  {"internalType": "uint256", "name": "amount", "type": "uint256"}
+                ],
+                "name": "approve",
+                "outputs": [{"internalType": "bool", "name": "", "type": "bool"}],
+                "stateMutability": "nonpayable",
+                "type": "function"
+              }
+            ],
+            functionName: 'approve',
+            args: [CONTRACTS.SEERSLEAGUE as `0x${string}`, totalFee]
+          });
+          
+          // Send approval transaction
+          const approveTxHash = await sdk.wallet.ethProvider.request({
+            method: 'eth_sendTransaction',
+            params: [{
+              to: '0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913', // USDC on Base
+              data: approveData,
+              from: address as `0x${string}`,
+              value: '0x0'
+            }]
+          });
+          
+          console.log('USDC approval transaction:', approveTxHash);
+          toast.dismiss(approvalToast);
+          toast.success(`USDC approval submitted... Hash: ${approveTxHash.slice(0, 10)}...`, { duration: 4000 });
+          
+          // Wait for approval confirmation
+          let approvalReceipt = null;
+          let approvalAttempts = 0;
+          const maxApprovalAttempts = 30;
+          
+          while (!approvalReceipt && approvalAttempts < maxApprovalAttempts) {
+            try {
+              approvalReceipt = await sdk.wallet.ethProvider.request({
+                method: 'eth_getTransactionReceipt',
+                params: [approveTxHash]
+              });
+              
+              if (!approvalReceipt) {
+                await new Promise(resolve => setTimeout(resolve, 2000));
+                approvalAttempts++;
+              }
+            } catch (error) {
+              console.error('Error checking approval receipt:', error);
+              await new Promise(resolve => setTimeout(resolve, 2000));
+              approvalAttempts++;
+            }
+          }
+          
+          if (!approvalReceipt || approvalReceipt.status === '0x0') {
+            toast.error('USDC approval failed. Please try again.', { duration: 6000 });
+            return;
+          }
+          
+          toast.success('USDC approval confirmed! Now submitting predictions...', { duration: 4000 });
+          
+        } catch (error) {
+          console.error('USDC approval error:', error);
+          toast.dismiss(approvalToast);
+          toast.error('USDC approval failed. Please try again.', { duration: 6000 });
+          return;
+        }
+      }
+      
+      // Now submit predictions
+      const predictionToast = toast.loading('Submitting predictions...');
       
       // Encode function call data for submitPredictions(uint256[] matchIds, uint8[] outcomes)
       const encodedData = encodeFunctionData({
@@ -191,8 +280,8 @@ export function PredictionForm({ matches }: PredictionFormProps) {
       console.log('Transaction submitted:', txHash);
       
       // Update loading toast to show transaction submitted
-      toast.dismiss(loadingToast);
-      toast.success(`İşlem bloğa gönderildi... Hash: ${txHash.slice(0, 10)}...`);
+      toast.dismiss(predictionToast);
+      toast.success(`Transaction submitted to blockchain... Hash: ${txHash.slice(0, 10)}...`, { duration: 4000 });
       
       // Wait for transaction receipt
       let receipt = null;
@@ -223,18 +312,18 @@ export function PredictionForm({ matches }: PredictionFormProps) {
           // Success!
           toast.success(
             <div>
-              <div className="font-bold text-green-600">✅ Başarılı!</div>
-              <div className="text-sm text-gray-600 mt-1">Tahminleriniz kaydedildi.</div>
+              <div className="font-bold text-green-600">✅ Success!</div>
+              <div className="text-sm text-gray-600 mt-1">Your predictions have been recorded.</div>
               <a 
                 href={`https://basescan.org/tx/${txHash}`} 
                 target="_blank" 
                 rel="noopener noreferrer"
                 className="text-blue-600 hover:text-blue-800 underline text-sm mt-1 inline-block"
               >
-                İşlemi Görüntüle →
+                View Transaction →
               </a>
             </div>,
-            { duration: 8000 }
+            { duration: Infinity }
           );
           
           // Update user stats
@@ -252,7 +341,7 @@ export function PredictionForm({ matches }: PredictionFormProps) {
           // Transaction failed
           toast.error(
             <div>
-              <div className="font-bold text-red-600">❌ İşlem Başarısız</div>
+              <div className="font-bold text-red-600">❌ Transaction Failed</div>
               <div className="text-sm text-gray-600 mt-1">Transaction reverted on chain</div>
               <a 
                 href={`https://basescan.org/tx/${txHash}`} 
@@ -260,15 +349,15 @@ export function PredictionForm({ matches }: PredictionFormProps) {
                 rel="noopener noreferrer"
                 className="text-blue-600 hover:text-blue-800 underline text-sm mt-1 inline-block"
               >
-                İşlemi Görüntüle →
+                View Transaction →
               </a>
             </div>,
-            { duration: 8000 }
+            { duration: 6000 }
           );
         }
       } else {
         // Timeout waiting for receipt
-        toast.error('İşlem zaman aşımına uğradı. Lütfen Basescan\'dan kontrol edin.', { duration: 6000 });
+        toast.error('Transaction timeout. Please check Basescan for confirmation.', { duration: 6000 });
       }
       
     } catch (error: any) {
@@ -277,32 +366,32 @@ export function PredictionForm({ matches }: PredictionFormProps) {
       // Dismiss loading toast
       toast.dismiss(loadingToast);
       
-      // Show specific error messages
-      let errorMessage = 'Failed to submit predictions. Please try again.';
-      
-      if (error.message) {
-        if (error.message.includes('User rejected') || error.message.includes('User denied')) {
-          errorMessage = 'İşlem kullanıcı tarafından reddedildi.';
-        } else if (error.message.includes('Prediction deadline passed')) {
-          errorMessage = 'Bu maçın tahmin süresi dolmuş.';
-        } else if (error.message.includes('Match is not registered')) {
-          errorMessage = 'Bu maç henüz kayıtlı değil.';
-        } else if (error.message.includes('Match results already recorded')) {
-          errorMessage = 'Bu maçın sonuçları zaten kaydedilmiş.';
-        } else if (error.message.includes('Insufficient USDC balance')) {
-          errorMessage = 'Yetersiz USDC bakiyesi.';
-        } else {
-          errorMessage = `Hata: ${error.message}`;
+        // Show specific error messages
+        let errorMessage = 'Failed to submit predictions. Please try again.';
+        
+        if (error.message) {
+          if (error.message.includes('User rejected') || error.message.includes('User denied')) {
+            errorMessage = 'Transaction was rejected by user.';
+          } else if (error.message.includes('Prediction deadline passed')) {
+            errorMessage = 'Prediction deadline for this match has passed.';
+          } else if (error.message.includes('Match is not registered')) {
+            errorMessage = 'This match is not yet registered.';
+          } else if (error.message.includes('Match results already recorded')) {
+            errorMessage = 'Match results have already been recorded.';
+          } else if (error.message.includes('Insufficient USDC balance')) {
+            errorMessage = 'Insufficient USDC balance.';
+          } else {
+            errorMessage = `Error: ${error.message}`;
+          }
         }
-      }
-      
-      toast.error(
-        <div>
-          <div className="font-bold text-red-600">❌ Hata!</div>
-          <div className="text-sm text-gray-600 mt-1">{errorMessage}</div>
-        </div>,
-        { duration: 6000 }
-      );
+        
+        toast.error(
+          <div>
+            <div className="font-bold text-red-600">❌ Error!</div>
+            <div className="text-sm text-gray-600 mt-1">{errorMessage}</div>
+          </div>,
+          { duration: 6000 }
+        );
     } finally {
       setIsSubmitting(false);
       setIsPending(false);
