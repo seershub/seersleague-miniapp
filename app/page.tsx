@@ -11,6 +11,7 @@ const COMPETITION_IDS = {
   BUNDESLIGA: 'BL1',         // Bundesliga
   SERIE_A: 'SA',             // Serie A
   LIGUE_1: 'FL1',            // Ligue 1
+  TURKISH_SUPER_LIG: 'TSL',  // Turkish Süper Lig
   CHAMPIONS_LEAGUE: 'CL',    // Champions League
   EUROPA_LEAGUE: 'EL',       // Europa League
   EREDIVISIE: 'DED',         // Eredivisie
@@ -27,13 +28,16 @@ async function fetchMatchesServer(): Promise<Match[]> {
   try {
     const allMatches: Match[] = [];
     
-    // Priority competitions to fetch from
+    // Priority competitions to fetch from (expanded with Turkish Super Lig)
     const priorityCompetitions = [
       { name: 'PREMIER_LEAGUE', id: COMPETITION_IDS.PREMIER_LEAGUE },
       { name: 'LA_LIGA', id: COMPETITION_IDS.LA_LIGA },
       { name: 'BUNDESLIGA', id: COMPETITION_IDS.BUNDESLIGA },
       { name: 'SERIE_A', id: COMPETITION_IDS.SERIE_A },
       { name: 'LIGUE_1', id: COMPETITION_IDS.LIGUE_1 },
+      { name: 'TURKISH_SUPER_LIG', id: COMPETITION_IDS.TURKISH_SUPER_LIG },
+      { name: 'CHAMPIONS_LEAGUE', id: COMPETITION_IDS.CHAMPIONS_LEAGUE },
+      { name: 'EUROPA_LEAGUE', id: COMPETITION_IDS.EUROPA_LEAGUE },
     ];
     
     // Get today's date in YYYY-MM-DD format
@@ -43,6 +47,9 @@ async function fetchMatchesServer(): Promise<Match[]> {
     const tomorrowStr = tomorrow.toISOString().split('T')[0];
     
     console.log('Fetching matches for dates:', today, 'and', tomorrowStr);
+    
+    // First, try to get all today's matches from all competitions
+    console.log('🎯 PRIORITY: Fetching TODAY\'s matches first');
     
     for (const competition of priorityCompetitions) {
       try {
@@ -80,8 +87,25 @@ async function fetchMatchesServer(): Promise<Match[]> {
           console.error(`❌ Failed to fetch ${competition.name} today:`, todayResponse.status);
         }
         
-        // If we don't have enough matches, also fetch tomorrow's
-        if (allMatches.length < 5) {
+        // Add delay between requests to be respectful to API
+        await new Promise(resolve => setTimeout(resolve, 200));
+        
+      } catch (error) {
+        console.error(`❌ Error fetching ${competition.name}:`, error);
+      }
+    }
+    
+    console.log(`📊 Total today's matches found: ${allMatches.length}`);
+    
+    // If we have enough today's matches, use them
+    if (allMatches.length >= 5) {
+      console.log('🎯 Using today\'s matches only');
+    } else {
+      console.log('📅 Not enough today\'s matches, adding tomorrow\'s matches');
+      
+      // If we don't have enough today's matches, add tomorrow's
+      for (const competition of priorityCompetitions) {
+        try {
           const tomorrowUrl = `${FOOTBALL_DATA_BASE}/competitions/${competition.id}/matches?date=${tomorrowStr}&status=SCHEDULED`;
           console.log(`Fetching ${competition.name} for tomorrow: ${tomorrowUrl}`);
           
@@ -97,36 +121,36 @@ async function fetchMatchesServer(): Promise<Match[]> {
             console.log(`✅ Tomorrow's ${competition.name} matches:`, tomorrowData.matches?.length || 0);
             
             if (tomorrowData.matches && Array.isArray(tomorrowData.matches)) {
-            const matches = tomorrowData.matches.map((match: any) => ({
-              id: match.id.toString(),
-              homeTeam: match.homeTeam.name,
-              awayTeam: match.awayTeam.name,
-              league: match.competition.name,
-              kickoff: match.utcDate,
-              venue: match.venue || 'TBA',
-              homeTeamBadge: match.homeTeam.crest || '/default-badge.svg',
-              awayTeamBadge: match.awayTeam.crest || '/default-badge.svg',
-              status: match.status === 'SCHEDULED' ? 'Not Started' : match.status,
-            }));
+              const matches = tomorrowData.matches.map((match: any) => ({
+                id: match.id.toString(),
+                homeTeam: match.homeTeam.name,
+                awayTeam: match.awayTeam.name,
+                league: match.competition.name,
+                kickoff: match.utcDate,
+                venue: match.venue || 'TBA',
+                homeTeamBadge: match.homeTeam.crest || '/default-badge.svg',
+                awayTeamBadge: match.awayTeam.crest || '/default-badge.svg',
+                status: match.status === 'SCHEDULED' ? 'Not Started' : match.status,
+              }));
               
               allMatches.push(...matches);
             }
           } else {
             console.error(`❌ Failed to fetch ${competition.name} tomorrow:`, tomorrowResponse.status);
           }
+          
+          // Add delay between requests
+          await new Promise(resolve => setTimeout(resolve, 200));
+          
+          // If we have enough matches total, break
+          if (allMatches.length >= 5) {
+            console.log(`🎯 Found enough total matches (${allMatches.length}), stopping search`);
+            break;
+          }
+          
+        } catch (error) {
+          console.error(`❌ Error fetching ${competition.name} tomorrow:`, error);
         }
-        
-        // Add delay between requests to be respectful to API
-        await new Promise(resolve => setTimeout(resolve, 200));
-        
-        // If we have enough matches, break
-        if (allMatches.length >= 5) {
-          console.log(`🎯 Found enough matches (${allMatches.length}), stopping search`);
-          break;
-        }
-        
-      } catch (error) {
-        console.error(`❌ Error fetching ${competition.name}:`, error);
       }
     }
     

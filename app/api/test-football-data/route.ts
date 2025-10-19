@@ -30,24 +30,24 @@ export async function GET() {
       sampleMatch: todayData.matches?.[0] || null,
     });
     
-    // Test 2: Get Premier League matches
-    const plUrl = `${FOOTBALL_DATA_BASE}/competitions/PL/matches?status=SCHEDULED`;
+    // Test 2: Get Turkish Super Lig matches
+    const tslUrl = `${FOOTBALL_DATA_BASE}/competitions/TSL/matches?date=${today}&status=SCHEDULED`;
     
-    console.log('Test 2: Premier League scheduled matches:', plUrl);
+    console.log('Test 2: Turkish Super Lig today matches:', tslUrl);
     
-    const plResponse = await fetch(plUrl, {
+    const tslResponse = await fetch(tslUrl, {
       headers: {
         'X-Auth-Token': API_KEY,
       },
     });
     
-    const plData = await plResponse.json();
+    const tslData = await tslResponse.json();
     results.push({
-      test: 'Premier League scheduled matches',
-      url: plUrl,
-      status: plResponse.status,
-      matchesCount: plData.matches?.length || 0,
-      sampleMatch: plData.matches?.[0] || null,
+      test: 'Turkish Super Lig today matches',
+      url: tslUrl,
+      status: tslResponse.status,
+      matchesCount: tslData.matches?.length || 0,
+      sampleMatch: tslData.matches?.[0] || null,
     });
     
     // Test 3: Get tomorrow's matches
