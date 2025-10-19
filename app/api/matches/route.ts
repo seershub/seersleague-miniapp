@@ -46,6 +46,7 @@ export async function GET() {
     console.log('=== FETCHING MATCHES FOR DATE:', dateStr, '===');
     console.log('=== CURRENT TIME:', new Date().toISOString(), '===');
     console.log('=== API KEY:', API_KEY, '===');
+    console.log('=== SPORTS_DB_BASE:', SPORTS_DB_BASE, '===');
     
     const allMatches: Match[] = [];
     
@@ -297,6 +298,10 @@ export async function GET() {
         },
       ]);
     }
+    
+    console.log('=== FINAL RESPONSE ===');
+    console.log('Featured matches count:', featured.length);
+    console.log('Featured matches:', JSON.stringify(featured, null, 2));
     
     return NextResponse.json(featured);
     
