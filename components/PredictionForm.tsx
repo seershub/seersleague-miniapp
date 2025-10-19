@@ -167,7 +167,7 @@ export function PredictionForm({ matches }: PredictionFormProps) {
         isString: typeof CONTRACTS.SEERSLEAGUE === 'string'
       });
       
-      if (!CONTRACTS.SEERSLEAGUE || CONTRACTS.SEERSLEAGUE === 'undefined' || CONTRACTS.SEERSLEAGUE === undefined) {
+      if (!CONTRACTS.SEERSLEAGUE || CONTRACTS.SEERSLEAGUE.length < 42) {
         toast.error('Contract address not configured. Please check environment variables.');
         console.error('Contract address missing:', CONTRACTS.SEERSLEAGUE);
         return;
