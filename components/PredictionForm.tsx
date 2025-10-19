@@ -116,18 +116,8 @@ export function PredictionForm({ matches }: PredictionFormProps) {
       return;
     }
     
-    // Calculate payment needed
-    const remainingFreePredictions = Math.max(0, 5 - userStats.freePredictionsUsed);
-    const predictionsToPayFor = Math.max(0, selectedMatches.length - remainingFreePredictions);
-    const totalFee = BigInt(predictionsToPayFor) * PREDICTION_FEE;
-    
-    if (totalFee > 0) {
-      // Show payment modal for paid predictions
-      setShowPaymentModal(true);
-    } else {
-      // Submit directly for free predictions
-      await submitPredictions();
-    }
+    // Submit predictions directly - fee calculation is handled inside submitPredictions
+    await submitPredictions();
   };
   
   const submitPredictions = async () => {
@@ -163,85 +153,12 @@ export function PredictionForm({ matches }: PredictionFormProps) {
         totalFee: totalFee.toString()
       });
       
-      // If payment is required, first approve USDC
+      // For now, only allow free predictions to avoid USDC approval issues
       if (totalFee > 0) {
         toast.dismiss(loadingToast);
-        const approvalToast = toast.loading('Approving USDC payment...');
-        
-        try {
-          // Encode USDC approve function
-          const approveData = encodeFunctionData({
-            abi: [
-              {
-                "inputs": [
-                  {"internalType": "address", "name": "spender", "type": "address"},
-                  {"internalType": "uint256", "name": "amount", "type": "uint256"}
-                ],
-                "name": "approve",
-                "outputs": [{"internalType": "bool", "name": "", "type": "bool"}],
-                "stateMutability": "nonpayable",
-                "type": "function"
-              }
-            ],
-            functionName: 'approve',
-            args: [CONTRACTS.SEERSLEAGUE as `0x${string}`, totalFee]
-          });
-          
-          // Send approval transaction
-          const approveTxHash = await sdk.wallet.ethProvider.request({
-            method: 'eth_sendTransaction',
-            params: [{
-              to: '0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913', // USDC on Base
-              data: approveData,
-              from: address as `0x${string}`,
-              value: '0x0'
-            }]
-          });
-          
-          console.log('USDC approval transaction:', approveTxHash);
-          toast.dismiss(approvalToast);
-          toast.success(`USDC approval submitted... Hash: ${approveTxHash.slice(0, 10)}...`, { duration: 4000 });
-          
-          // Wait for approval confirmation
-          let approvalReceipt = null;
-          let approvalAttempts = 0;
-          const maxApprovalAttempts = 30;
-          
-          while (!approvalReceipt && approvalAttempts < maxApprovalAttempts) {
-            try {
-              approvalReceipt = await sdk.wallet.ethProvider.request({
-                method: 'eth_getTransactionReceipt',
-                params: [approveTxHash]
-              });
-              
-              if (!approvalReceipt) {
-                await new Promise(resolve => setTimeout(resolve, 2000));
-                approvalAttempts++;
-              }
-            } catch (error) {
-              console.error('Error checking approval receipt:', error);
-              await new Promise(resolve => setTimeout(resolve, 2000));
-              approvalAttempts++;
-            }
-          }
-          
-          if (!approvalReceipt || approvalReceipt.status === '0x0') {
-            toast.error('USDC approval failed. Please try again.', { duration: 6000 });
-            return;
-          }
-          
-          toast.success('USDC approval confirmed! Now submitting predictions...', { duration: 4000 });
-          
-        } catch (error) {
-          console.error('USDC approval error:', error);
-          toast.dismiss(approvalToast);
-          toast.error('USDC approval failed. Please try again.', { duration: 6000 });
-          return;
-        }
+        toast.error('Paid predictions temporarily disabled. Please use your free predictions first.', { duration: 8000 });
+        return;
       }
-      
-      // Now submit predictions
-      const predictionToast = toast.loading('Submitting predictions...');
       
       // Encode function call data for submitPredictions(uint256[] matchIds, uint8[] outcomes)
       const encodedData = encodeFunctionData({
@@ -280,7 +197,7 @@ export function PredictionForm({ matches }: PredictionFormProps) {
       console.log('Transaction submitted:', txHash);
       
       // Update loading toast to show transaction submitted
-      toast.dismiss(predictionToast);
+      toast.dismiss(loadingToast);
       toast.success(`Transaction submitted to blockchain... Hash: ${txHash.slice(0, 10)}...`, { duration: 4000 });
       
       // Wait for transaction receipt
