@@ -142,7 +142,7 @@ export function PredictionForm({ matches }: PredictionFormProps) {
       setIsPending(true);
       
       // Prepare match IDs and outcomes for selected matches only
-      const matchIds = selectedMatches;
+      const matchIds = selectedMatches.map(id => BigInt(id));
       const outcomes = selectedMatches.map(matchId => predictions[matchId]);
       
       // Real on-chain transaction
