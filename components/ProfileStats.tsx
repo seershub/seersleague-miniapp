@@ -1,6 +1,6 @@
 'use client';
 
-import { UserStats, calculateAccuracy } from '@/lib/contract-interactions';
+import { UserStats, calculateAccuracy, getRemainingFreePredictions } from '@/lib/contract-interactions';
 
 interface ProfileStatsProps {
   stats: UserStats;
@@ -8,6 +8,7 @@ interface ProfileStatsProps {
 
 export function ProfileStats({ stats }: ProfileStatsProps) {
   const accuracy = calculateAccuracy(stats);
+  const remainingFreePredictions = getRemainingFreePredictions(stats);
   
   return (
     <div className="card">
@@ -34,32 +35,34 @@ export function ProfileStats({ stats }: ProfileStatsProps) {
           <div className="text-2xl font-bold text-purple-400">📊 {stats.totalPredictions}</div>
           <div className="text-sm text-gray-400">Total Predictions</div>
           <div className="text-xs text-gray-500 mt-1">
-            {stats.totalPredictions / 5} days
+            {stats.freePredictionsUsed}/5 free used
           </div>
         </div>
       </div>
       
-      {/* Free Trial Status */}
-      {!stats.hasUsedFreeTrial && (
+      {/* Free Predictions Status */}
+      {remainingFreePredictions > 0 && (
         <div className="mt-4 p-3 bg-green-900 bg-opacity-20 border border-green-700 rounded-lg">
           <div className="flex items-center space-x-2">
-            <span className="text-green-400">🎉</span>
-            <span className="text-sm font-semibold text-green-400">Free Trial Available</span>
+            <span className="text-green-400">🎯</span>
+            <span className="text-sm font-semibold text-green-400">
+              {remainingFreePredictions} Free Predictions Left
+            </span>
           </div>
           <p className="text-xs text-green-300 mt-1">
-            Your first 5 predictions are completely free!
+            After {remainingFreePredictions} more predictions, you'll pay 0.5 USDC per match.
           </p>
         </div>
       )}
       
-      {stats.hasUsedFreeTrial && (
+      {remainingFreePredictions === 0 && (
         <div className="mt-4 p-3 bg-blue-900 bg-opacity-20 border border-blue-700 rounded-lg">
           <div className="flex items-center space-x-2">
             <span className="text-blue-400">💰</span>
             <span className="text-sm font-semibold text-blue-400">Premium Member</span>
           </div>
           <p className="text-xs text-blue-300 mt-1">
-            Entry fee: $1 USDC per day
+            Fee: 0.5 USDC per prediction
           </p>
         </div>
       )}
