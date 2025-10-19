@@ -28,18 +28,29 @@ interface Match {
   status: string;
 }
 
-export async function GET() {
+export async function GET(
+  request: Request,
+  { params }: { params: { date: string } }
+) {
   try {
-    const today = new Date();
-    const dateStr = today.toISOString().split('T')[0];
+    const { date } = params;
     
-    console.log('Fetching matches for date:', dateStr);
+    // Validate date format (YYYY-MM-DD)
+    const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
+    if (!dateRegex.test(date)) {
+      return NextResponse.json(
+        { error: 'Invalid date format. Use YYYY-MM-DD' },
+        { status: 400 }
+      );
+    }
+    
+    console.log('Fetching matches for date:', date);
     
     const allMatches: Match[] = [];
     
     for (const [name, leagueId] of Object.entries(LEAGUE_IDS)) {
       try {
-        const url = `${SPORTS_DB_BASE}/${API_KEY}/eventsday.php?d=${dateStr}&l=${leagueId}`;
+        const url = `${SPORTS_DB_BASE}/${API_KEY}/eventsday.php?d=${date}&l=${leagueId}`;
         console.log(`Fetching ${name}:`, url);
         
         const response = await fetch(url, {
@@ -90,68 +101,6 @@ export async function GET() {
       .slice(0, 5);
     
     console.log('Featured matches:', featured.length);
-    
-    // If no matches today, return mock data for testing
-    if (featured.length === 0) {
-      console.log('No matches found, returning mock data');
-      return NextResponse.json([
-        {
-          id: '1',
-          homeTeam: 'Liverpool',
-          awayTeam: 'Arsenal',
-          league: 'Premier League',
-          kickoff: new Date(Date.now() + 3600000).toISOString(),
-          venue: 'Anfield',
-          homeTeamBadge: '/default-badge.png',
-          awayTeamBadge: '/default-badge.png',
-          status: 'Not Started',
-        },
-        {
-          id: '2',
-          homeTeam: 'Real Madrid',
-          awayTeam: 'Barcelona',
-          league: 'La Liga',
-          kickoff: new Date(Date.now() + 7200000).toISOString(),
-          venue: 'Santiago Bernabéu',
-          homeTeamBadge: '/default-badge.png',
-          awayTeamBadge: '/default-badge.png',
-          status: 'Not Started',
-        },
-        {
-          id: '3',
-          homeTeam: 'Bayern Munich',
-          awayTeam: 'Borussia Dortmund',
-          league: 'Bundesliga',
-          kickoff: new Date(Date.now() + 10800000).toISOString(),
-          venue: 'Allianz Arena',
-          homeTeamBadge: '/default-badge.png',
-          awayTeamBadge: '/default-badge.png',
-          status: 'Not Started',
-        },
-        {
-          id: '4',
-          homeTeam: 'Inter Milan',
-          awayTeam: 'Juventus',
-          league: 'Serie A',
-          kickoff: new Date(Date.now() + 14400000).toISOString(),
-          venue: 'San Siro',
-          homeTeamBadge: '/default-badge.png',
-          awayTeamBadge: '/default-badge.png',
-          status: 'Not Started',
-        },
-        {
-          id: '5',
-          homeTeam: 'PSG',
-          awayTeam: 'Marseille',
-          league: 'Ligue 1',
-          kickoff: new Date(Date.now() + 18000000).toISOString(),
-          venue: 'Parc des Princes',
-          homeTeamBadge: '/default-badge.png',
-          awayTeamBadge: '/default-badge.png',
-          status: 'Not Started',
-        },
-      ]);
-    }
     
     return NextResponse.json(featured);
     
