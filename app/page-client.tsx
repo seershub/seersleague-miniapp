@@ -56,34 +56,33 @@ export default function Home({ initialMatches = [] }: HomeProps) {
       }
     }
 
-    // Only fetch if no initial matches provided (fallback for client-side)
-    if (initialMatches.length === 0) {
-      const fetchMatches = async () => {
-        try {
-          setLoading(true);
-          console.log('Fetching matches...');
-          
-          const response = await fetch(`/api/matches?t=${Date.now()}`);
-          
-          if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
-          }
-          
-          const data = await response.json();
-          console.log('Matches received:', data);
-          
-          setMatches(data);
-          setError(null);
-        } catch (err) {
-          console.error('Error fetching matches:', err);
-          setError(err instanceof Error ? err.message : 'Unknown error occurred');
-        } finally {
-          setLoading(false);
+    // Always fetch matches and keep them fresh
+    const fetchMatches = async () => {
+      try {
+        setLoading(true);
+        console.log('Fetching matches...');
+        const response = await fetch(`/api/matches?t=${Date.now()}`, { cache: 'no-store' });
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
         }
-      };
-      
-      fetchMatches();
-    }
+        const data: Match[] = await response.json();
+        console.log('Matches received:', data);
+        setMatches(data);
+        setError(null);
+      } catch (err) {
+        console.error('Error fetching matches:', err);
+        setError(err instanceof Error ? err.message : 'Unknown error occurred');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    // Initial fetch (even if SSR provided matches)
+    fetchMatches();
+
+    // Poll every 30s to keep list updated and circulating
+    const interval = setInterval(fetchMatches, 30000);
+    return () => clearInterval(interval);
   }, []);
   
   return (
