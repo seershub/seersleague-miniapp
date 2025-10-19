@@ -4,9 +4,10 @@ import { useState, useEffect } from 'react';
 import { Match } from '@/lib/matches';
 import { MatchCard } from './MatchCard';
 import { PaymentModal } from './PaymentModal';
-import { CONTRACTS, SEERSLEAGUE_ABI, PREDICTION_FEE, UserStats, formatUSDC } from '@/lib/contract-interactions';
+import { CONTRACTS, SEERSLEAGUE_ABI, PREDICTION_FEE, UserStats, formatUSDC, USDC_ABI } from '@/lib/contract-interactions';
 import { useMiniKit } from './MiniKitProvider';
 import { encodeFunctionData } from 'viem';
+import { publicClient } from '@/lib/viem-config';
 import toast from 'react-hot-toast';
 
 interface PredictionFormProps {
@@ -49,19 +50,25 @@ export function PredictionForm({ matches }: PredictionFormProps) {
   
   const getUserStats = async (userAddress: string) => {
     if (!sdk) return;
-    
     try {
-      // For now, simulate user stats since we don't have real contract integration yet
-      // In real implementation, would call getUserStats(address) function
-      console.log('Fetching user stats for:', userAddress);
-      
-      // Parse stats (simplified for now)
+      const stats = await publicClient.readContract({
+        address: CONTRACTS.SEERSLEAGUE,
+        abi: SEERSLEAGUE_ABI,
+        functionName: 'getUserStats',
+        args: [userAddress as `0x${string}`]
+      }) as unknown as {
+        correctPredictions: bigint;
+        totalPredictions: bigint;
+        freePredictionsUsed: bigint;
+        currentStreak: bigint;
+        longestStreak: bigint;
+      };
       setUserStats({
-        correctPredictions: 0,
-        totalPredictions: 0,
-        freePredictionsUsed: 0,
-        currentStreak: 0,
-        longestStreak: 0
+        correctPredictions: Number(stats.correctPredictions || 0n),
+        totalPredictions: Number(stats.totalPredictions || 0n),
+        freePredictionsUsed: Number(stats.freePredictionsUsed || 0n),
+        currentStreak: Number(stats.currentStreak || 0n),
+        longestStreak: Number(stats.longestStreak || 0n)
       });
     } catch (error) {
       console.error('Error fetching user stats:', error);
@@ -137,9 +144,9 @@ export function PredictionForm({ matches }: PredictionFormProps) {
       const matchIds = Object.keys(predictions).map(id => BigInt(parseInt(id)));
       const outcomes = Object.keys(predictions).map(matchId => predictions[parseInt(matchId)]);
       
-      // Calculate total fee needed
+      // Calculate total fee needed (align with contract logic using on-chain stats)
       const predictionCount = Object.keys(predictions).length;
-      const remainingFreePredictions = userStats ? Math.max(0, 5 - userStats.freePredictionsUsed) : 5;
+      const remainingFreePredictions = userStats ? Math.max(0, 5 - userStats.freePredictionsUsed) : 0;
       const predictionsToPayFor = Math.max(0, predictionCount - remainingFreePredictions);
       const totalFee = BigInt(predictionsToPayFor) * PREDICTION_FEE;
       
@@ -165,18 +172,21 @@ export function PredictionForm({ matches }: PredictionFormProps) {
         totalFee: totalFee.toString()
       });
       
-      // For now, only allow free predictions to avoid USDC approval issues
-      if (totalFee > 0) {
-        toast.dismiss(loadingToast);
-        toast.error('Paid predictions temporarily disabled. Please use your free predictions first.', { duration: 8000 });
-        return;
-      }
-      
-      // Only submit if all predictions are free
-      if (predictionsToPayFor > 0) {
-        toast.dismiss(loadingToast);
-        toast.error('Cannot submit paid predictions. Please use only free predictions.', { duration: 8000 });
-        return;
+      // If fee required, check current allowance first
+      if (totalFee > 0n) {
+        const currentAllowance = await publicClient.readContract({
+          address: CONTRACTS.USDC,
+          abi: USDC_ABI,
+          functionName: 'allowance',
+          args: [address as `0x${string}`, CONTRACTS.SEERSLEAGUE]
+        }) as bigint;
+        if (currentAllowance < totalFee) {
+          toast.dismiss(loadingToast);
+          setShowPaymentModal(true);
+          setIsSubmitting(false);
+          setIsPending(false);
+          return;
+        }
       }
       
       // Encode function call data for submitPredictions(uint256[] matchIds, uint8[] outcomes)
@@ -331,7 +341,6 @@ export function PredictionForm({ matches }: PredictionFormProps) {
     } finally {
       setIsSubmitting(false);
       setIsPending(false);
-      setShowPaymentModal(false);
     }
   };
   
@@ -444,7 +453,11 @@ export function PredictionForm({ matches }: PredictionFormProps) {
       {/* Payment Modal */}
       {showPaymentModal && (
         <PaymentModal
-          onSuccess={submitPredictions}
+          onSuccess={async () => {
+            // After approval, close modal and re-run submission which now should succeed
+            setShowPaymentModal(false);
+            await submitPredictions();
+          }}
           onCancel={() => setShowPaymentModal(false)}
           amount={totalFee}
         />

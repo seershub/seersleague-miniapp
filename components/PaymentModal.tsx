@@ -1,8 +1,11 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 // import { useAccount, useReadContract, useWriteContract, useWaitForTransactionReceipt } from 'wagmi';
 import { USDC_ABI, CONTRACTS, formatUSDC } from '@/lib/contract-interactions';
+import { encodeFunctionData } from 'viem';
+import { publicClient } from '@/lib/viem-config';
+import { useMiniKit } from './MiniKitProvider';
 import toast from 'react-hot-toast';
 
 interface PaymentModalProps {
@@ -13,16 +16,53 @@ interface PaymentModalProps {
 
 export function PaymentModal({ onSuccess, onCancel, amount }: PaymentModalProps) {
   // const { address } = useAccount();
-  const address = null; // Placeholder for now
+  const { isReady, sdk } = useMiniKit();
+  const [address, setAddress] = useState<`0x${string}` | null>(null);
   const [step, setStep] = useState<'approve' | 'confirm'>('approve');
   const [isApproving, setIsApproving] = useState(false);
   const [isConfirming, setIsConfirming] = useState(false);
+  const [balance, setBalance] = useState<bigint | null>(null);
+  const [allowance, setAllowance] = useState<bigint | null>(null);
   
-  // Check USDC balance - placeholder for now
-  const balance = BigInt(10000000000); // 10 USDC placeholder
-  
-  // Check current allowance - placeholder for now
-  const allowance = BigInt(0); // No allowance placeholder
+  useEffect(() => {
+    const init = async () => {
+      try {
+        if (!isReady || !sdk) return;
+        const accounts = await sdk.wallet.ethProvider.request({ method: 'eth_accounts' });
+        if (accounts && accounts.length > 0) {
+          setAddress(accounts[0] as `0x${string}`);
+        }
+      } catch {}
+    };
+    init();
+  }, [isReady, sdk]);
+
+  useEffect(() => {
+    const load = async () => {
+      if (!address) return;
+      try {
+        const [bal, alw] = await Promise.all([
+          publicClient.readContract({
+            address: CONTRACTS.USDC,
+            abi: USDC_ABI,
+            functionName: 'balanceOf',
+            args: [address]
+          }) as Promise<bigint>,
+          publicClient.readContract({
+            address: CONTRACTS.USDC,
+            abi: USDC_ABI,
+            functionName: 'allowance',
+            args: [address, CONTRACTS.SEERSLEAGUE]
+          }) as Promise<bigint>,
+        ]);
+        setBalance(bal);
+        setAllowance(alw);
+      } catch (e) {
+        console.error('Failed to load USDC data', e);
+      }
+    };
+    load();
+  }, [address]);
   
   // const { writeContract: writeApprove, data: approveHash } = useWriteContract();
   // const { isLoading: isApprovePending } = useWaitForTransactionReceipt({ hash: approveHash });
@@ -32,18 +72,45 @@ export function PaymentModal({ onSuccess, onCancel, amount }: PaymentModalProps)
   // const { isLoading: isConfirmPending } = useWaitForTransactionReceipt({ hash: confirmHash });
   const isConfirmPending = false;
   
-  const hasEnoughBalance = balance && balance >= amount;
-  const hasEnoughAllowance = allowance && allowance >= amount;
+  const hasEnoughBalance = balance !== null && balance >= amount;
+  const hasEnoughAllowance = allowance !== null && allowance >= amount;
   
   const handleApprove = async () => {
     try {
       setIsApproving(true);
-      
-      // Placeholder for now - will be implemented with Farcaster Mini App SDK
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
+      if (!sdk || !address) throw new Error('Wallet not connected');
+      const data = encodeFunctionData({
+        abi: USDC_ABI,
+        functionName: 'approve',
+        args: [CONTRACTS.SEERSLEAGUE, amount]
+      });
+      const txHash = await sdk.wallet.ethProvider.request({
+        method: 'eth_sendTransaction',
+        params: [{ to: CONTRACTS.USDC, data, from: address }]
+      });
+      let receipt = null as any;
+      let attempts = 0;
+      while (!receipt && attempts < 30) {
+        try {
+          receipt = await sdk.wallet.ethProvider.request({
+            method: 'eth_getTransactionReceipt',
+            params: [txHash]
+          });
+          if (!receipt) await new Promise(r => setTimeout(r, 2000));
+        } catch {
+          await new Promise(r => setTimeout(r, 2000));
+        }
+        attempts++;
+      }
       toast.success('USDC approval successful!');
-      
+      const newAllowance = await publicClient.readContract({
+        address: CONTRACTS.USDC,
+        abi: USDC_ABI,
+        functionName: 'allowance',
+        args: [address, CONTRACTS.SEERSLEAGUE]
+      }) as bigint;
+      setAllowance(newAllowance);
+      if (newAllowance >= amount) setStep('confirm');
     } catch (error: any) {
       console.error('Approval error:', error);
       toast.error('Failed to approve USDC. Please try again.');
@@ -68,9 +135,11 @@ export function PaymentModal({ onSuccess, onCancel, amount }: PaymentModalProps)
   };
   
   // Auto-advance to confirm step when approval is complete
-  if (isApprovePending && step === 'approve') {
-    setStep('confirm');
-  }
+  useEffect(() => {
+    if (hasEnoughAllowance && step === 'approve') {
+      setStep('confirm');
+    }
+  }, [hasEnoughAllowance, step]);
   
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
@@ -82,7 +151,7 @@ export function PaymentModal({ onSuccess, onCancel, amount }: PaymentModalProps)
           <div className="flex justify-between items-center">
             <span className="text-gray-400">Your USDC Balance:</span>
             <span className="font-semibold">
-              {balance ? formatUSDC(balance) : '...'} USDC
+              {balance !== null ? formatUSDC(balance) : '...'} USDC
             </span>
           </div>
           {!hasEnoughBalance && (
@@ -121,7 +190,7 @@ export function PaymentModal({ onSuccess, onCancel, amount }: PaymentModalProps)
             
             <button
               onClick={handleApprove}
-              disabled={!hasEnoughBalance || isApproving || isApprovePending}
+              disabled={!hasEnoughBalance || isApproving || isApprovePending || !address}
               className="btn-primary w-full py-3"
             >
               {isApproving || isApprovePending ? (
