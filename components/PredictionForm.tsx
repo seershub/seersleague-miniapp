@@ -69,19 +69,17 @@ export function PredictionForm({ matches }: PredictionFormProps) {
   };
   
   const toggleMatchSelection = (matchId: number) => {
-    setSelectedMatches(prev => {
-      if (prev.includes(matchId)) {
-        // Remove match
-        const newSelected = prev.filter(id => id !== matchId);
-        const newPredictions = { ...predictions };
-        delete newPredictions[matchId];
-        setPredictions(newPredictions);
-        return newSelected;
-      } else {
-        // Add match
-        return [...prev, matchId];
-      }
-    });
+    if (predictions[matchId] !== undefined) {
+      // Remove prediction
+      const newPredictions = { ...predictions };
+      delete newPredictions[matchId];
+      setPredictions(newPredictions);
+      
+      setSelectedMatches(prev => prev.filter(id => id !== matchId));
+    } else {
+      // Add match to selection (but user still needs to select outcome)
+      setSelectedMatches(prev => [...prev, matchId]);
+    }
   };
 
   const handleOutcomeSelect = (matchId: number, outcome: 1 | 2 | 3) => {
@@ -89,6 +87,14 @@ export function PredictionForm({ matches }: PredictionFormProps) {
       ...prev,
       [matchId]: outcome
     }));
+    
+    // Automatically add to selected matches when outcome is selected
+    setSelectedMatches(prev => {
+      if (!prev.includes(matchId)) {
+        return [...prev, matchId];
+      }
+      return prev;
+    });
   };
   
   const handleSubmit = async () => {
@@ -104,16 +110,9 @@ export function PredictionForm({ matches }: PredictionFormProps) {
       return;
     }
     
-    // Validate at least one match is selected
-    if (selectedMatches.length === 0) {
+    // Validate at least one prediction is made
+    if (Object.keys(predictions).length === 0) {
       toast.error('Please select at least one match to predict');
-      return;
-    }
-    
-    // Validate all selected matches have predictions
-    const selectedPredictions = selectedMatches.filter(matchId => predictions[matchId]);
-    if (selectedPredictions.length !== selectedMatches.length) {
-      toast.error('Please select outcomes for all selected matches');
       return;
     }
     
@@ -141,9 +140,9 @@ export function PredictionForm({ matches }: PredictionFormProps) {
       setIsSubmitting(true);
       setIsPending(true);
       
-      // Prepare match IDs and outcomes for selected matches only
-      const matchIds = selectedMatches.map(id => BigInt(id));
-      const outcomes = selectedMatches.map(matchId => predictions[matchId]);
+      // Prepare match IDs and outcomes for predictions only
+      const matchIds = Object.keys(predictions).map(id => BigInt(parseInt(id)));
+      const outcomes = Object.keys(predictions).map(matchId => predictions[parseInt(matchId)]);
       
       // Real on-chain transaction
       console.log('Submitting predictions to contract:', {
@@ -189,10 +188,11 @@ export function PredictionForm({ matches }: PredictionFormProps) {
       toast.success(`Predictions submitted! Transaction: ${txHash.slice(0, 10)}...`);
       
       // Update user stats
+      const predictionCount = Object.keys(predictions).length;
       setUserStats(prev => prev ? {
         ...prev,
-        totalPredictions: prev.totalPredictions + selectedMatches.length,
-        freePredictionsUsed: Math.min(prev.freePredictionsUsed + selectedMatches.length, 5)
+        totalPredictions: prev.totalPredictions + predictionCount,
+        freePredictionsUsed: Math.min(prev.freePredictionsUsed + predictionCount, 5)
       } : null);
       
       // Clear selections
@@ -209,9 +209,9 @@ export function PredictionForm({ matches }: PredictionFormProps) {
     }
   };
   
-  const isFormValid = selectedMatches.length > 0 && selectedMatches.every(matchId => predictions[matchId]);
+  const isFormValid = Object.keys(predictions).length > 0;
   const remainingFreePredictions = userStats ? Math.max(0, 5 - userStats.freePredictionsUsed) : 5;
-  const predictionsToPayFor = Math.max(0, selectedMatches.length - remainingFreePredictions);
+  const predictionsToPayFor = Math.max(0, Object.keys(predictions).length - remainingFreePredictions);
   const totalFee = BigInt(predictionsToPayFor) * PREDICTION_FEE;
   
   if (!isConnected) {
@@ -241,10 +241,10 @@ export function PredictionForm({ matches }: PredictionFormProps) {
       </div>
       
       {/* Payment Summary */}
-      {selectedMatches.length > 0 && (
+      {Object.keys(predictions).length > 0 && (
         <div className="card bg-green-900 bg-opacity-20 border-green-700">
           <div className="flex items-center justify-between">
-            <span className="font-semibold text-green-400">Selected Matches: {selectedMatches.length}</span>
+            <span className="font-semibold text-green-400">Selected Matches: {Object.keys(predictions).length}</span>
             <span className="text-green-300">
               {predictionsToPayFor > 0 ? `Fee: ${formatUSDC(totalFee)} USDC` : 'FREE'}
             </span>
@@ -256,8 +256,8 @@ export function PredictionForm({ matches }: PredictionFormProps) {
       <div className="space-y-4">
         {matches.map((match) => {
           const matchId = parseInt(match.id);
-          const isSelected = selectedMatches.includes(matchId);
           const selectedOutcome = predictions[matchId];
+          const isSelected = selectedOutcome !== undefined;
           
           return (
             <div key={match.id} className="relative">
@@ -272,19 +272,17 @@ export function PredictionForm({ matches }: PredictionFormProps) {
                   className="w-5 h-5 text-blue-600 bg-gray-700 border-gray-600 rounded focus:ring-blue-500"
                 />
                 <label htmlFor={`match-${matchId}`} className="text-sm font-medium text-gray-300">
-                  Select this match for prediction
+                  Predict this match
                 </label>
               </div>
               
-              {/* Match Card */}
-              {isSelected && (
-                <MatchCard
-                  match={match}
-                  selectedOutcome={selectedOutcome}
-                  onOutcomeSelect={(outcome) => handleOutcomeSelect(matchId, outcome)}
-                  disabled={isSubmitting || isPending}
-                />
-              )}
+              {/* Match Card - Always visible */}
+              <MatchCard
+                match={match}
+                selectedOutcome={selectedOutcome}
+                onOutcomeSelect={(outcome) => handleOutcomeSelect(matchId, outcome)}
+                disabled={isSubmitting || isPending}
+              />
             </div>
           );
         })}
