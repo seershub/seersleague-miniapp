@@ -42,28 +42,37 @@ async function fetchMatchesServer(): Promise<Match[]> {
     
     console.log('Dates to try:', datesToTry);
     
+    // Try only the most popular leagues first to avoid rate limiting
+    const priorityLeagues = [
+      { name: 'PREMIER_LEAGUE', id: '4328' },
+      { name: 'LA_LIGA', id: '4335' },
+      { name: 'BUNDESLIGA', id: '4331' },
+      { name: 'SERIE_A', id: '4332' },
+      { name: 'LIGUE_1', id: '4334' }
+    ];
+    
     for (const tryDate of datesToTry) {
       console.log(`\n--- TRYING DATE: ${tryDate} ---`);
       
-      for (const [name, leagueId] of Object.entries(LEAGUE_IDS)) {
+      for (const league of priorityLeagues) {
         try {
-          const url = `${SPORTS_DB_BASE}/${API_KEY}/eventsday.php?d=${tryDate}&l=${leagueId}`;
-          console.log(`Fetching ${name} for ${tryDate}: ${url}`);
+          const url = `${SPORTS_DB_BASE}/${API_KEY}/eventsday.php?d=${tryDate}&l=${league.id}`;
+          console.log(`Fetching ${league.name} for ${tryDate}: ${url}`);
           
           const response = await fetch(url, {
-            next: { revalidate: 300 } // 5 minutes cache
+            next: { revalidate: 3600 } // 1 hour cache to reduce API calls
           });
           
           if (!response.ok) {
-            console.error(`❌ Failed to fetch ${name}:`, response.status);
+            console.error(`❌ Failed to fetch ${league.name}:`, response.status);
             continue;
           }
           
           const data = await response.json();
-          console.log(`✅ Response for ${name}:`, data);
+          console.log(`✅ Response for ${league.name}:`, data);
           
           if (data.events && Array.isArray(data.events)) {
-            console.log(`📊 Raw events count for ${name}:`, data.events.length);
+            console.log(`📊 Raw events count for ${league.name}:`, data.events.length);
             
             const matches = data.events
               .filter((event: any) => {
@@ -86,14 +95,17 @@ async function fetchMatchesServer(): Promise<Match[]> {
                 status: event.strStatus,
               }));
             
-            console.log(`✅ Filtered matches for ${name}:`, matches.length);
+            console.log(`✅ Filtered matches for ${league.name}:`, matches.length);
             allMatches.push(...matches);
           } else {
-            console.log(`❌ No events array in response for ${name}`);
+            console.log(`❌ No events array in response for ${league.name}`);
           }
         } catch (error) {
-          console.error(`❌ Error fetching ${name}:`, error);
+          console.error(`❌ Error fetching ${league.name}:`, error);
         }
+        
+        // Add delay between requests to avoid rate limiting
+        await new Promise(resolve => setTimeout(resolve, 100));
       }
       
       // If we found matches, break
