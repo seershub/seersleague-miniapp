@@ -120,7 +120,7 @@ export function PredictionForm({ matches }: PredictionFormProps) {
     // Calculate payment needed
     const remainingFreePredictions = Math.max(0, 5 - userStats.freePredictionsUsed);
     const predictionsToPayFor = Math.max(0, selectedMatches.length - remainingFreePredictions);
-    const totalFee = predictionsToPayFor * PREDICTION_FEE;
+    const totalFee = BigInt(predictionsToPayFor) * PREDICTION_FEE;
     
     if (totalFee > 0) {
       // Show payment modal for paid predictions
@@ -212,7 +212,7 @@ export function PredictionForm({ matches }: PredictionFormProps) {
   const isFormValid = selectedMatches.length > 0 && selectedMatches.every(matchId => predictions[matchId]);
   const remainingFreePredictions = userStats ? Math.max(0, 5 - userStats.freePredictionsUsed) : 5;
   const predictionsToPayFor = Math.max(0, selectedMatches.length - remainingFreePredictions);
-  const totalFee = predictionsToPayFor * PREDICTION_FEE;
+  const totalFee = BigInt(predictionsToPayFor) * PREDICTION_FEE;
   
   if (!isConnected) {
     return (
