@@ -27,7 +27,7 @@ export async function GET() {
     
   } catch (error) {
     return NextResponse.json({
-      error: error.message,
+      error: error instanceof Error ? error.message : 'Unknown error',
       date: new Date().toISOString().split('T')[0]
     }, { status: 500 });
   }
