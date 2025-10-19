@@ -160,6 +160,13 @@ export function PredictionForm({ matches }: PredictionFormProps) {
         return;
       }
       
+      // Only submit if all predictions are free
+      if (predictionsToPayFor > 0) {
+        toast.dismiss(loadingToast);
+        toast.error('Cannot submit paid predictions. Please use only free predictions.', { duration: 8000 });
+        return;
+      }
+      
       // Encode function call data for submitPredictions(uint256[] matchIds, uint8[] outcomes)
       const encodedData = encodeFunctionData({
         abi: SEERSLEAGUE_ABI,
