@@ -24,7 +24,7 @@ export async function GET() {
       console.log('Response 1 text:', text1.substring(0, 500));
       data1 = JSON.parse(text1);
     } catch (parseError) {
-      data1 = { error: 'JSON parse error', rawResponse: await response1.text() };
+      data1 = { error: 'JSON parse error', rawResponse: text1.substring(0, 200) };
     }
     
     tests.push({
@@ -47,7 +47,7 @@ export async function GET() {
       console.log('Response 2 text:', text2.substring(0, 500));
       data2 = JSON.parse(text2);
     } catch (parseError) {
-      data2 = { error: 'JSON parse error', rawResponse: await response2.text() };
+      data2 = { error: 'JSON parse error', rawResponse: text2.substring(0, 200) };
     }
     
     tests.push({
@@ -69,7 +69,7 @@ export async function GET() {
       console.log('Response 3 text:', text3.substring(0, 500));
       data3 = JSON.parse(text3);
     } catch (parseError) {
-      data3 = { error: 'JSON parse error', rawResponse: await response3.text() };
+      data3 = { error: 'JSON parse error', rawResponse: text3.substring(0, 200) };
     }
     
     tests.push({
@@ -91,7 +91,7 @@ export async function GET() {
       console.log('Response 4 text:', text4.substring(0, 500));
       data4 = JSON.parse(text4);
     } catch (parseError) {
-      data4 = { error: 'JSON parse error', rawResponse: await response4.text() };
+      data4 = { error: 'JSON parse error', rawResponse: text4.substring(0, 200) };
     }
     
     tests.push({
@@ -113,7 +113,7 @@ export async function GET() {
       console.log('Response 5 text:', text5.substring(0, 500));
       data5 = JSON.parse(text5);
     } catch (parseError) {
-      data5 = { error: 'JSON parse error', rawResponse: await response5.text() };
+      data5 = { error: 'JSON parse error', rawResponse: text5.substring(0, 200) };
     }
     
     tests.push({
@@ -135,7 +135,7 @@ export async function GET() {
       console.log('Response 6 text:', text6.substring(0, 500));
       data6 = JSON.parse(text6);
     } catch (parseError) {
-      data6 = { error: 'JSON parse error', rawResponse: await response6.text() };
+      data6 = { error: 'JSON parse error', rawResponse: text6.substring(0, 200) };
     }
     
     tests.push({
