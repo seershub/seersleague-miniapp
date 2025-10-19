@@ -19,7 +19,12 @@ export function PredictionForm({ matches }: PredictionFormProps) {
   const [predictions, setPredictions] = useState<(1 | 2 | 3 | 0)[]>(new Array(5).fill(0));
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [userStats, setUserStats] = useState<any>(null);
+  const [userStats, setUserStats] = useState<{
+    totalPredictions: number;
+    correctPredictions: number;
+    lastPredictionDay: number;
+    isFirstDay: boolean;
+  } | null>(null);
   const [isPending, setIsPending] = useState(false);
   
   // Get user address and stats
