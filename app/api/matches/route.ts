@@ -33,7 +33,7 @@ export async function GET() {
     const today = new Date();
     const dateStr = today.toISOString().split('T')[0];
     
-    console.log('Fetching matches for date:', dateStr);
+    console.log('=== FETCHING MATCHES FOR DATE:', dateStr, '===');
     
     const allMatches: Match[] = [];
     
@@ -45,54 +45,79 @@ export async function GET() {
       datesToTry.push(date.toISOString().split('T')[0]);
     }
     
-    for (const dateStr of datesToTry) {
-      console.log(`Trying date: ${dateStr}`);
+    console.log('Dates to try:', datesToTry);
+    
+    for (const tryDate of datesToTry) {
+      console.log(`\n--- TRYING DATE: ${tryDate} ---`);
       
       for (const [name, leagueId] of Object.entries(LEAGUE_IDS)) {
         try {
-          const url = `${SPORTS_DB_BASE}/${API_KEY}/eventsday.php?d=${dateStr}&l=${leagueId}`;
-          console.log(`Fetching ${name} for ${dateStr}:`, url);
+          const url = `${SPORTS_DB_BASE}/${API_KEY}/eventsday.php?d=${tryDate}&l=${leagueId}`;
+          console.log(`\nFetching ${name} for ${tryDate}:`);
+          console.log(`URL: ${url}`);
           
           const response = await fetch(url, {
-            next: { revalidate: 3600 } // Cache 1 hour
+            next: { revalidate: 300 } // Cache 5 minutes for testing
           });
           
           if (!response.ok) {
-            console.error(`Failed to fetch ${name}:`, response.status);
+            console.error(`❌ Failed to fetch ${name}:`, response.status);
             continue;
           }
           
           const data = await response.json();
+          console.log(`✅ Response for ${name}:`, JSON.stringify(data, null, 2));
           
-          if (data.events && Array.isArray(data.events) && data.events.length > 0) {
+          if (data.events && Array.isArray(data.events)) {
+            console.log(`📊 Raw events count for ${name}:`, data.events.length);
+            
+            // Log all events to see what we're getting
+            data.events.forEach((event: any, index: number) => {
+              console.log(`Event ${index + 1}:`, {
+                id: event.idEvent,
+                home: event.strHomeTeam,
+                away: event.strAwayTeam,
+                status: event.strStatus,
+                date: event.dateEvent,
+                time: event.strTime
+              });
+            });
+            
             const matches = data.events
-              .filter((event: any) => 
-                event.strStatus === 'Not Started' || 
-                event.strStatus === 'NS' ||
-                event.strStatus === 'Scheduled'
-              )
+              .filter((event: any) => {
+                const isValid = event.strStatus === 'Not Started' || 
+                               event.strStatus === 'NS' ||
+                               event.strStatus === 'Scheduled' ||
+                               event.strStatus === 'Time to be defined' ||
+                               event.strStatus === 'TBD';
+                console.log(`Event ${event.idEvent} status: ${event.strStatus} - Valid: ${isValid}`);
+                return isValid;
+              })
               .map((event: any) => ({
                 id: event.idEvent,
                 homeTeam: event.strHomeTeam,
                 awayTeam: event.strAwayTeam,
                 league: event.strLeague,
-                kickoff: event.dateEvent + 'T' + (event.strTime || '00:00:00'),
+                kickoff: event.dateEvent + 'T' + (event.strTime || '15:00:00'),
                 venue: event.strVenue || 'TBA',
                 homeTeamBadge: event.strHomeTeamBadge || '/default-badge.png',
                 awayTeamBadge: event.strAwayTeamBadge || '/default-badge.png',
                 status: event.strStatus,
               }));
             
+            console.log(`✅ Filtered matches for ${name}:`, matches.length);
             allMatches.push(...matches);
-            console.log(`${name} for ${dateStr}: Found ${matches.length} matches`);
+          } else {
+            console.log(`❌ No events array in response for ${name}`);
           }
         } catch (error) {
-          console.error(`Error fetching ${name}:`, error);
+          console.error(`❌ Error fetching ${name}:`, error);
         }
       }
       
       // If we found matches, break
       if (allMatches.length >= 5) {
+        console.log(`🎯 Found enough matches (${allMatches.length}), stopping search`);
         break;
       }
     }
