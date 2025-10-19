@@ -71,7 +71,7 @@ async function fetchMatchesServer(): Promise<Match[]> {
               venue: match.venue || 'TBA',
               homeTeamBadge: match.homeTeam.crest || '/default-badge.svg',
               awayTeamBadge: match.awayTeam.crest || '/default-badge.svg',
-              status: match.status,
+              status: match.status === 'SCHEDULED' ? 'Not Started' : match.status,
             }));
             
             allMatches.push(...matches);
@@ -97,17 +97,17 @@ async function fetchMatchesServer(): Promise<Match[]> {
             console.log(`✅ Tomorrow's ${competition.name} matches:`, tomorrowData.matches?.length || 0);
             
             if (tomorrowData.matches && Array.isArray(tomorrowData.matches)) {
-              const matches = tomorrowData.matches.map((match: any) => ({
-                id: match.id.toString(),
-                homeTeam: match.homeTeam.name,
-                awayTeam: match.awayTeam.name,
-                league: match.competition.name,
-                kickoff: match.utcDate,
-                venue: match.venue || 'TBA',
-                homeTeamBadge: match.homeTeam.crest || '/default-badge.svg',
-                awayTeamBadge: match.awayTeam.crest || '/default-badge.svg',
-                status: match.status,
-              }));
+            const matches = tomorrowData.matches.map((match: any) => ({
+              id: match.id.toString(),
+              homeTeam: match.homeTeam.name,
+              awayTeam: match.awayTeam.name,
+              league: match.competition.name,
+              kickoff: match.utcDate,
+              venue: match.venue || 'TBA',
+              homeTeamBadge: match.homeTeam.crest || '/default-badge.svg',
+              awayTeamBadge: match.awayTeam.crest || '/default-badge.svg',
+              status: match.status === 'SCHEDULED' ? 'Not Started' : match.status,
+            }));
               
               allMatches.push(...matches);
             }
@@ -172,7 +172,7 @@ function getFallbackMatches(): Match[] {
       venue: 'Anfield',
       homeTeamBadge: '/default-badge.svg',
       awayTeamBadge: '/default-badge.svg',
-      status: 'SCHEDULED',
+      status: 'Not Started',
     },
     {
       id: '2',
@@ -183,7 +183,7 @@ function getFallbackMatches(): Match[] {
       venue: 'Santiago Bernabéu',
       homeTeamBadge: '/default-badge.svg',
       awayTeamBadge: '/default-badge.svg',
-      status: 'SCHEDULED',
+      status: 'Not Started',
     },
     {
       id: '3',
@@ -194,7 +194,7 @@ function getFallbackMatches(): Match[] {
       venue: 'Allianz Arena',
       homeTeamBadge: '/default-badge.svg',
       awayTeamBadge: '/default-badge.svg',
-      status: 'SCHEDULED',
+      status: 'Not Started',
     },
     {
       id: '4',
@@ -205,7 +205,7 @@ function getFallbackMatches(): Match[] {
       venue: 'San Siro',
       homeTeamBadge: '/default-badge.svg',
       awayTeamBadge: '/default-badge.svg',
-      status: 'SCHEDULED',
+      status: 'Not Started',
     },
     {
       id: '5',
@@ -216,7 +216,7 @@ function getFallbackMatches(): Match[] {
       venue: 'Parc des Princes',
       homeTeamBadge: '/default-badge.svg',
       awayTeamBadge: '/default-badge.svg',
-      status: 'SCHEDULED',
+      status: 'Not Started',
     },
   ];
 }
