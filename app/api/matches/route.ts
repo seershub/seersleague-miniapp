@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server'
 import { CONTRACTS } from '@/lib/contract-interactions'
 import { SEERSLEAGUE_ABI } from '@/lib/contracts/abi-new'
 import { getTodayMatches } from '@/lib/matches'
-import { createWalletClient, http } from 'viem'
+import { createWalletClient, createPublicClient, http } from 'viem'
 import { base } from 'viem/chains'
 import { privateKeyToAccount } from 'viem/accounts'
 
@@ -11,6 +11,8 @@ export const dynamic = 'force-dynamic'
 
 const FOOTBALL_DATA_BASE = 'https://api.football-data.org/v4'
 const API_KEY = 'ab4bf8eeaf614f969dfe8de37c58107d'
+const ENABLE_AUTO_REGISTRATION = process.env.ENABLE_AUTO_REGISTRATION === 'true'
+const RPC_URL = process.env.NEXT_PUBLIC_BASE_RPC || 'https://mainnet.base.org'
 
 const priorityCompetitions = [
   { name: 'PREMIER_LEAGUE', id: 'PL' },
@@ -55,11 +57,11 @@ function mockFallbackMatches(): any[] {
 
 async function ensureRegistered(matchIds: bigint[], startTimes: bigint[]) {
   try {
+    if (!ENABLE_AUTO_REGISTRATION) return { registered: false, reason: 'auto-reg disabled' }
     const pk = process.env.PRIVATE_KEY
-    if (!pk) return { registered: false }
+    if (!pk) return { registered: false, reason: 'no private key' }
     const account = privateKeyToAccount(pk as `0x${string}`)
-    const rpc = process.env.NEXT_PUBLIC_BASE_RPC || 'https://mainnet.base.org'
-    const wallet = createWalletClient({ account, chain: base, transport: http(rpc) })
+    const wallet = createWalletClient({ account, chain: base, transport: http(RPC_URL) })
     await wallet.writeContract({
       address: CONTRACTS.SEERSLEAGUE,
       abi: SEERSLEAGUE_ABI,
@@ -69,6 +71,29 @@ async function ensureRegistered(matchIds: bigint[], startTimes: bigint[]) {
     return { registered: true }
   } catch (e) {
     return { registered: false, error: (e as Error).message }
+  }
+}
+
+async function filterUnregistered(ids: bigint[]) {
+  try {
+    const publicClient = createPublicClient({ chain: base, transport: http(RPC_URL) })
+    const checks = await Promise.all(ids.map(async (id) => {
+      try {
+        const info = await publicClient.readContract({
+          address: CONTRACTS.SEERSLEAGUE,
+          abi: SEERSLEAGUE_ABI,
+          functionName: 'getMatch',
+          args: [id],
+        }) as any
+        return { id, exists: !!info?.exists }
+      } catch {
+        return { id, exists: false }
+      }
+    }))
+    return checks.filter(c => !c.exists).map(c => c.id)
+  } catch {
+    // If read fails, avoid writing to be safe
+    return []
   }
 }
 
@@ -138,7 +163,19 @@ export async function GET() {
     if (featured.length > 0) {
       const ids = featured.map(m => BigInt(parseInt(m.id)))
       const times = featured.map(m => BigInt(toUnixSeconds(m.kickoff)))
-      await ensureRegistered(ids, times)
+      const idsToReg = await filterUnregistered(ids)
+      if (idsToReg.length > 0) {
+        const set = new Set(idsToReg.map(String))
+        const regIds: bigint[] = []
+        const regTimes: bigint[] = []
+        ids.forEach((id, idx) => {
+          if (set.has(String(id))) {
+            regIds.push(id)
+            regTimes.push(times[idx])
+          }
+        })
+        if (regIds.length > 0) await ensureRegistered(regIds, regTimes)
+      }
       return NextResponse.json(featured)
     }
 
@@ -153,7 +190,19 @@ export async function GET() {
       if (altUpcoming.length > 0) {
         const ids = altUpcoming.map(m => BigInt(parseInt(m.id)))
         const times = altUpcoming.map(m => BigInt(toUnixSeconds(m.kickoff)))
-        await ensureRegistered(ids, times)
+        const idsToReg = await filterUnregistered(ids)
+        if (idsToReg.length > 0) {
+          const set = new Set(idsToReg.map(String))
+          const regIds: bigint[] = []
+          const regTimes: bigint[] = []
+          ids.forEach((id, idx) => {
+            if (set.has(String(id))) {
+              regIds.push(id)
+              regTimes.push(times[idx])
+            }
+          })
+          if (regIds.length > 0) await ensureRegistered(regIds, regTimes)
+        }
         return NextResponse.json(altUpcoming)
       }
     } catch (e) {
@@ -171,7 +220,19 @@ export async function GET() {
       if (ups5.length > 0) {
         const ids = ups5.map(m => BigInt(parseInt(m.id)))
         const times = ups5.map(m => BigInt(toUnixSeconds(m.kickoff)))
-        await ensureRegistered(ids, times)
+        const idsToReg = await filterUnregistered(ids)
+        if (idsToReg.length > 0) {
+          const set = new Set(idsToReg.map(String))
+          const regIds: bigint[] = []
+          const regTimes: bigint[] = []
+          ids.forEach((id, idx) => {
+            if (set.has(String(id))) {
+              regIds.push(id)
+              regTimes.push(times[idx])
+            }
+          })
+          if (regIds.length > 0) await ensureRegistered(regIds, regTimes)
+        }
         return NextResponse.json(ups5)
       }
     } catch (e) {
@@ -183,7 +244,19 @@ export async function GET() {
     try {
       const ids = mock.map(m => BigInt(parseInt(m.id)))
       const times = mock.map(m => BigInt(toUnixSeconds(m.kickoff)))
-      await ensureRegistered(ids, times)
+      const idsToReg = await filterUnregistered(ids)
+      if (idsToReg.length > 0) {
+        const set = new Set(idsToReg.map(String))
+        const regIds: bigint[] = []
+        const regTimes: bigint[] = []
+        ids.forEach((id, idx) => {
+          if (set.has(String(id))) {
+            regIds.push(id)
+            regTimes.push(times[idx])
+          }
+        })
+        if (regIds.length > 0) await ensureRegistered(regIds, regTimes)
+      }
     } catch {}
     return NextResponse.json(mock)
   } catch (e) {
