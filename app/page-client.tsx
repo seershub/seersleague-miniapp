@@ -58,7 +58,7 @@ export default function Home({ initialMatches = [] }: HomeProps) {
 
     // Only fetch if no initial matches provided (fallback for client-side)
     if (initialMatches.length === 0) {
-      async function fetchMatches() {
+      const fetchMatches = async () => {
         try {
           setLoading(true);
           console.log('Fetching matches...');
@@ -80,7 +80,7 @@ export default function Home({ initialMatches = [] }: HomeProps) {
         } finally {
           setLoading(false);
         }
-      }
+      };
       
       fetchMatches();
     }
