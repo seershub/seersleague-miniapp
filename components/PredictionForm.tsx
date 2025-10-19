@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { Match } from '@/lib/matches';
 import { MatchCard } from './MatchCard';
 import { PaymentModal } from './PaymentModal';
-import { CONTRACTS, SEERSLEAGUE_ABI, PREDICTION_FEE, UserStats } from '@/lib/contract-interactions';
+import { CONTRACTS, SEERSLEAGUE_ABI, PREDICTION_FEE, UserStats, formatUSDC } from '@/lib/contract-interactions';
 import { useMiniKit } from './MiniKitProvider';
 import { encodeFunctionData } from 'viem';
 import toast from 'react-hot-toast';
@@ -246,7 +246,7 @@ export function PredictionForm({ matches }: PredictionFormProps) {
           <div className="flex items-center justify-between">
             <span className="font-semibold text-green-400">Selected Matches: {selectedMatches.length}</span>
             <span className="text-green-300">
-              {predictionsToPayFor > 0 ? `Fee: ${(totalFee / 1000000).toFixed(1)} USDC` : 'FREE'}
+              {predictionsToPayFor > 0 ? `Fee: ${formatUSDC(totalFee)} USDC` : 'FREE'}
             </span>
           </div>
         </div>
@@ -305,7 +305,7 @@ export function PredictionForm({ matches }: PredictionFormProps) {
             </div>
           ) : (
             <>
-              {totalFee > 0 ? `Submit Predictions (${(totalFee / 1000000).toFixed(1)} USDC)` : 'Submit FREE Predictions'}
+              {totalFee > 0 ? `Submit Predictions (${formatUSDC(totalFee)} USDC)` : 'Submit FREE Predictions'}
             </>
           )}
         </button>
