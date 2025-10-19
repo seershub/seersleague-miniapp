@@ -283,6 +283,11 @@ export function PredictionForm({ matches }: PredictionFormProps) {
           // Clear selections
           setSelectedMatches([]);
           setPredictions({});
+
+          // Notify app to refresh matches immediately (avoid stale/mock data)
+          if (typeof window !== 'undefined') {
+            window.dispatchEvent(new CustomEvent('seers:refresh-matches'));
+          }
         } else {
           // Transaction failed
           toast.error(

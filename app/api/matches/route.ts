@@ -23,23 +23,30 @@ const priorityCompetitions = [
   { name: 'TURKISH_SUPER_LIG', id: 'TSL' },
   { name: 'CHAMPIONS_LEAGUE', id: 'CL' },
   { name: 'EUROPA_LEAGUE', id: 'EL' },
+  { name: 'EREDIVISIE', id: 'DED' },
+  { name: 'PRIMEIRA_LIGA', id: 'PPL' },
+  { name: 'BELGIAN_PRO', id: 'B1' },
+  { name: 'SCOTTISH_PREMIER', id: 'SPL' },
+  { name: 'MLS', id: 'MLS' },
 ]
 
 function toUnixSeconds(iso: string): number {
   return Math.floor(new Date(iso).getTime() / 1000)
 }
 
-function mockFallbackMatches(): any[] {
-  const baseTime = new Date()
-  baseTime.setDate(baseTime.getDate() + 1)
+function mockFallbackMatches(todayIso: string): any[] {
+  const now = new Date()
   const mk = (offsetH: number, id: number, home: string, away: string, league: string, venue: string) => {
-    const dt = new Date(baseTime.getTime() + offsetH * 3600 * 1000)
+    const dt = new Date(now.getTime() + offsetH * 3600 * 1000)
+    // Force same-day ISO if crosses midnight: fallback by replacing date part
+    const iso = dt.toISOString()
+    const kickoff = iso.slice(0, 10) === todayIso ? iso : `${todayIso}${iso.slice(10)}`
     return {
       id: id.toString(),
       homeTeam: home,
       awayTeam: away,
       league,
-      kickoff: dt.toISOString(),
+      kickoff,
       venue,
       homeTeamBadge: '/default-badge.svg',
       awayTeamBadge: '/default-badge.svg',
@@ -101,9 +108,7 @@ export async function GET() {
   try {
     const all: any[] = []
     const today = new Date().toISOString().split('T')[0]
-    const tomorrow = new Date()
-    tomorrow.setDate(tomorrow.getDate() + 1)
-    const tomorrowStr = tomorrow.toISOString().split('T')[0]
+    // Only today’s matches will be considered
 
     const fetchWithTimeout = async (url: string, headers: Record<string, string>, ms = 2200) => {
       const ctrl = new AbortController()
@@ -134,7 +139,7 @@ export async function GET() {
       }))
     }
 
-    // Parallel fetch for today
+    // Parallel fetch for today only (no tomorrow)
     const todayUrls = priorityCompetitions.map(c => `${FOOTBALL_DATA_BASE}/competitions/${c.id}/matches?dateFrom=${today}&dateTo=${today}`)
     const todayRes = await Promise.allSettled(todayUrls.map(u => fetchWithTimeout(u, { 'X-Auth-Token': API_KEY })))
     for (const r of todayRes) {
@@ -143,19 +148,10 @@ export async function GET() {
       }
     }
 
-    // If still <5, also parallel fetch tomorrow (timeboxed)
-    if (all.length < 5) {
-      const tmrUrls = priorityCompetitions.map(c => `${FOOTBALL_DATA_BASE}/competitions/${c.id}/matches?dateFrom=${tomorrowStr}&dateTo=${tomorrowStr}`)
-      const tmrRes = await Promise.allSettled(tmrUrls.map(u => fetchWithTimeout(u, { 'X-Auth-Token': API_KEY })))
-      for (const r of tmrRes) {
-        if (r.status === 'fulfilled' && r.value) {
-          all.push(...mapMatches(r.value))
-        }
-      }
-    }
+    // No tomorrow fetch by design; keep strictly today
 
     const featured = all
-      .filter(m => !m.status || m.status === 'Not Started')
+      .filter(m => (!m.status || m.status === 'Not Started') && (m.kickoff?.slice(0,10) === today))
       .sort((a, b) => new Date(a.kickoff).getTime() - new Date(b.kickoff).getTime())
       .slice(0, 5)
 
@@ -175,14 +171,14 @@ export async function GET() {
         })
         if (regIds.length > 0) await ensureRegistered(regIds, regTimes)
       }
-      return NextResponse.json(featured)
+      return NextResponse.json(featured, { headers: { 'x-matches-source': 'fd' } })
     }
 
     // Fallback to TheSportsDB if Football-Data provided no upcoming matches (today)
     try {
       const alt = await getTodayMatches()
       const altUpcoming = alt
-        .filter(m => m.status === 'Not Started')
+        .filter(m => m.status === 'Not Started' && (m.kickoff?.slice(0,10) === today))
         .sort((a, b) => new Date(a.kickoff).getTime() - new Date(b.kickoff).getTime())
         .slice(0, 5)
 
@@ -202,44 +198,14 @@ export async function GET() {
           })
           if (regIds.length > 0) await ensureRegistered(regIds, regTimes)
         }
-        return NextResponse.json(altUpcoming)
+        return NextResponse.json(altUpcoming, { headers: { 'x-matches-source': 'sportsdb' } })
       }
     } catch (e) {
       console.error('Fallback matches fetch failed:', e)
     }
 
-    // Second fallback: use upcoming matches for next 3 days from TheSportsDB
-    try {
-      const { getUpcomingMatches } = await import('@/lib/matches')
-      const ups = await getUpcomingMatches(3)
-      const ups5 = ups
-        .filter(m => m.status === 'Not Started')
-        .sort((a, b) => new Date(a.kickoff).getTime() - new Date(b.kickoff).getTime())
-        .slice(0, 5)
-      if (ups5.length > 0) {
-        const ids = ups5.map(m => BigInt(parseInt(m.id)))
-        const times = ups5.map(m => BigInt(toUnixSeconds(m.kickoff)))
-        const idsToReg = await filterUnregistered(ids)
-        if (idsToReg.length > 0) {
-          const set = new Set(idsToReg.map(String))
-          const regIds: bigint[] = []
-          const regTimes: bigint[] = []
-          ids.forEach((id, idx) => {
-            if (set.has(String(id))) {
-              regIds.push(id)
-              regTimes.push(times[idx])
-            }
-          })
-          if (regIds.length > 0) await ensureRegistered(regIds, regTimes)
-        }
-        return NextResponse.json(ups5)
-      }
-    } catch (e) {
-      console.error('Upcoming fallback fetch failed:', e)
-    }
-
     // Final fallback: static mock to avoid empty UI and keep flow testable
-    const mock = mockFallbackMatches()
+    const mock = mockFallbackMatches(today)
     try {
       const ids = mock.map(m => BigInt(parseInt(m.id)))
       const times = mock.map(m => BigInt(toUnixSeconds(m.kickoff)))
@@ -257,7 +223,7 @@ export async function GET() {
         if (regIds.length > 0) await ensureRegistered(regIds, regTimes)
       }
     } catch {}
-    return NextResponse.json(mock)
+    return NextResponse.json(mock, { headers: { 'x-matches-source': 'mock' } })
   } catch (e) {
     return NextResponse.json({ error: (e as Error).message }, { status: 500 })
   }

@@ -87,9 +87,20 @@ export default function Home({ initialMatches = [] }: HomeProps) {
     // Initial fetch (even if SSR provided matches)
     fetchMatches();
 
+    // Listen to immediate refresh events (e.g., after prediction submit)
+    const onRefresh = () => fetchMatches();
+    if (typeof window !== 'undefined') {
+      window.addEventListener('seers:refresh-matches', onRefresh);
+    }
+
     // Poll every 30s to keep list updated and circulating
     const interval = setInterval(fetchMatches, 30000);
-    return () => clearInterval(interval);
+    return () => {
+      clearInterval(interval);
+      if (typeof window !== 'undefined') {
+        window.removeEventListener('seers:refresh-matches', onRefresh);
+      }
+    };
   }, []);
   
   return (
