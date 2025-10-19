@@ -1,9 +1,10 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { sdk } from '@farcaster/miniapp-sdk';
+import { useMiniKit } from './MiniKitProvider';
 
 export function WalletConnect() {
+  const { isReady, sdk } = useMiniKit();
   const [isConnected, setIsConnected] = useState(false);
   const [userAddress, setUserAddress] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
@@ -11,14 +12,18 @@ export function WalletConnect() {
   useEffect(() => {
     const checkConnection = async () => {
       try {
-        // Check if we're in Base App context
-        if (typeof window !== 'undefined' && (window as any).base) {
-          // In Base App, wallet is automatically connected
-          setIsConnected(true);
-          setUserAddress('Base App User');
-          console.log('Wallet connected via Base App');
+        if (isReady && sdk) {
+          // Check if we're in Farcaster Mini App context
+          const context = await sdk.context.get();
+          if (context && context.user) {
+            setIsConnected(true);
+            setUserAddress(context.user.fid?.toString() || 'Farcaster User');
+            console.log('Wallet connected via Farcaster Mini App');
+          } else {
+            setIsConnected(false);
+            setUserAddress(null);
+          }
         } else {
-          // Not in Base App context
           setIsConnected(false);
           setUserAddress(null);
         }
@@ -30,18 +35,25 @@ export function WalletConnect() {
       }
     };
 
-    checkConnection();
-  }, []);
+    if (isReady) {
+      checkConnection();
+    }
+  }, [isReady, sdk]);
 
   const handleConnect = async () => {
     try {
-      // In Base App context, wallet is already connected
-      if (typeof window !== 'undefined' && (window as any).base) {
-        setIsConnected(true);
-        setUserAddress('Base App User');
-        console.log('Wallet connected via Base App');
+      if (sdk) {
+        // In Farcaster Mini App context, wallet is automatically connected
+        const context = await sdk.context.get();
+        if (context && context.user) {
+          setIsConnected(true);
+          setUserAddress(context.user.fid?.toString() || 'Farcaster User');
+          console.log('Wallet connected via Farcaster Mini App');
+        } else {
+          alert('Please open this app in Farcaster to connect your wallet!');
+        }
       } else {
-        alert('Please open this app in Base App to connect your wallet!');
+        alert('Mini App SDK not ready. Please try again.');
       }
     } catch (error) {
       console.error('Connection error:', error);
@@ -49,11 +61,11 @@ export function WalletConnect() {
     }
   };
 
-  if (loading) {
+  if (loading || !isReady) {
     return (
       <div className="card text-center">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-white mx-auto mb-4"></div>
-        <p className="text-gray-400">Checking wallet connection...</p>
+        <p className="text-gray-400">Initializing Mini App...</p>
       </div>
     );
   }
@@ -68,7 +80,7 @@ export function WalletConnect() {
             Ready to make predictions and compete for prizes!
           </p>
           <p className="text-sm text-gray-500">
-            {userAddress}
+            User ID: {userAddress}
           </p>
         </div>
       </div>
@@ -81,7 +93,7 @@ export function WalletConnect() {
         <div className="text-4xl mb-2">🔗</div>
         <h3 className="text-xl font-bold mb-2">Connect Your Wallet</h3>
         <p className="text-gray-400 mb-4">
-          Open this app in Base App to automatically connect your wallet!
+          Open this app in Farcaster to automatically connect your wallet!
         </p>
       </div>
       
@@ -93,7 +105,7 @@ export function WalletConnect() {
       </button>
       
       <p className="text-xs text-gray-500 mt-3">
-        Powered by Farcaster & Base
+        Powered by Farcaster Mini Apps
       </p>
     </div>
   );

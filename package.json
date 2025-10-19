@@ -12,6 +12,7 @@
   },
   "dependencies": {
     "@farcaster/miniapp-sdk": "^0.2.1",
+    "@openzeppelin/contracts": "^5.4.0",
     "autoprefixer": "^10.4.0",
     "clsx": "^2.1.0",
     "lucide-react": "^0.400.0",
@@ -31,7 +32,7 @@
     "dotenv": "^16.4.0",
     "eslint": "^8.57.0",
     "eslint-config-next": "^14.2.0",
-    "hardhat": "^2.22.0",
+    "hardhat": "^2.26.3",
     "typescript": "^5.5.0"
   },
   "keywords": [

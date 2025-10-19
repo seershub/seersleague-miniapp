@@ -3,7 +3,6 @@
 import { useEffect, useState } from 'react';
 import { WalletConnect } from '@/components/WalletConnect';
 import { useMiniKit } from '@/components/MiniKitProvider';
-import { sdk } from '@farcaster/miniapp-sdk';
 
 interface Match {
   id: string;

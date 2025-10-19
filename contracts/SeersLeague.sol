@@ -3,8 +3,8 @@ pragma solidity ^0.8.20;
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
-import "@openzeppelin/contracts/security/Pausable.sol";
-import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
+import "@openzeppelin/contracts/utils/Pausable.sol";
+import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 
 /**
  * @title SeersLeague
@@ -69,7 +69,7 @@ contract SeersLeague is Ownable, Pausable, ReentrancyGuard {
     
     event TreasuryUpdated(address indexed newTreasury);
     
-    constructor(address _treasury) {
+    constructor(address _treasury) Ownable(msg.sender) {
         require(_treasury != address(0), "Invalid treasury");
         treasury = _treasury;
     }
