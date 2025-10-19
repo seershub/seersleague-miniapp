@@ -143,6 +143,18 @@ export function PredictionForm({ matches }: PredictionFormProps) {
       const predictionsToPayFor = Math.max(0, predictionCount - remainingFreePredictions);
       const totalFee = BigInt(predictionsToPayFor) * PREDICTION_FEE;
       
+      console.log('🔍 DEBUG: Fee calculation details:', {
+        predictionCount,
+        userStats: userStats ? {
+          freePredictionsUsed: userStats.freePredictionsUsed,
+          totalPredictions: userStats.totalPredictions
+        } : 'no stats',
+        remainingFreePredictions,
+        predictionsToPayFor,
+        totalFee: totalFee.toString(),
+        totalFeeAsNumber: Number(totalFee)
+      });
+      
       console.log('Submitting predictions to contract:', {
         matchIds,
         outcomes,
