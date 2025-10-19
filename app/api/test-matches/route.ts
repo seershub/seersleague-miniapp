@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 
 const SPORTS_DB_BASE = 'https://www.thesportsdb.com/api/v1/json';
-const API_KEY = process.env.SPORTS_DB_API_KEY || '3';
+const API_KEY = process.env.SPORTS_DB_API_KEY || '123'; // Correct free API key
 
 export async function GET() {
   try {
@@ -17,10 +17,20 @@ export async function GET() {
     const testUrl1 = `${SPORTS_DB_BASE}/${API_KEY}/eventsday.php?d=${dateStr}&l=4328`;
     console.log('Test URL 1:', testUrl1);
     const response1 = await fetch(testUrl1);
-    const data1 = await response1.json();
+    
+    let data1;
+    try {
+      const text1 = await response1.text();
+      console.log('Response 1 text:', text1.substring(0, 500));
+      data1 = JSON.parse(text1);
+    } catch (parseError) {
+      data1 = { error: 'JSON parse error', rawResponse: await response1.text() };
+    }
+    
     tests.push({
       test: 'Premier League (4328)',
       url: testUrl1,
+      status: response1.status,
       eventsCount: data1.events ? data1.events.length : 0,
       response: data1
     });
@@ -30,10 +40,20 @@ export async function GET() {
     const testUrl2 = `${SPORTS_DB_BASE}/${API_KEY}/eventsday.php?d=${dateStr2}&l=4328`;
     console.log('Test URL 2:', testUrl2);
     const response2 = await fetch(testUrl2);
-    const data2 = await response2.json();
+    
+    let data2;
+    try {
+      const text2 = await response2.text();
+      console.log('Response 2 text:', text2.substring(0, 500));
+      data2 = JSON.parse(text2);
+    } catch (parseError) {
+      data2 = { error: 'JSON parse error', rawResponse: await response2.text() };
+    }
+    
     tests.push({
       test: 'Premier League (DD-MM-YYYY)',
       url: testUrl2,
+      status: response2.status,
       eventsCount: data2.events ? data2.events.length : 0,
       response: data2
     });
@@ -42,10 +62,20 @@ export async function GET() {
     const testUrl3 = `${SPORTS_DB_BASE}/${API_KEY}/eventsday.php?d=${dateStr}&l=4335`;
     console.log('Test URL 3:', testUrl3);
     const response3 = await fetch(testUrl3);
-    const data3 = await response3.json();
+    
+    let data3;
+    try {
+      const text3 = await response3.text();
+      console.log('Response 3 text:', text3.substring(0, 500));
+      data3 = JSON.parse(text3);
+    } catch (parseError) {
+      data3 = { error: 'JSON parse error', rawResponse: await response3.text() };
+    }
+    
     tests.push({
       test: 'La Liga (4335)',
       url: testUrl3,
+      status: response3.status,
       eventsCount: data3.events ? data3.events.length : 0,
       response: data3
     });
@@ -54,12 +84,66 @@ export async function GET() {
     const testUrl4 = `${SPORTS_DB_BASE}/${API_KEY}/eventsupcoming.php?id=4328`;
     console.log('Test URL 4:', testUrl4);
     const response4 = await fetch(testUrl4);
-    const data4 = await response4.json();
+    
+    let data4;
+    try {
+      const text4 = await response4.text();
+      console.log('Response 4 text:', text4.substring(0, 500));
+      data4 = JSON.parse(text4);
+    } catch (parseError) {
+      data4 = { error: 'JSON parse error', rawResponse: await response4.text() };
+    }
+    
     tests.push({
       test: 'Premier League Upcoming',
       url: testUrl4,
+      status: response4.status,
       eventsCount: data4.events ? data4.events.length : 0,
       response: data4
+    });
+    
+    // Test 5: Try season events endpoint (from documentation)
+    const testUrl5 = `${SPORTS_DB_BASE}/${API_KEY}/eventsseason.php?id=4328&s=2024-2025`;
+    console.log('Test URL 5:', testUrl5);
+    const response5 = await fetch(testUrl5);
+    
+    let data5;
+    try {
+      const text5 = await response5.text();
+      console.log('Response 5 text:', text5.substring(0, 500));
+      data5 = JSON.parse(text5);
+    } catch (parseError) {
+      data5 = { error: 'JSON parse error', rawResponse: await response5.text() };
+    }
+    
+    tests.push({
+      test: 'Premier League Season 2024-2025',
+      url: testUrl5,
+      status: response5.status,
+      eventsCount: data5.events ? data5.events.length : 0,
+      response: data5
+    });
+    
+    // Test 6: Try next 10 events in league (from documentation)
+    const testUrl6 = `${SPORTS_DB_BASE}/${API_KEY}/eventsnextleague.php?id=4328`;
+    console.log('Test URL 6:', testUrl6);
+    const response6 = await fetch(testUrl6);
+    
+    let data6;
+    try {
+      const text6 = await response6.text();
+      console.log('Response 6 text:', text6.substring(0, 500));
+      data6 = JSON.parse(text6);
+    } catch (parseError) {
+      data6 = { error: 'JSON parse error', rawResponse: await response6.text() };
+    }
+    
+    tests.push({
+      test: 'Premier League Next Events',
+      url: testUrl6,
+      status: response6.status,
+      eventsCount: data6.events ? data6.events.length : 0,
+      response: data6
     });
     
     return NextResponse.json({

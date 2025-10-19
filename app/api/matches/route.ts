@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 
 const SPORTS_DB_BASE = 'https://www.thesportsdb.com/api/v1/json';
-const API_KEY = process.env.SPORTS_DB_API_KEY || '3';
+const API_KEY = process.env.SPORTS_DB_API_KEY || '123'; // Correct free API key
 
 const LEAGUE_IDS = {
   PREMIER_LEAGUE: '4328',
@@ -137,20 +137,54 @@ export async function GET() {
     if (featured.length === 0) {
       console.log('No matches found, trying alternative approach...');
       
-      // Try to get upcoming matches from Premier League
+      // Try to get upcoming matches using better endpoints
       try {
-        const upcomingUrl = `${SPORTS_DB_BASE}/${API_KEY}/eventsseason.php?id=4328&s=2024-2025`;
-        console.log('Fetching upcoming matches:', upcomingUrl);
+        // First try: Next events in Premier League
+        const nextEventsUrl = `${SPORTS_DB_BASE}/${API_KEY}/eventsnextleague.php?id=4328`;
+        console.log('Fetching next events:', nextEventsUrl);
         
-        const response = await fetch(upcomingUrl, {
+        const response1 = await fetch(nextEventsUrl, {
           next: { revalidate: 3600 }
         });
         
-        if (response.ok) {
-          const data = await response.json();
+        if (response1.ok) {
+          const data1 = await response1.json();
           
-          if (data.events && Array.isArray(data.events)) {
-            const upcomingMatches = data.events
+          if (data1.events && Array.isArray(data1.events)) {
+            const upcomingMatches = data1.events
+              .slice(0, 5) // Take first 5
+              .map((event: any) => ({
+                id: event.idEvent,
+                homeTeam: event.strHomeTeam,
+                awayTeam: event.strAwayTeam,
+                league: event.strLeague,
+                kickoff: event.dateEvent + 'T' + (event.strTime || '15:00:00'),
+                venue: event.strVenue || 'TBA',
+                homeTeamBadge: event.strHomeTeamBadge || '/default-badge.png',
+                awayTeamBadge: event.strAwayTeamBadge || '/default-badge.png',
+                status: event.strStatus,
+              }));
+            
+            if (upcomingMatches.length > 0) {
+              console.log('Found next events:', upcomingMatches.length);
+              return NextResponse.json(upcomingMatches);
+            }
+          }
+        }
+        
+        // Second try: Season events
+        const seasonUrl = `${SPORTS_DB_BASE}/${API_KEY}/eventsseason.php?id=4328&s=2024-2025`;
+        console.log('Fetching season events:', seasonUrl);
+        
+        const response2 = await fetch(seasonUrl, {
+          next: { revalidate: 3600 }
+        });
+        
+        if (response2.ok) {
+          const data2 = await response2.json();
+          
+          if (data2.events && Array.isArray(data2.events)) {
+            const upcomingMatches = data2.events
               .filter((event: any) => {
                 const eventDate = new Date(event.dateEvent);
                 const today = new Date();
@@ -177,7 +211,7 @@ export async function GET() {
               }));
             
             if (upcomingMatches.length > 0) {
-              console.log('Found upcoming matches:', upcomingMatches.length);
+              console.log('Found season matches:', upcomingMatches.length);
               return NextResponse.json(upcomingMatches);
             }
           }
