@@ -57,7 +57,7 @@ export default function Home() {
         setLoading(true);
         console.log('Fetching matches...');
         
-        const response = await fetch('/api/matches');
+        const response = await fetch(`/api/matches?t=${Date.now()}`);
         
         if (!response.ok) {
           throw new Error(`HTTP error! status: ${response.status}`);

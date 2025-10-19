@@ -33,7 +33,13 @@ interface Match {
   status: string;
 }
 
-export async function GET() {
+export async function GET(request: Request) {
+  // Force no cache
+  const headers = new Headers();
+  headers.set('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+  headers.set('Pragma', 'no-cache');
+  headers.set('Expires', '0');
+  
   try {
     const today = new Date();
     const dateStr = today.toISOString().split('T')[0];
@@ -90,8 +96,8 @@ export async function GET() {
                 league: event.strLeague,
                 kickoff: event.dateEvent + 'T' + (event.strTime || '15:00:00'),
                 venue: event.strVenue || 'TBA',
-                homeTeamBadge: event.strHomeTeamBadge || '/default-badge.png',
-                awayTeamBadge: event.strAwayTeamBadge || '/default-badge.png',
+                homeTeamBadge: event.strHomeTeamBadge || '/default-badge.svg',
+                awayTeamBadge: event.strAwayTeamBadge || '/default-badge.svg',
                 status: event.strStatus,
               }));
             
@@ -134,8 +140,8 @@ export async function GET() {
           league: 'Premier League',
           kickoff: new Date(Date.now() + 3600000).toISOString(),
           venue: 'Anfield',
-          homeTeamBadge: '/default-badge.png',
-          awayTeamBadge: '/default-badge.png',
+          homeTeamBadge: '/default-badge.svg',
+          awayTeamBadge: '/default-badge.svg',
           status: 'Not Started',
         },
         {
@@ -145,8 +151,8 @@ export async function GET() {
           league: 'La Liga',
           kickoff: new Date(Date.now() + 7200000).toISOString(),
           venue: 'Santiago Bernabéu',
-          homeTeamBadge: '/default-badge.png',
-          awayTeamBadge: '/default-badge.png',
+          homeTeamBadge: '/default-badge.svg',
+          awayTeamBadge: '/default-badge.svg',
           status: 'Not Started',
         },
         {
@@ -156,8 +162,8 @@ export async function GET() {
           league: 'Bundesliga',
           kickoff: new Date(Date.now() + 10800000).toISOString(),
           venue: 'Allianz Arena',
-          homeTeamBadge: '/default-badge.png',
-          awayTeamBadge: '/default-badge.png',
+          homeTeamBadge: '/default-badge.svg',
+          awayTeamBadge: '/default-badge.svg',
           status: 'Not Started',
         },
         {
@@ -167,8 +173,8 @@ export async function GET() {
           league: 'Serie A',
           kickoff: new Date(Date.now() + 14400000).toISOString(),
           venue: 'San Siro',
-          homeTeamBadge: '/default-badge.png',
-          awayTeamBadge: '/default-badge.png',
+          homeTeamBadge: '/default-badge.svg',
+          awayTeamBadge: '/default-badge.svg',
           status: 'Not Started',
         },
         {
@@ -178,8 +184,8 @@ export async function GET() {
           league: 'Ligue 1',
           kickoff: new Date(Date.now() + 18000000).toISOString(),
           venue: 'Parc des Princes',
-          homeTeamBadge: '/default-badge.png',
-          awayTeamBadge: '/default-badge.png',
+          homeTeamBadge: '/default-badge.svg',
+          awayTeamBadge: '/default-badge.svg',
           status: 'Not Started',
         },
       ]);
@@ -189,13 +195,13 @@ export async function GET() {
     console.log('Featured matches count:', featured.length);
     console.log('Featured matches:', JSON.stringify(featured, null, 2));
     
-    return NextResponse.json(featured);
+    return NextResponse.json(featured, { headers });
     
   } catch (error) {
     console.error('Error in matches API:', error);
     return NextResponse.json(
       { error: 'Failed to fetch matches' },
-      { status: 500 }
+      { status: 500, headers }
     );
   }
 }
