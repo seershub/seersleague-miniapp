@@ -13,23 +13,10 @@ export function WalletConnect() {
     const checkConnection = async () => {
       try {
         if (isReady && sdk) {
-          // Check if we're in Farcaster Mini App context
-          try {
-            const context = await sdk.context.get();
-            if (context && context.user) {
-              setIsConnected(true);
-              setUserAddress(context.user.fid?.toString() || 'Farcaster User');
-              console.log('Wallet connected via Farcaster Mini App');
-            } else {
-              setIsConnected(false);
-              setUserAddress(null);
-            }
-          } catch (sdkError) {
-            // SDK not available, fallback to basic connection
-            setIsConnected(true);
-            setUserAddress('Farcaster User');
-            console.log('Fallback wallet connection');
-          }
+          // For now, assume we're in Farcaster context if SDK is ready
+          setIsConnected(true);
+          setUserAddress('Farcaster User');
+          console.log('Wallet connected via Farcaster Mini App');
         } else {
           setIsConnected(false);
           setUserAddress(null);
@@ -51,21 +38,9 @@ export function WalletConnect() {
     try {
       if (sdk) {
         // In Farcaster Mini App context, wallet is automatically connected
-        try {
-          const context = await sdk.context.get();
-          if (context && context.user) {
-            setIsConnected(true);
-            setUserAddress(context.user.fid?.toString() || 'Farcaster User');
-            console.log('Wallet connected via Farcaster Mini App');
-          } else {
-            alert('Please open this app in Farcaster to connect your wallet!');
-          }
-        } catch (sdkError) {
-          // Fallback connection
-          setIsConnected(true);
-          setUserAddress('Farcaster User');
-          console.log('Fallback wallet connection');
-        }
+        setIsConnected(true);
+        setUserAddress('Farcaster User');
+        console.log('Wallet connected via Farcaster Mini App');
       } else {
         alert('Mini App SDK not ready. Please try again.');
       }
