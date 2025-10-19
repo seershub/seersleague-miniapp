@@ -1,7 +1,7 @@
 {
-  "contractAddress": "0x52F1819966A2F1F05baF86a5C5fcB58CDfe11Ec6",
+  "contractAddress": "0x5FbDB2315678afecb367f032d93F642f64180aa3",
   "treasuryAddress": "0x2cab9667c6e3ab9549c128c9f50f5103c627a575",
-  "deploymentTx": "0x7b1877203fc7d68c43645807253742f934c40a781e4be0fe03f55e1a58b53044",
-  "deployedAt": "2025-10-18T23:36:23.678Z",
+  "deploymentTx": "0xb004125c3af773e2b18ab951f24cd203f028d5427964061312e11f08b6fcef00",
+  "deployedAt": "2025-10-19T11:59:40.836Z",
   "network": "base-mainnet"
 }
