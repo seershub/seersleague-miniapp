@@ -219,7 +219,7 @@ export function PredictionForm({ matches }: PredictionFormProps) {
       
       if (receipt) {
         // Check transaction status
-        if (receipt.status === '0x1' || receipt.status === '0x01') {
+        if (receipt.status && receipt.status !== '0x0') {
           // Success!
           toast.success(
             <div>

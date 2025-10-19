@@ -8,7 +8,7 @@ export async function GET() {
       signature: "pAp2aFOxDH9FSC+2WJmg/3i9ggjzmmnNJia1SLSuw5dgoKbHgZF7l8wf4x6SfPCPo5INcaW3l6Ninp+Bio1Nihs="
     },
     baseBuilder: {
-      allowedAddresses: [""] // Add your Base Account address here
+      allowedAddresses: ["0x2cab9667c6e3ab9549c128c9f50f5103c627a575"] // Add your Base Account address here
     },
     miniapp: {
       version: "1",
