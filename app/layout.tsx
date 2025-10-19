@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import './globals.css';
 import { MiniKitProvider } from '@/components/MiniKitProvider';
+import { Toaster } from 'react-hot-toast';
 
 export const metadata: Metadata = {
   title: 'SeersLeague - Daily Football Predictions',
@@ -35,6 +36,7 @@ export default function RootLayout({
       <body>
         <MiniKitProvider>
           {children}
+          <Toaster position="top-center" />
         </MiniKitProvider>
       </body>
     </html>
