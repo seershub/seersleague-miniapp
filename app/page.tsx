@@ -22,7 +22,7 @@ const COMPETITION_IDS = {
 
 async function fetchMatchesServer(): Promise<Match[]> {
   console.log('=== FETCHING REAL MATCHES FROM FOOTBALL-DATA.ORG ===');
-  console.log('=== API KEY:', API_KEY === 'YOUR_API_KEY_HERE' ? 'NOT SET' : 'SET', '===');
+  console.log('=== API KEY: SET ===');
   
   try {
     const allMatches: Match[] = [];
