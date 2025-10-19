@@ -5,14 +5,7 @@ import { WalletConnect } from '@/components/WalletConnect';
 import { PredictionForm } from '@/components/PredictionForm';
 import { useMiniKit } from '@/components/MiniKitProvider';
 import { sdk } from '@farcaster/miniapp-sdk';
-
-interface Match {
-  id: string;
-  homeTeam: string;
-  awayTeam: string;
-  league: string;
-  kickoff: string;
-}
+import { Match } from '@/lib/matches';
 
 export default function Home() {
   const [matches, setMatches] = useState<Match[]>([]);
