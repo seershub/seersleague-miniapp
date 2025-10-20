@@ -2,6 +2,9 @@ import { Match } from '@/lib/matches';
 import Home from './page-client';
 import { headers } from 'next/headers';
 
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+
 async function fetchMatchesServer(): Promise<Match[]> {
   try {
     const h = headers();

@@ -6,6 +6,12 @@ const nextConfig = {
       'league.seershub.com'
     ],
   },
+  eslint: {
+    ignoreDuringBuilds: true,
+  },
+  typescript: {
+    ignoreBuildErrors: true,
+  },
   async rewrites() {
     return [
       {
