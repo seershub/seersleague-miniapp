@@ -1,9 +1,15 @@
 import { NextResponse } from 'next/server';
 
 const FOOTBALL_DATA_BASE = 'https://api.football-data.org/v4';
-const API_KEY = 'ab4bf8eeaf614f969dfe8de37c58107d';
+const API_KEY = process.env.FOOTBALL_DATA_API_KEY || '';
+
+export const dynamic = 'force-dynamic';
+export const runtime = 'nodejs';
 
 export async function GET() {
+  if (process.env.ENABLE_API_TESTS !== 'true') {
+    return NextResponse.json({ success: false, disabled: true }, { status: 404 });
+  }
   console.log('=== TESTING FOOTBALL-DATA.ORG API ===');
   
   const results = [];
