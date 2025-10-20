@@ -10,5 +10,17 @@
         ]
       }
     ]
-  }
+  },
+  "functions": [
+    {
+      "codebase": "firebase-frameworks-seershub",
+      "runtime": "nodejs20",
+      "secrets": [
+        "REGISTER_SECRET",
+        "PRIVATE_KEY",
+        "TREASURY_ADDRESS",
+        "FOOTBALL_DATA_API_KEY"
+      ]
+    }
+  ]
 }

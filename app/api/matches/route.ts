@@ -10,7 +10,7 @@ export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
 
 const FOOTBALL_DATA_BASE = 'https://api.football-data.org/v4'
-const API_KEY = 'ab4bf8eeaf614f969dfe8de37c58107d'
+const API_KEY = process.env.FOOTBALL_DATA_API_KEY || ''
 const ENABLE_AUTO_REGISTRATION = process.env.ENABLE_AUTO_REGISTRATION === 'true'
 const RPC_URL = process.env.NEXT_PUBLIC_BASE_RPC || 'https://mainnet.base.org'
 
