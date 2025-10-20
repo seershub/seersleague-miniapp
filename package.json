@@ -3,6 +3,9 @@
   "version": "0.1.0",
   "description": "Daily prediction mini app on Farcaster & Base - 5 matches, on-chain competition",
   "private": true,
+  "engines": {
+    "node": "20"
+  },
   "scripts": {
     "dev": "next dev",
     "build": "next build",
