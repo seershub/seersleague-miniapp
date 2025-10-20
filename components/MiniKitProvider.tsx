@@ -21,6 +21,7 @@ export function MiniKitProvider({ children }: { children: ReactNode }) {
         console.log('MiniKitProvider: SDK initialized and ready.');
       } catch (error) {
         console.error('MiniKitProvider: SDK initialization failed:', error);
+        setIsReady(true);
       }
     };
 

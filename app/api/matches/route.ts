@@ -62,9 +62,9 @@ function mockFallbackMatches(todayIso: string): any[] {
   ]
 }
 
-async function ensureRegistered(matchIds: bigint[], startTimes: bigint[]) {
+async function ensureRegistered(matchIds: bigint[], startTimes: bigint[], allowWrite: boolean) {
   try {
-    if (!ENABLE_AUTO_REGISTRATION) return { registered: false, reason: 'auto-reg disabled' }
+    if (!ENABLE_AUTO_REGISTRATION || !allowWrite) return { registered: false, reason: 'auto-reg disabled' }
     const pk = process.env.PRIVATE_KEY
     if (!pk) return { registered: false, reason: 'no private key' }
     const account = privateKeyToAccount(pk as `0x${string}`)
@@ -104,13 +104,15 @@ async function filterUnregistered(ids: bigint[]) {
   }
 }
 
-export async function GET() {
+export async function GET(req: Request) {
   try {
     const all: any[] = []
     const today = new Date().toISOString().split('T')[0]
     // Only today’s matches will be considered
+    const secret = process.env.REGISTER_SECRET || ''
+    const allowWrite = !!secret && (req.headers.get('x-register-secret') === secret)
 
-    const fetchWithTimeout = async (url: string, headers: Record<string, string>, ms = 2200) => {
+    const fetchWithTimeout = async (url: string, headers: Record<string, string>, ms = 3000) => {
       const ctrl = new AbortController()
       const id = setTimeout(() => ctrl.abort(), ms)
       try {
@@ -150,12 +152,43 @@ export async function GET() {
 
     // No tomorrow fetch by design; keep strictly today
 
-    const featured = all
+    let featured = all
       .filter(m => (!m.status || m.status === 'Not Started') && (m.kickoff?.slice(0,10) === today))
       .sort((a, b) => new Date(a.kickoff).getTime() - new Date(b.kickoff).getTime())
       .slice(0, 5)
 
-    if (featured.length > 0) {
+    // If fewer than 5 from Football-Data, try to fill from SportsDB
+    let source = 'fd'
+    if (featured.length < 5) {
+      try {
+        const alt = await getTodayMatches()
+        const seen = new Set(featured.map(m => String(parseInt(m.id))))
+        const fill = alt
+          .filter(m => m.status === 'Not Started' && (m.kickoff?.slice(0,10) === today))
+          .filter(m => !seen.has(String(parseInt(m.id))))
+          .sort((a, b) => new Date(a.kickoff).getTime() - new Date(b.kickoff).getTime())
+        for (const m of fill) {
+          if (featured.length >= 5) break
+          featured.push(m)
+        }
+        if (fill.length > 0) source = 'mixed'
+      } catch {}
+    }
+
+    // If still fewer than 5, fill with mock
+    if (featured.length < 5) {
+      const mock = mockFallbackMatches(today)
+      const seen = new Set(featured.map(m => String(parseInt(m.id))))
+      for (const m of mock) {
+        if (featured.length >= 5) break
+        if (!seen.has(String(parseInt(m.id)))) featured.push(m)
+      }
+      source = featured.length > 0 && source !== 'mixed' ? 'sportsdb' : source
+      if (featured.length > 0) source = source === 'fd' ? 'fd' : (source === 'mixed' ? 'mixed' : 'mock')
+    }
+
+    // Optional auto-registration (heavily gated): only when explicitly allowed via secret header
+    if (featured.length > 0 && allowWrite) {
       const ids = featured.map(m => BigInt(parseInt(m.id)))
       const times = featured.map(m => BigInt(toUnixSeconds(m.kickoff)))
       const idsToReg = await filterUnregistered(ids)
@@ -169,60 +202,15 @@ export async function GET() {
             regTimes.push(times[idx])
           }
         })
-        if (regIds.length > 0) await ensureRegistered(regIds, regTimes)
+        if (regIds.length > 0) await ensureRegistered(regIds, regTimes, true)
       }
-      return NextResponse.json(featured, { headers: { 'x-matches-source': 'fd' } })
     }
 
-    // Fallback to TheSportsDB if Football-Data provided no upcoming matches (today)
-    try {
-      const alt = await getTodayMatches()
-      const altUpcoming = alt
-        .filter(m => m.status === 'Not Started' && (m.kickoff?.slice(0,10) === today))
-        .sort((a, b) => new Date(a.kickoff).getTime() - new Date(b.kickoff).getTime())
-        .slice(0, 5)
+    // Always return exactly 5 (or fewer if even mock failed)
+    return NextResponse.json(featured.slice(0, 5), { headers: { 'x-matches-source': source } })
 
-      if (altUpcoming.length > 0) {
-        const ids = altUpcoming.map(m => BigInt(parseInt(m.id)))
-        const times = altUpcoming.map(m => BigInt(toUnixSeconds(m.kickoff)))
-        const idsToReg = await filterUnregistered(ids)
-        if (idsToReg.length > 0) {
-          const set = new Set(idsToReg.map(String))
-          const regIds: bigint[] = []
-          const regTimes: bigint[] = []
-          ids.forEach((id, idx) => {
-            if (set.has(String(id))) {
-              regIds.push(id)
-              regTimes.push(times[idx])
-            }
-          })
-          if (regIds.length > 0) await ensureRegistered(regIds, regTimes)
-        }
-        return NextResponse.json(altUpcoming, { headers: { 'x-matches-source': 'sportsdb' } })
-      }
-    } catch (e) {
-      console.error('Fallback matches fetch failed:', e)
-    }
-
-    // Final fallback: static mock to avoid empty UI and keep flow testable
+    // Final fallback (should rarely hit): static mock
     const mock = mockFallbackMatches(today)
-    try {
-      const ids = mock.map(m => BigInt(parseInt(m.id)))
-      const times = mock.map(m => BigInt(toUnixSeconds(m.kickoff)))
-      const idsToReg = await filterUnregistered(ids)
-      if (idsToReg.length > 0) {
-        const set = new Set(idsToReg.map(String))
-        const regIds: bigint[] = []
-        const regTimes: bigint[] = []
-        ids.forEach((id, idx) => {
-          if (set.has(String(id))) {
-            regIds.push(id)
-            regTimes.push(times[idx])
-          }
-        })
-        if (regIds.length > 0) await ensureRegistered(regIds, regTimes)
-      }
-    } catch {}
     return NextResponse.json(mock, { headers: { 'x-matches-source': 'mock' } })
   } catch (e) {
     return NextResponse.json({ error: (e as Error).message }, { status: 500 })
