@@ -88,7 +88,7 @@ export default function Home({ initialMatches = [] }: HomeProps) {
     fetchMatches();
 
     // Listen to immediate refresh events (e.g., after prediction submit)
-    const onRefresh = () => fetchMatches();
+    const onRefresh = () => { fetchMatches(); setTimeout(fetchMatches, 1500); };
     if (typeof window !== 'undefined') {
       window.addEventListener('seers:refresh-matches', onRefresh);
     }

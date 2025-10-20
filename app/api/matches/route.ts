@@ -168,7 +168,7 @@ export async function GET(req: Request) {
         const alt = await getTodayMatches()
         const seen = new Set(featured.map(m => String(parseInt(m.id))))
         const fill = alt
-          .filter(m => m.status === 'Not Started')
+          .filter(m => m.status === 'Not Started' && (m.kickoff?.slice(0,10) === today))
           .filter(m => !seen.has(String(parseInt(m.id))))
           .sort((a, b) => new Date(a.kickoff).getTime() - new Date(b.kickoff).getTime())
         for (const m of fill) {
