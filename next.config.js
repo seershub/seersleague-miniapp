@@ -6,6 +6,14 @@ const nextConfig = {
       'league.seershub.com'
     ],
   },
+  async rewrites() {
+    return [
+      {
+        source: '/manifest.json',
+        destination: '/manifest.webmanifest',
+      },
+    ];
+  },
   async headers() {
     return [
       {

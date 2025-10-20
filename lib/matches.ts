@@ -2,16 +2,22 @@
 const SPORTS_DB_BASE = 'https://www.thesportsdb.com/api/v1/json';
 const API_KEY = process.env.SPORTS_DB_API_KEY || '3'; // Free tier key
 
-// League IDs for top football leagues
-const LEAGUE_IDS = {
-  PREMIER_LEAGUE: '4328',
-  LA_LIGA: '4335',
-  BUNDESLIGA: '4331',
-  SERIE_A: '4332',
-  LIGUE_1: '4334',
-  CHAMPIONS_LEAGUE: '4331',
-  EUROPA_LEAGUE: '4332',
-} as const;
+// Preferred leagues for display (TheSportsDB uses these names)
+const ALLOWED_LEAGUES = new Set<string>([
+  'English Premier League',
+  'Spanish La Liga',
+  'German Bundesliga',
+  'Italian Serie A',
+  'French Ligue 1',
+  'Turkish Super Lig',
+  'UEFA Champions League',
+  'UEFA Europa League',
+  'Dutch Eredivisie',
+  'Portuguese Primeira Liga',
+  'Belgian First Division A',
+  'Scottish Premiership',
+  'Major League Soccer',
+]);
 
 export interface Match {
   id: string;
@@ -67,65 +73,54 @@ export const sportsDbLimiter = new RateLimiter();
 export async function getTodayMatches(): Promise<Match[]> {
   try {
     await sportsDbLimiter.checkLimit();
-    
     const today = new Date();
     const dateStr = today.toISOString().split('T')[0]; // YYYY-MM-DD
-    
-    const allMatches: Match[] = [];
-    
-    // Fetch from each league
-    for (const leagueId of Object.values(LEAGUE_IDS)) {
-      try {
-        await sportsDbLimiter.checkLimit();
-        
-        const response = await fetch(
-          `${SPORTS_DB_BASE}/${API_KEY}/eventsday.php?d=${dateStr}&l=${leagueId}`,
-          { 
-            next: { revalidate: 3600 }, // Cache for 1 hour
-            headers: {
-              'User-Agent': 'SeersLeague/1.0'
-            }
-          }
-        );
-        
-        if (!response.ok) continue;
-        
-        const data = await response.json();
-        
-        if (data.events) {
-          const matches = data.events
-            .filter((event: any) => event.strStatus === 'Not Started')
-            .map((event: any) => ({
-              id: event.idEvent,
-              homeTeam: event.strHomeTeam,
-              awayTeam: event.strAwayTeam,
-              league: event.strLeague,
-              kickoff: event.dateEvent + 'T' + event.strTime,
-              venue: event.strVenue,
-              homeTeamBadge: event.strHomeTeamBadge || '/default-badge.png',
-              awayTeamBadge: event.strAwayTeamBadge || '/default-badge.png',
-              status: event.strStatus,
-              homeScore: parseInt(event.intHomeScore || '0'),
-              awayScore: parseInt(event.intAwayScore || '0'),
-            }));
-          
-          allMatches.push(...matches);
-        }
-      } catch (error) {
-        console.error(`Error fetching from league ${leagueId}:`, error);
-        continue;
+
+    // Fetch all Soccer events for the day (more reliable than league param)
+    const response = await fetch(
+      `${SPORTS_DB_BASE}/${API_KEY}/eventsday.php?d=${dateStr}&s=Soccer`,
+      {
+        next: { revalidate: 600 }, // cache 10 mins
+        headers: { 'User-Agent': 'SeersLeague/1.0' },
+      }
+    );
+    if (!response.ok) {
+      throw new Error(`SportsDB HTTP ${response.status}`);
+    }
+    const data = await response.json();
+    const events = Array.isArray(data?.events) ? data.events : [];
+
+    const normalize = (event: any): Match => ({
+      id: event.idEvent,
+      homeTeam: event.strHomeTeam,
+      awayTeam: event.strAwayTeam,
+      league: event.strLeague,
+      kickoff: `${event.dateEvent}T${event.strTime}`,
+      venue: event.strVenue || 'TBA',
+      homeTeamBadge: event.strHomeTeamBadge || '/default-badge.svg',
+      awayTeamBadge: event.strAwayTeamBadge || '/default-badge.svg',
+      status: event.strStatus as any,
+      homeScore: parseInt(event.intHomeScore || '0'),
+      awayScore: parseInt(event.intAwayScore || '0'),
+    });
+
+    // Preferred leagues first
+    const notStarted = events.filter((e: any) => e?.strStatus === 'Not Started').map(normalize);
+    const preferred = notStarted.filter((m: Match) => ALLOWED_LEAGUES.has(m.league));
+    const others = notStarted.filter((m: Match) => !ALLOWED_LEAGUES.has(m.league));
+
+    const featured: Match[] = [];
+    for (const m of preferred.sort((a: Match, b: Match) => new Date(a.kickoff).getTime() - new Date(b.kickoff).getTime())) {
+      if (featured.length >= 5) break;
+      featured.push(m);
+    }
+    if (featured.length < 5) {
+      for (const m of others.sort((a: Match, b: Match) => new Date(a.kickoff).getTime() - new Date(b.kickoff).getTime())) {
+        if (featured.length >= 5) break;
+        featured.push(m);
       }
     }
-    
-    // Sort by kickoff time and take first 5
-    const featured = allMatches
-      .sort((a, b) => 
-        new Date(a.kickoff).getTime() - new Date(b.kickoff).getTime()
-      )
-      .slice(0, 5);
-    
     return featured;
-    
   } catch (error) {
     console.error('Error fetching matches:', error);
     throw new Error('Failed to fetch matches');
@@ -213,57 +208,35 @@ export async function verifyAndRecordResults(
  */
 export async function getUpcomingMatches(days: number = 3): Promise<Match[]> {
   try {
-    const allMatches: Match[] = [];
-    
+    const out: Match[] = [];
     for (let i = 0; i < days; i++) {
       const date = new Date();
       date.setDate(date.getDate() + i);
       const dateStr = date.toISOString().split('T')[0];
-      
-      for (const leagueId of Object.values(LEAGUE_IDS)) {
-        try {
-          await sportsDbLimiter.checkLimit();
-          
-          const response = await fetch(
-            `${SPORTS_DB_BASE}/${API_KEY}/eventsday.php?d=${dateStr}&l=${leagueId}`,
-            { 
-              next: { revalidate: 3600 },
-              headers: {
-                'User-Agent': 'SeersLeague/1.0'
-              }
-            }
-          );
-          
-          if (!response.ok) continue;
-          
-          const data = await response.json();
-          
-          if (data.events) {
-            const matches = data.events
-              .filter((event: any) => event.strStatus === 'Not Started')
-              .map((event: any) => ({
-                id: event.idEvent,
-                homeTeam: event.strHomeTeam,
-                awayTeam: event.strAwayTeam,
-                league: event.strLeague,
-                kickoff: event.dateEvent + 'T' + event.strTime,
-                venue: event.strVenue,
-                homeTeamBadge: event.strHomeTeamBadge || '/default-badge.png',
-                awayTeamBadge: event.strAwayTeamBadge || '/default-badge.png',
-                status: event.strStatus,
-              }));
-            
-            allMatches.push(...matches);
-          }
-        } catch (error) {
-          console.error(`Error fetching from league ${leagueId}:`, error);
-          continue;
-        }
+      await sportsDbLimiter.checkLimit();
+      const response = await fetch(
+        `${SPORTS_DB_BASE}/${API_KEY}/eventsday.php?d=${dateStr}&s=Soccer`,
+        { next: { revalidate: 600 }, headers: { 'User-Agent': 'SeersLeague/1.0' } }
+      );
+      if (!response.ok) continue;
+      const data = await response.json();
+      const events = Array.isArray(data?.events) ? data.events : [];
+      for (const event of events) {
+        if (event?.strStatus !== 'Not Started') continue;
+        out.push({
+          id: event.idEvent,
+          homeTeam: event.strHomeTeam,
+          awayTeam: event.strAwayTeam,
+          league: event.strLeague,
+          kickoff: `${event.dateEvent}T${event.strTime}`,
+          venue: event.strVenue || 'TBA',
+          homeTeamBadge: event.strHomeTeamBadge || '/default-badge.svg',
+          awayTeamBadge: event.strAwayTeamBadge || '/default-badge.svg',
+          status: 'Not Started',
+        });
       }
     }
-    
-    return allMatches;
-    
+    return out;
   } catch (error) {
     console.error('Error fetching upcoming matches:', error);
     throw new Error('Failed to fetch upcoming matches');

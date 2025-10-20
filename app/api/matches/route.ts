@@ -10,7 +10,7 @@ export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
 
 const FOOTBALL_DATA_BASE = 'https://api.football-data.org/v4'
-const API_KEY = 'ab4bf8eeaf614f969dfe8de37c58107d'
+const API_KEY = process.env.FOOTBALL_DATA_API_KEY || ''
 const ENABLE_AUTO_REGISTRATION = process.env.ENABLE_AUTO_REGISTRATION === 'true'
 const RPC_URL = process.env.NEXT_PUBLIC_BASE_RPC || 'https://mainnet.base.org'
 
@@ -141,12 +141,14 @@ export async function GET(req: Request) {
       }))
     }
 
-    // Parallel fetch for today only (no tomorrow)
-    const todayUrls = priorityCompetitions.map(c => `${FOOTBALL_DATA_BASE}/competitions/${c.id}/matches?dateFrom=${today}&dateTo=${today}`)
-    const todayRes = await Promise.allSettled(todayUrls.map(u => fetchWithTimeout(u, { 'X-Auth-Token': API_KEY })))
-    for (const r of todayRes) {
-      if (r.status === 'fulfilled' && r.value) {
-        all.push(...mapMatches(r.value))
+    // Parallel fetch for today only (no tomorrow), only if API key provided
+    if (API_KEY) {
+      const todayUrls = priorityCompetitions.map(c => `${FOOTBALL_DATA_BASE}/competitions/${c.id}/matches?dateFrom=${today}&dateTo=${today}`)
+      const todayRes = await Promise.allSettled(todayUrls.map(u => fetchWithTimeout(u, { 'X-Auth-Token': API_KEY })))
+      for (const r of todayRes) {
+        if (r.status === 'fulfilled' && r.value) {
+          all.push(...mapMatches(r.value))
+        }
       }
     }
 
@@ -158,20 +160,22 @@ export async function GET(req: Request) {
       .slice(0, 5)
 
     // If fewer than 5 from Football-Data, try to fill from SportsDB
-    let source = 'fd'
+    let usedFD = featured.length > 0
+    let usedSportsDB = false
+    let usedMock = false
     if (featured.length < 5) {
       try {
         const alt = await getTodayMatches()
         const seen = new Set(featured.map(m => String(parseInt(m.id))))
         const fill = alt
-          .filter(m => m.status === 'Not Started' && (m.kickoff?.slice(0,10) === today))
+          .filter(m => m.status === 'Not Started')
           .filter(m => !seen.has(String(parseInt(m.id))))
           .sort((a, b) => new Date(a.kickoff).getTime() - new Date(b.kickoff).getTime())
         for (const m of fill) {
           if (featured.length >= 5) break
           featured.push(m)
         }
-        if (fill.length > 0) source = 'mixed'
+        if (fill.length > 0) usedSportsDB = true
       } catch {}
     }
 
@@ -183,8 +187,7 @@ export async function GET(req: Request) {
         if (featured.length >= 5) break
         if (!seen.has(String(parseInt(m.id)))) featured.push(m)
       }
-      source = featured.length > 0 && source !== 'mixed' ? 'sportsdb' : source
-      if (featured.length > 0) source = source === 'fd' ? 'fd' : (source === 'mixed' ? 'mixed' : 'mock')
+      usedMock = featured.length > 0
     }
 
     // Optional auto-registration (heavily gated): only when explicitly allowed via secret header
@@ -207,7 +210,12 @@ export async function GET(req: Request) {
     }
 
     // Always return exactly 5 (or fewer if even mock failed)
-    return NextResponse.json(featured.slice(0, 5), { headers: { 'x-matches-source': source } })
+    const parts = [] as string[]
+    if (usedFD) parts.push('fd')
+    if (usedSportsDB) parts.push('sportsdb')
+    if (usedMock && !usedFD && !usedSportsDB) parts.push('mock')
+    const sourceHeader = parts.join('+') || 'mock'
+    return NextResponse.json(featured.slice(0, 5), { headers: { 'x-matches-source': sourceHeader } })
 
     // Final fallback (should rarely hit): static mock
     const mock = mockFallbackMatches(today)
