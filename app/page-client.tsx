@@ -93,65 +93,88 @@ export default function Home({ initialMatches = [] }: HomeProps) {
   }, []);
   
   return (
-    <main className="min-h-screen bg-gradient-to-b from-black to-blue-900 text-white p-4">
-      <div className="container mx-auto max-w-2xl">
+    <div className="min-h-screen bg-dark-500">
+      {/* Hero Section */}
+      <section className="pt-8 pb-6 text-center">
+        <div className="inline-flex items-center gap-2 px-4 py-2 bg-gradient-gold rounded-full text-black text-sm font-semibold mb-4 animate-fade-in">
+          <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>
+          First Day FREE • $1 USDC After
+        </div>
         
-        {/* Header */}
-        <header className="mb-8 text-center">
-          <h1 className="text-4xl font-bold mb-2">⚽ SeersLeague</h1>
-          <p className="text-gray-300">Daily Football Predictions on Base</p>
-          {chainId && chainId !== '0x2105' && (
-            <div className="mt-4 p-3 bg-yellow-900 border border-yellow-600 rounded-lg">
-              <p className="text-yellow-200 text-sm">
-                ⚠️ Not on Base Mainnet! Current chain: {chainId} (Expected: 0x2105)
-              </p>
-            </div>
-          )}
-        </header>
+        <h1 className="text-3xl font-bold mb-2 animate-slide-up">
+          Daily Football Predictions
+        </h1>
+        
+        <p className="text-gray-400 text-lg animate-slide-up">
+          Compete on accuracy. Build reputation. Win prizes.
+        </p>
+      </section>
 
-        {/* Wallet Status */}
-        <div className="mb-6 p-4 bg-blue-900/30 rounded-lg">
-          <div className="text-center">
-            <p className="text-sm text-gray-400 mb-2">Mini App Mode</p>
-            <WalletConnect />
+      {/* Wallet Status - COMPACT VERSION */}
+      <section className="mb-8">
+        <WalletConnect />
+      </section>
+
+      {/* Today's Matches */}
+      <section className="mb-8">
+        <div className="flex items-center justify-between mb-6">
+          <div>
+            <h2 className="text-xl font-bold">Today's Matches</h2>
+            <p className="text-gray-400 text-sm">Select your predictions</p>
+          </div>
+          <div className="flex items-center gap-2 text-sm text-gray-400">
+            <span className="w-2 h-2 bg-primary-500 rounded-full"></span>
+            {matches.length}
           </div>
         </div>
 
-        {/* Matches Section */}
-        <section>
-          <h2 className="text-2xl font-bold mb-4">Today's Matches</h2>
-          
-          {loading && (
-            <p className="text-center text-gray-400">Loading matches...</p>
-          )}
-          
-          {error && (
-            <div className="bg-red-900/30 border border-red-500 rounded p-4 mb-4">
-              <p className="text-red-400">Error: {error}</p>
-              <p className="text-sm text-gray-400 mt-2">
-                Check console for details
-              </p>
-            </div>
-          )}
-          
-          {!loading && !error && matches.length === 0 && (
-            <p className="text-center text-gray-400">No matches found</p>
-          )}
-          
-          {!loading && matches.length > 0 && (
-            <PredictionForm matches={matches} />
-          )}
-        </section>
+        {/* KEEP existing loading/error/matches logic */}
+        {loading ? (
+          <div className="space-y-4">
+            {[1, 2, 3, 4, 5].map((i) => (
+              <div key={i} className="bg-surface rounded-xl p-6 animate-pulse">
+                <div className="h-4 bg-surface-light rounded mb-4"></div>
+                <div className="h-8 bg-surface-light rounded mb-4"></div>
+                <div className="flex gap-2">
+                  <div className="h-10 bg-surface-light rounded flex-1"></div>
+                  <div className="h-10 bg-surface-light rounded flex-1"></div>
+                  <div className="h-10 bg-surface-light rounded flex-1"></div>
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="space-y-4">
+            {matches.map((match) => (
+              <PredictionForm key={match.id} matches={[match]} />
+            ))}
+          </div>
+        )}
 
-        {/* Debug Info */}
-        <div className="mt-8 p-4 bg-gray-900 rounded text-xs">
-          <p className="text-gray-400 mb-1">Debug Info:</p>
-          <p>Matches: {matches.length}</p>
-          <p>Loading: {loading ? 'Yes' : 'No'}</p>
-          <p>Error: {error || 'None'}</p>
+        {error && (
+          <div className="bg-red-900/20 border border-red-500/30 rounded-xl p-4 mb-4">
+            <p className="text-red-400 text-sm">Error: {error}</p>
+            <p className="text-xs text-gray-400 mt-1">
+              Check console for details
+            </p>
+          </div>
+        )}
+        
+        {!loading && !error && matches.length === 0 && (
+          <div className="text-center py-12">
+            <p className="text-gray-400">No matches found</p>
+          </div>
+        )}
+      </section>
+
+      {/* Chain Warning */}
+      {chainId && chainId !== '0x2105' && (
+        <div className="mb-6 p-4 bg-yellow-900/20 border border-yellow-500/30 rounded-xl">
+          <p className="text-yellow-200 text-sm">
+            ⚠️ Not on Base Mainnet! Current chain: {chainId} (Expected: 0x2105)
+          </p>
         </div>
-
-      </div>
-    </main>
+      )}
+    </div>
   );
 }

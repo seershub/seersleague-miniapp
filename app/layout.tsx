@@ -36,35 +36,41 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body className="bg-dark text-white">
+      <body className="bg-dark-500 text-white min-h-screen">
         <MiniKitProvider>
-          {/* Header with logo */}
-          <header className="sticky top-0 z-40 bg-[#0b0b0c]/80 backdrop-blur border-b border-gray-800">
-            <div className="max-w-screen-sm mx-auto px-4 py-3 flex items-center gap-3">
-              <Image src="/logomuz.png" alt="SeersLeague" width={120} height={32} priority />
-              <div className="ml-auto text-sm text-gray-400">Daily Football Predictions</div>
+          {/* Clean Centered Header */}
+          <header className="sticky top-0 z-40 bg-gradient-dark backdrop-blur-md border-b border-surface-light/20">
+            <div className="max-w-screen-sm mx-auto px-6 py-4 flex items-center justify-center">
+              <Image 
+                src="/logomuz.png" 
+                alt="SeersLeague" 
+                width={140} 
+                height={36} 
+                priority 
+                className="animate-fade-in"
+              />
             </div>
           </header>
 
-          {/* Page content */}
-          <main className="max-w-screen-sm mx-auto w-full px-4 pb-20">
+          {/* Main Content */}
+          <main className="max-w-screen-sm mx-auto w-full px-6 pb-24">
             {children}
           </main>
 
-          {/* Fixed Footer Navigation */}
-          <footer className="fixed bottom-0 left-0 right-0 bg-[#0b0b0c]/95 border-t border-gray-800">
-            <nav className="max-w-screen-sm mx-auto px-6 py-2 flex items-center justify-between">
-              <Link href="/" className="flex flex-col items-center gap-1 text-gray-300 hover:text-primary transition-colors">
-                <Home className="w-5 h-5" />
-                <span className="text-xs">Home</span>
+          {/* Bottom Navigation */}
+          <footer className="fixed bottom-0 left-0 right-0 bg-surface/95 backdrop-blur-md border-t border-surface-light/20">
+            <nav className="max-w-screen-sm mx-auto px-6 py-3 flex items-center justify-around">
+              <Link href="/" className="flex flex-col items-center gap-1.5 text-gray-400 hover:text-primary-500 transition-all duration-200 group">
+                <Home className="w-5 h-5 group-hover:scale-110 transition-transform" />
+                <span className="text-xs font-medium">Home</span>
               </Link>
-              <Link href="/leaderboard" className="flex flex-col items-center gap-1 text-gray-300 hover:text-primary transition-colors">
-                <Trophy className="w-5 h-5" />
-                <span className="text-xs">Leaderboard</span>
+              <Link href="/leaderboard" className="flex flex-col items-center gap-1.5 text-gray-400 hover:text-primary-500 transition-all duration-200 group">
+                <Trophy className="w-5 h-5 group-hover:scale-110 transition-transform" />
+                <span className="text-xs font-medium">Leaderboard</span>
               </Link>
-              <Link href="/profile" className="flex flex-col items-center gap-1 text-gray-300 hover:text-primary transition-colors">
-                <User className="w-5 h-5" />
-                <span className="text-xs">Profile</span>
+              <Link href="/profile" className="flex flex-col items-center gap-1.5 text-gray-400 hover:text-primary-500 transition-all duration-200 group">
+                <User className="w-5 h-5 group-hover:scale-110 transition-transform" />
+                <span className="text-xs font-medium">Profile</span>
               </Link>
             </nav>
           </footer>
