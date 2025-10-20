@@ -15,7 +15,9 @@ module.exports = {
         farcaster: {
           purple: '#8B5CF6',
           'purple-dark': '#7C3AED',
-        }
+        },
+        primary: '#F5C518',
+        dark: '#0B0B0C',
       },
       animation: {
         'fade-in': 'fadeIn 0.5s ease-in-out',
