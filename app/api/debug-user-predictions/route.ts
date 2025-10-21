@@ -50,8 +50,6 @@ export async function GET(request: Request) {
         let matchIds = [];
         if (event.args.matchIds && Array.isArray(event.args.matchIds)) {
           matchIds = event.args.matchIds;
-        } else if (event.args.matchId) {
-          matchIds = [event.args.matchId];
         }
         
         const predictionsCount = Number(event.args.predictionsCount || 0);
