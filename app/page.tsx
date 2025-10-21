@@ -4,87 +4,77 @@ import Home from './page-client';
 const FOOTBALL_DATA_BASE = 'https://api.football-data.org/v4';
 const API_KEY = 'ab4bf8eeaf614f969dfe8de37c58107d';
 
-async function enrichMatchesWithFootballData(matches: Match[]): Promise<Match[]> {
-  console.log(`🌐 Enriching ${matches.length} matches with Football-data.org...`);
-  
-  const enriched: Match[] = [];
-  
-  for (const match of matches) {
-    try {
-      // Try to find match in Football-data.org by team names
-      const response = await fetch(`${FOOTBALL_DATA_BASE}/matches?dateFrom=${new Date().toISOString().split('T')[0]}&dateTo=${new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]}`, {
-        headers: { 'X-Auth-Token': API_KEY },
-        next: { revalidate: 1800 }
-      });
-      
-      if (response.ok) {
-        const data = await response.json();
-        const foundMatch = data.matches?.find((m: any) => 
-          (m.homeTeam.name.toLowerCase().includes(match.homeTeam.toLowerCase()) ||
-           match.homeTeam.toLowerCase().includes(m.homeTeam.name.toLowerCase())) &&
-          (m.awayTeam.name.toLowerCase().includes(match.awayTeam.toLowerCase()) ||
-           match.awayTeam.toLowerCase().includes(m.awayTeam.name.toLowerCase()))
-        );
-        
-        if (foundMatch) {
-          // Use Football-data.org data with blockchain match ID
-          enriched.push({
-            ...match,
-            homeTeamBadge: foundMatch.homeTeam.crest || '/default-badge.svg',
-            awayTeamBadge: foundMatch.awayTeam.crest || '/default-badge.svg',
-            league: foundMatch.competition.name || match.league,
-            venue: foundMatch.venue || match.venue,
-            kickoff: foundMatch.utcDate || match.kickoff,
-          });
-        } else {
-          // Keep blockchain data with default badges
-          enriched.push(match);
-        }
-      } else {
-        // Keep blockchain data with default badges
-        enriched.push(match);
-      }
-      
-      // Rate limiting
-      await new Promise(resolve => setTimeout(resolve, 100));
-      
-    } catch (error) {
-      console.error(`Error enriching match ${match.id}:`, error);
-      // Keep blockchain data with default badges
-      enriched.push({
-        ...match,
-        homeTeamBadge: '/default-badge.svg',
-        awayTeamBadge: '/default-badge.svg',
-      });
-    }
-  }
-  
-  console.log(`✅ Enriched ${enriched.length} matches`);
-  return enriched;
-}
 
 async function fetchMatchesServer(): Promise<Match[]> {
-  console.log('=== FETCHING MATCHES FROM BLOCKCHAIN + ENRICHING ===');
+  console.log('=== FETCHING MATCHES FROM FOOTBALL-DATA.ORG ===');
   
   try {
-    // Step 1: Get match IDs from blockchain
-    const response = await fetch(`${process.env.NEXT_PUBLIC_URL || 'http://localhost:3000'}/api/matches?limit=50`);
+    // Get today's date in YYYY-MM-DD format
+    const today = new Date().toISOString().split('T')[0];
+    const endDate = new Date();
+    endDate.setDate(endDate.getDate() + 14);
+    const endDateStr = endDate.toISOString().split('T')[0];
     
-    if (!response.ok) {
-      throw new Error(`API error: ${response.status}`);
+    console.log(`Fetching matches from ${today} to ${endDateStr}`);
+    
+    const allMatches: Match[] = [];
+    
+    // Priority competitions
+    const competitions = [
+      { name: 'PREMIER_LEAGUE', id: 'PL' },
+      { name: 'LA_LIGA', id: 'PD' },
+      { name: 'BUNDESLIGA', id: 'BL1' },
+      { name: 'SERIE_A', id: 'SA' },
+      { name: 'LIGUE_1', id: 'FL1' },
+      { name: 'CHAMPIONS_LEAGUE', id: 'CL' },
+      { name: 'EUROPA_LEAGUE', id: 'EL' },
+    ];
+    
+    for (const competition of competitions) {
+      try {
+        const response = await fetch(`${FOOTBALL_DATA_BASE}/competitions/${competition.id}/matches?dateFrom=${today}&dateTo=${endDateStr}`, {
+          headers: { 'X-Auth-Token': API_KEY },
+          next: { revalidate: 3600 }
+        });
+        
+        if (response.ok) {
+          const data = await response.json();
+          if (data.matches && data.matches.length > 0) {
+            const matches = data.matches
+              .filter((match: any) => match.status === 'SCHEDULED' || match.status === 'TIMED')
+              .map((match: any) => ({
+                id: match.id.toString(),
+                homeTeam: match.homeTeam.name,
+                awayTeam: match.awayTeam.name,
+                league: match.competition.name,
+                kickoff: match.utcDate,
+                venue: match.venue || 'TBA',
+                homeTeamBadge: match.homeTeam.crest || '/default-badge.svg',
+                awayTeamBadge: match.awayTeam.crest || '/default-badge.svg',
+                status: match.status,
+              }));
+            
+            allMatches.push(...matches);
+          }
+        }
+        
+        // Rate limiting
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        
+      } catch (error) {
+        console.error(`Error fetching ${competition.name}:`, error);
+        continue;
+      }
     }
     
-    const data = await response.json();
-    console.log('Blockchain matches:', data.matches?.length || 0);
+    console.log(`✅ Found ${allMatches.length} matches from Football-data.org`);
     
-    if (!data.matches || data.matches.length === 0) {
-      return getFallbackMatches();
-    }
+    // Sort by kickoff time and take first 20
+    const sortedMatches = allMatches
+      .sort((a, b) => new Date(a.kickoff).getTime() - new Date(b.kickoff).getTime())
+      .slice(0, 20);
     
-    // Step 2: Enrich with Football-data.org for logos and details
-    const enrichedMatches = await enrichMatchesWithFootballData(data.matches);
-    
-    return enrichedMatches;
+    return sortedMatches;
     
   } catch (error) {
     console.error('Error fetching blockchain matches:', error);
