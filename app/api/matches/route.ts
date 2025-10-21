@@ -71,10 +71,12 @@ async function getUpcomingRegisteredMatches(): Promise<{ matchId: string; startT
 
   // Filter to only matches that haven't started
   const upcoming = events
-    .filter(e => e.args?.matchId && e.args?.startTime)
+    .filter((e): e is typeof e & { args: { matchId: bigint; startTime: bigint } } =>
+      Boolean(e.args?.matchId && e.args?.startTime)
+    )
     .map(e => ({
-      matchId: e.args!.matchId.toString(),
-      startTime: Number(e.args!.startTime)
+      matchId: e.args.matchId.toString(),
+      startTime: Number(e.args.startTime)
     }))
     .filter(m => m.startTime > now) // Only future matches
     .sort((a, b) => a.startTime - b.startTime); // Earliest first
