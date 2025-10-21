@@ -40,14 +40,26 @@ export async function GET(request: Request) {
 
     // Get user's individual predictions from events
     const userPredictions = [];
+    console.log('Raw prediction events:', JSON.stringify(predictionEvents, null, 2));
+    
     for (const event of predictionEvents) {
       if (event.args) {
-        const matchIds = event.args.matchIds || [];
+        console.log('Event args:', event.args);
+        
+        // Try different ways to get matchIds
+        let matchIds = [];
+        if (event.args.matchIds && Array.isArray(event.args.matchIds)) {
+          matchIds = event.args.matchIds;
+        } else if (event.args.matchId) {
+          matchIds = [event.args.matchId];
+        }
+        
         const predictionsCount = Number(event.args.predictionsCount || 0);
         const freeUsed = Number(event.args.freeUsed || 0);
         const feePaid = Number(event.args.feePaid || 0);
         
         console.log(`Event: ${matchIds.length} matches, ${predictionsCount} predictions, free: ${freeUsed}, fee: ${feePaid}`);
+        console.log('Match IDs:', matchIds);
         
         // For now, just show the match IDs from events
         for (const matchId of matchIds) {
