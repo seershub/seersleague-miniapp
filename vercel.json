@@ -7,6 +7,10 @@
     {
       "path": "/api/cron/update-leaderboard",
       "schedule": "0 0 * * *"
+    },
+    {
+      "path": "/api/cron/record-results",
+      "schedule": "0 0 * * *"
     }
   ]
 }
