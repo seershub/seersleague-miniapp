@@ -2,8 +2,8 @@ import { NextResponse } from 'next/server';
 import { publicClient } from '@/lib/viem-config';
 import { CONTRACTS, SEERSLEAGUE_ABI } from '@/lib/contract-interactions';
 
+export const runtime = 'edge';
 export const dynamic = 'force-dynamic';
-export const maxDuration = 30;
 
 interface SimpleLeaderboardEntry {
   rank: number;
@@ -16,25 +16,24 @@ interface SimpleLeaderboardEntry {
 }
 
 /**
- * Optimized leaderboard endpoint - scans recent events in small batches
- * to avoid timeout while still getting real data
+ * Simple and reliable leaderboard
+ * Scans recent events (last 2000 blocks) for active users
+ * Edge runtime = no timeout issues
  */
 export async function GET() {
   try {
-    console.log('[Simple Leaderboard] Starting optimized event scan...');
+    console.log('[Leaderboard] Starting...');
     
     const currentBlock = await publicClient.getBlockNumber();
-    console.log(`Current block: ${currentBlock}`);
     
-    // Scan last 5000 blocks only (~2.7 hours on Base) to avoid timeout
-    // This is a reasonable window for active users
-    const BLOCK_RANGE = 5000n;
-    const fromBlock = currentBlock - BLOCK_RANGE;
+    // Scan only last 2000 blocks (~1 hour on Base)
+    // Small enough to be fast, large enough to catch active users
+    const fromBlock = currentBlock - 2000n;
     
     console.log(`Scanning blocks ${fromBlock} to ${currentBlock}`);
 
-    // Fetch PredictionsSubmitted events from recent blocks
-    const predictionEvents = await publicClient.getLogs({
+    // Get prediction events
+    const events = await publicClient.getLogs({
       address: CONTRACTS.SEERSLEAGUE,
       event: {
         type: 'event',
@@ -51,28 +50,36 @@ export async function GET() {
       toBlock: 'latest'
     });
 
-    console.log(`Found ${predictionEvents.length} recent prediction events`);
+    console.log(`Found ${events.length} events`);
 
-    // Extract unique user addresses
-    const uniqueUsers = new Set<string>();
-    predictionEvents.forEach(event => {
-      if (event.args && event.args.user) {
-        uniqueUsers.add(event.args.user.toLowerCase());
-      }
+    // Get unique users
+    const users = new Set<string>();
+    events.forEach(e => {
+      if (e.args?.user) users.add(e.args.user.toLowerCase());
     });
 
-    console.log(`Found ${uniqueUsers.size} unique users in recent activity`);
+    console.log(`Found ${users.size} users`);
+
+    if (users.size === 0) {
+      return NextResponse.json({
+        success: true,
+        totalPlayers: 0,
+        leaderboard: [],
+        topPlayers: [],
+        lastUpdated: new Date().toISOString()
+      });
+    }
 
     const leaderboardData: SimpleLeaderboardEntry[] = [];
 
-    // Fetch stats for each user in parallel (much faster)
-    const statsPromises = Array.from(uniqueUsers).map(async (userAddress) => {
+    // Fetch stats in parallel
+    const promises = Array.from(users).map(async (addr) => {
       try {
         const stats = await publicClient.readContract({
           address: CONTRACTS.SEERSLEAGUE,
           abi: SEERSLEAGUE_ABI,
           functionName: 'getUserStats',
-          args: [userAddress as `0x${string}`]
+          args: [addr as `0x${string}`]
         }) as unknown as {
           correctPredictions: bigint;
           totalPredictions: bigint;
@@ -81,39 +88,29 @@ export async function GET() {
           longestStreak: bigint;
         };
 
-        const correctPredictions = Number(stats.correctPredictions || 0);
-        const totalPredictions = Number(stats.totalPredictions || 0);
+        const correct = Number(stats.correctPredictions || 0);
+        const total = Number(stats.totalPredictions || 0);
 
-        if (totalPredictions > 0) {
-          const accuracy = totalPredictions > 0
-            ? Math.round((correctPredictions / totalPredictions) * 100)
-            : 0;
-
+        if (total > 0) {
           return {
             rank: 0,
-            address: userAddress,
-            accuracy,
-            totalPredictions,
-            correctPredictions,
+            address: addr,
+            accuracy: Math.round((correct / total) * 100),
+            totalPredictions: total,
+            correctPredictions: correct,
             currentStreak: Number(stats.currentStreak || 0),
             longestStreak: Number(stats.longestStreak || 0)
           };
         }
         return null;
-      } catch (error) {
-        console.error(`Error fetching stats for ${userAddress}:`, error);
+      } catch (err) {
+        console.error(`Error for ${addr}:`, err);
         return null;
       }
     });
 
-    const results = await Promise.all(statsPromises);
-    
-    // Filter out null results
-    results.forEach(result => {
-      if (result) {
-        leaderboardData.push(result);
-      }
-    });
+    const results = await Promise.all(promises);
+    results.forEach(r => r && leaderboardData.push(r));
 
     // Sort leaderboard
     leaderboardData.sort((a, b) => {
