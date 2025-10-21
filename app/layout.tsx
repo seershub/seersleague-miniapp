@@ -41,23 +41,23 @@ export default function RootLayout({
           <div className="min-h-screen flex flex-col">
             
             {/* Header - Seershub Style Adapted */}
-            <header className="relative bg-black py-4 px-4">
+            <header className="relative bg-black py-3 px-4">
               <div className="max-w-4xl mx-auto">
-                {/* Main Container with Animated Border - Compact */}
-                <div className="relative rounded-2xl overflow-hidden py-3 px-4">
-                  {/* Animated Gradient Border */}
+                {/* Main Container with Animated Border - Ultra Compact */}
+                <div className="relative rounded-2xl overflow-hidden py-2 px-4">
+                  {/* Animated Gradient Border - Brighter */}
                   <div
                     className="absolute inset-0 rounded-2xl animate-border-flow"
                     style={{
-                      background: 'linear-gradient(90deg, transparent, rgba(251, 191, 36, 0.3), rgba(245, 158, 11, 0.3), transparent) 0.6% 0% / 200% 100%'
+                      background: 'linear-gradient(90deg, transparent, rgba(251, 191, 36, 0.5), rgba(245, 158, 11, 0.5), transparent) 0.6% 0% / 200% 100%'
                     }}
                   >
                     {/* Inner glassmorphism layer */}
-                    <div className="absolute inset-[1px] rounded-2xl bg-white/[0.02] backdrop-blur-sm"></div>
+                    <div className="absolute inset-[1px] rounded-2xl bg-white/[0.03] backdrop-blur-sm"></div>
                   </div>
 
-                  {/* Subtle gradient overlay */}
-                  <div className="absolute inset-0 bg-gradient-to-b from-yellow-500/[0.02] to-transparent pointer-events-none"></div>
+                  {/* Subtle gradient overlay - Brighter */}
+                  <div className="absolute inset-0 bg-gradient-to-b from-yellow-500/[0.04] to-transparent pointer-events-none"></div>
 
                   {/* Content */}
                   <div className="relative z-10 flex flex-col items-center">
@@ -72,26 +72,26 @@ export default function RootLayout({
                         priority
                         className="h-40 md:h-44 lg:h-48 w-auto"
                         style={{
-                          filter: 'brightness(1.15) contrast(1.05) drop-shadow(0 8px 24px rgba(0, 0, 0, 0.2))'
+                          filter: 'brightness(1.2) contrast(1.08) drop-shadow(0 8px 24px rgba(251, 191, 36, 0.3))'
                         }}
                       />
                     </div>
 
                     {/* Decorative Line with Soccer Balls */}
-                    <div className="flex items-center justify-center w-full max-w-md -mt-2">
+                    <div className="flex items-center justify-center w-full max-w-md -mt-3">
                       <span
-                        className="text-2xl opacity-35 animate-float-rotate-1"
+                        className="text-2xl opacity-40 animate-float-rotate-1"
                         style={{
-                          filter: 'drop-shadow(0 2px 8px rgba(251, 191, 36, 0.2))'
+                          filter: 'drop-shadow(0 2px 8px rgba(251, 191, 36, 0.35))'
                         }}
                       >
                         ⚽
                       </span>
-                      <div className="flex-1 h-[1px] bg-gradient-to-r from-transparent via-white/20 to-transparent mx-4"></div>
+                      <div className="flex-1 h-[1px] bg-gradient-to-r from-transparent via-white/25 to-transparent mx-4"></div>
                       <span
-                        className="text-2xl opacity-35 animate-float-rotate-2"
+                        className="text-2xl opacity-40 animate-float-rotate-2"
                         style={{
-                          filter: 'drop-shadow(0 2px 8px rgba(245, 158, 11, 0.2))'
+                          filter: 'drop-shadow(0 2px 8px rgba(245, 158, 11, 0.35))'
                         }}
                       >
                         ⚽
@@ -99,7 +99,7 @@ export default function RootLayout({
                     </div>
 
                     {/* Tagline */}
-                    <p className="text-xs md:text-sm text-white/40 font-light tracking-wide text-center mt-1">
+                    <p className="text-xs md:text-sm text-white/45 font-light tracking-wide text-center mt-0.5">
                       Decentralized Football Prediction Platform
                     </p>
                   </div>
