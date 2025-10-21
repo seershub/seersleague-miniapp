@@ -40,17 +40,25 @@ export default function RootLayout({
         <MiniKitProvider>
           <div className="min-h-screen flex flex-col">
             
-            <header className="sticky top-0 z-50 bg-black/95 backdrop-blur-xl border-b border-white/10">
-              <div className="container mx-auto px-4 py-6">
+            <header className="sticky top-0 z-50 bg-dark-900/95 backdrop-blur-xl border-b border-gold-500/20 shadow-lg">
+              <div className="container mx-auto px-6 py-8">
                 <div className="flex items-center justify-center">
-                  <Image
-                    src="/logomuz.png"
-                    alt="SeersLeague"
-                    width={280}
-                    height={90}
-                    priority
-                    className="h-20 w-auto object-contain"
-                  />
+                  <div className="relative group">
+                    <Image
+                      src="/logomuz.png"
+                      alt="SeersLeague"
+                      width={400}
+                      height={120}
+                      priority
+                      className="h-24 w-auto object-contain animate-fade-in group-hover:scale-105 transition-transform duration-300"
+                    />
+                    <div className="absolute inset-0 bg-gold-gradient opacity-0 group-hover:opacity-10 rounded-2xl blur-xl transition-opacity duration-300"></div>
+                  </div>
+                </div>
+                <div className="text-center mt-4">
+                  <p className="text-gold-400 text-sm font-semibold tracking-wider uppercase">
+                    Daily Football Predictions
+                  </p>
                 </div>
               </div>
             </header>
@@ -60,29 +68,35 @@ export default function RootLayout({
               {children}
             </main>
 
-            <nav className="fixed bottom-0 left-0 right-0 z-50 bg-zinc-900/95 backdrop-blur-xl border-t border-white/10">
+            <nav className="fixed bottom-0 left-0 right-0 z-50 bg-dark-900/95 backdrop-blur-xl border-t border-gold-500/20 shadow-lg">
               <div className="container mx-auto">
                 <div className="flex items-center justify-around h-20">
                   <Link 
                     href="/"
-                    className="flex flex-col items-center gap-2 px-8 py-3 text-gray-400 hover:text-gold-500 transition-all"
+                    className="flex flex-col items-center gap-2 px-6 py-4 text-surface-400 hover:text-gold-500 transition-all duration-300 group"
                   >
-                    <Home className="w-7 h-7" />
-                    <span className="text-xs font-semibold">Home</span>
+                    <div className="p-2 rounded-xl group-hover:bg-gold-500/10 transition-colors duration-300">
+                      <Home className="w-6 h-6 group-hover:scale-110 transition-transform duration-300" />
+                    </div>
+                    <span className="text-xs font-semibold group-hover:text-gold-500 transition-colors duration-300">Home</span>
                   </Link>
                   <Link 
                     href="/leaderboard"
-                    className="flex flex-col items-center gap-2 px-8 py-3 text-gray-400 hover:text-gold-500 transition-all"
+                    className="flex flex-col items-center gap-2 px-6 py-4 text-surface-400 hover:text-gold-500 transition-all duration-300 group"
                   >
-                    <Trophy className="w-7 h-7" />
-                    <span className="text-xs font-semibold">Leaderboard</span>
+                    <div className="p-2 rounded-xl group-hover:bg-gold-500/10 transition-colors duration-300">
+                      <Trophy className="w-6 h-6 group-hover:scale-110 transition-transform duration-300" />
+                    </div>
+                    <span className="text-xs font-semibold group-hover:text-gold-500 transition-colors duration-300">Leaderboard</span>
                   </Link>
                   <Link 
                     href="/profile"
-                    className="flex flex-col items-center gap-2 px-8 py-3 text-gray-400 hover:text-gold-500 transition-all"
+                    className="flex flex-col items-center gap-2 px-6 py-4 text-surface-400 hover:text-gold-500 transition-all duration-300 group"
                   >
-                    <User className="w-7 h-7" />
-                    <span className="text-xs font-semibold">Profile</span>
+                    <div className="p-2 rounded-xl group-hover:bg-gold-500/10 transition-colors duration-300">
+                      <User className="w-6 h-6 group-hover:scale-110 transition-transform duration-300" />
+                    </div>
+                    <span className="text-xs font-semibold group-hover:text-gold-500 transition-colors duration-300">Profile</span>
                   </Link>
                 </div>
               </div>

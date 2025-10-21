@@ -414,6 +414,9 @@ export function PredictionForm({ matches }: PredictionFormProps) {
               {/* Match Card - Always visible */}
               <MatchCard
                 match={match}
+                selectedOutcome={selectedOutcome}
+                onOutcomeSelect={(outcome) => handleOutcomeSelect(matchId, outcome)}
+                disabled={isSubmitting || isPending}
               />
             </div>
           );

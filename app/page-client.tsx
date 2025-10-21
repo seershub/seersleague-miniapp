@@ -94,69 +94,94 @@ export default function Home({ initialMatches = [] }: HomeProps) {
   }, []);
   
   return (
-    <div className="container mx-auto px-4 py-6 pb-24">
-      
-      {/* WALLET STATUS */}
-      <div className="mb-8">
-        <WalletConnect />
-      </div>
-
-      {/* MATCHES SECTION */}
-      <div className="mb-8">
-        <div className="flex items-center justify-between mb-6">
-          <div>
-            <h2 className="text-3xl font-black mb-2 bg-gradient-to-r from-gold-500 to-gold-600 bg-clip-text text-transparent">
-              🚀 TODAY'S MATCHES 🚀
-            </h2>
-            <p className="text-gray-500">Make your predictions</p>
+    <div className="min-h-screen bg-hero-gradient">
+      <div className="container mx-auto px-6 py-8">
+        
+        {/* HERO SECTION */}
+        <section className="text-center mb-12 animate-fade-in">
+          <div className="inline-flex items-center gap-3 px-6 py-3 bg-gold-gradient rounded-full text-black text-sm font-bold mb-6 shadow-gold-glow">
+            <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+            <span>First 5 Predictions FREE</span>
           </div>
-          <div className="px-5 py-2.5 rounded-xl bg-zinc-900/50 border border-white/10">
-            <span className="text-gold-500 font-bold text-lg">{matches.length}</span>
-            <span className="text-gray-500 text-sm ml-2">matches</span>
-          </div>
-        </div>
-      </div>
-
-      {/* MATCH LIST */}
-      {loading ? (
-        <div className="space-y-6">
-          {[1,2,3,4,5].map(i => (
-            <div key={i} className="h-64 bg-zinc-900/30 rounded-3xl animate-pulse border border-white/5" />
-          ))}
-        </div>
-      ) : (
-        <>
-          <div className="space-y-6 mb-8">
-            {matches.map((match) => (
-              <PredictionForm key={match.id} matches={[match]} />
-            ))}
-          </div>
-        </>
-      )}
-
-      {error && (
-        <div className="bg-red-900/20 border border-red-500/30 rounded-xl p-4 mb-4">
-          <p className="text-red-400 text-sm">Error: {error}</p>
-          <p className="text-xs text-gray-400 mt-1">
-            Check console for details
+          <h1 className="text-4xl md:text-5xl font-black mb-4 text-gradient text-glow">
+            Today's Matches
+          </h1>
+          <p className="text-surface-300 text-lg max-w-2xl mx-auto">
+            Make your predictions and compete for accuracy. Build your reputation in the community.
           </p>
-        </div>
-      )}
-      
-      {!loading && !error && matches.length === 0 && (
-        <div className="text-center py-12">
-          <p className="text-gray-400">No matches found</p>
-        </div>
-      )}
+        </section>
 
-      {/* Chain Warning */}
-      {chainId && chainId !== '0x2105' && (
-        <div className="mb-6 p-4 bg-yellow-900/20 border border-yellow-500/30 rounded-xl">
-          <p className="text-yellow-200 text-sm">
-            ⚠️ Not on Base Mainnet! Current chain: {chainId} (Expected: 0x2105)
-          </p>
-        </div>
-      )}
+        {/* WALLET STATUS */}
+        <section className="mb-12">
+          <WalletConnect />
+        </section>
+
+        {/* MATCHES SECTION */}
+        <section className="mb-12">
+          <div className="flex items-center justify-between mb-8">
+            <div>
+              <h2 className="text-2xl font-bold text-white mb-2">Featured Matches</h2>
+              <p className="text-surface-400">Select your predictions</p>
+            </div>
+            <div className="px-4 py-2 bg-card-gradient rounded-xl border border-surface-700 shadow-card-shadow">
+              <span className="text-gold-500 font-bold text-lg">{matches.length}</span>
+              <span className="text-surface-400 text-sm ml-2">matches</span>
+            </div>
+          </div>
+
+          {/* MATCHES GRID */}
+          {loading ? (
+            <div className="grid gap-6 md:grid-cols-2">
+              {[1,2,3,4].map(i => (
+                <div key={i} className="h-64 bg-card-gradient rounded-2xl animate-pulse border border-surface-700" />
+              ))}
+            </div>
+          ) : (
+            <div className="grid gap-6 md:grid-cols-2">
+              {matches.map((match) => (
+                <PredictionForm key={match.id} matches={[match]} />
+              ))}
+            </div>
+          )}
+
+          {error && (
+            <div className="bg-red-900/20 border border-red-500/30 rounded-2xl p-6 mb-6">
+              <p className="text-red-400 font-semibold">Error: {error}</p>
+              <p className="text-surface-400 text-sm mt-2">
+                Please check your connection and try again
+              </p>
+            </div>
+          )}
+          
+          {!loading && !error && matches.length === 0 && (
+            <div className="text-center py-16">
+              <div className="w-20 h-20 bg-surface-800 rounded-full flex items-center justify-center mx-auto mb-4">
+                <span className="text-4xl">⚽</span>
+              </div>
+              <p className="text-surface-400 text-lg">No matches available today</p>
+              <p className="text-surface-500 text-sm mt-2">Check back later for new matches</p>
+            </div>
+          )}
+        </section>
+
+        {/* CHAIN WARNING */}
+        {chainId && chainId !== '0x2105' && (
+          <div className="bg-yellow-900/20 border border-yellow-500/30 rounded-2xl p-6 mb-6">
+            <div className="flex items-center gap-3">
+              <div className="w-6 h-6 bg-yellow-500 rounded-full flex items-center justify-center">
+                <span className="text-black text-sm font-bold">!</span>
+              </div>
+              <div>
+                <p className="text-yellow-200 font-semibold">Network Warning</p>
+                <p className="text-yellow-300 text-sm">
+                  You're not on Base Mainnet. Current: {chainId} (Expected: 0x2105)
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
+
+      </div>
     </div>
   );
 }
