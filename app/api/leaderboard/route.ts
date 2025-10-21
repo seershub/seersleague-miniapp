@@ -14,10 +14,52 @@ export interface LeaderboardEntry {
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
 
+// Trigger background update if data is stale (> 1 hour old)
+async function triggerUpdateIfStale() {
+  try {
+    const lastUpdated = await kv.get<string>('leaderboard:lastUpdated');
+
+    if (!lastUpdated) {
+      // No data yet, trigger update
+      triggerBackgroundUpdate();
+      return;
+    }
+
+    const lastUpdateTime = new Date(lastUpdated).getTime();
+    const now = Date.now();
+    const oneHour = 60 * 60 * 1000;
+
+    // If data is older than 1 hour, trigger background update
+    if (now - lastUpdateTime > oneHour) {
+      console.log('Leaderboard data is stale, triggering background update...');
+      triggerBackgroundUpdate();
+    }
+  } catch (error) {
+    console.error('Error checking leaderboard staleness:', error);
+  }
+}
+
+// Trigger background update without blocking response
+function triggerBackgroundUpdate() {
+  // Don't await - let it run in background
+  fetch(`${process.env.NEXT_PUBLIC_URL || 'http://localhost:3000'}/api/cron/update-leaderboard`, {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${process.env.CRON_SECRET}`,
+      'Content-Type': 'application/json'
+    }
+  }).catch(err => {
+    console.error('Background update failed:', err);
+  });
+}
+
 export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
     const userAddress = searchParams.get('address');
+
+    // Trigger update if data is stale (non-blocking)
+    triggerUpdateIfStale();
 
     // Get leaderboard from KV
     const leaderboard = await kv.get<LeaderboardEntry[]>('leaderboard:all');
@@ -27,7 +69,8 @@ export async function GET(request: Request) {
         leaderboard: [],
         topPlayers: [],
         userRank: null,
-        totalPlayers: 0
+        totalPlayers: 0,
+        needsUpdate: true
       });
     }
 

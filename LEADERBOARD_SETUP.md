@@ -4,12 +4,26 @@ This guide explains how to setup the leaderboard feature with Vercel KV caching.
 
 ## Overview
 
-The leaderboard uses an event-driven indexing system:
-1. A Vercel Cron Job runs every 10 minutes
+The leaderboard uses a hybrid event-driven indexing system:
+
+### Daily Cron Job (Vercel Hobby Plan Compatible)
+1. A Vercel Cron Job runs **daily at midnight** (00:00 UTC)
 2. It fetches on-chain events (`ResultRecorded`, `PredictionSubmitted`)
 3. Reads `getUserStats` for each unique user
 4. Sorts and caches data in Vercel KV
 5. Frontend fetches from KV for instant loading
+
+### Smart On-Demand Updates
+1. When users visit `/leaderboard`, the API checks last update time
+2. If data is older than **1 hour**, triggers background update automatically
+3. Update runs in background (doesn't block page load)
+4. Keeps data fresh throughout the day without Pro plan
+
+**Why This Approach?**
+- Vercel Hobby plan allows only **1 cron job per day**
+- On-demand updates ensure data stays fresh (max 1 hour old)
+- No user-facing delays - updates happen in background
+- Best of both worlds: scheduled + on-demand
 
 ## Setup Steps
 
@@ -131,9 +145,11 @@ Returns:
 ## Performance
 
 - **Event Indexing:** ~10,000 blocks (~8 hours on Base)
-- **Cron Frequency:** Every 10 minutes
+- **Cron Frequency:** Daily at midnight (Hobby plan)
+- **On-Demand Updates:** Triggered if data >1 hour old
 - **KV Read Latency:** <10ms globally
 - **Frontend Load:** Instant (cached data)
+- **Max Data Staleness:** 1 hour (auto-update)
 
 ## Monitoring
 
@@ -179,12 +195,17 @@ vercel logs --follow
 - 100,000 reads/month
 - 1,000 writes/month
 
-**Usage:**
-- Writes: ~4,320/month (every 10 min)
+**Actual Usage (Hobby Plan):**
+- Writes: ~60/month (daily cron + on-demand updates)
 - Reads: ~86,400/month (2/sec average)
 - Storage: <1 MB
 
-✅ Fits within free tier!
+✅ **Easily fits within free tier!**
+
+**Breakdown:**
+- Daily cron: 30 writes/month
+- On-demand updates: ~30 writes/month (assuming moderate traffic)
+- Total: ~60 writes/month (<<< 1,000 limit)
 
 ### Upgrade If Needed
 

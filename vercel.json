@@ -6,7 +6,7 @@
   "crons": [
     {
       "path": "/api/cron/update-leaderboard",
-      "schedule": "*/10 * * * *"
+      "schedule": "0 0 * * *"
     }
   ]
 }
