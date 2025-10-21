@@ -40,7 +40,19 @@ export async function GET(request: Request) {
 
     // Get user's individual predictions from events
     const userPredictions = [];
-    console.log('Raw prediction events:', JSON.stringify(predictionEvents, null, 2));
+    
+    // Convert BigInt to string for logging
+    const serializedEvents = predictionEvents.map(event => ({
+      ...event,
+      args: event.args ? {
+        user: event.args.user,
+        matchIds: event.args.matchIds?.map(id => id.toString()),
+        predictionsCount: event.args.predictionsCount?.toString(),
+        freeUsed: event.args.freeUsed?.toString(),
+        feePaid: event.args.feePaid?.toString()
+      } : undefined
+    }));
+    console.log('Raw prediction events:', JSON.stringify(serializedEvents, null, 2));
     
     for (const event of predictionEvents) {
       if (event.args) {
