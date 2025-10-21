@@ -358,94 +358,69 @@ export function PredictionForm({ matches }: PredictionFormProps) {
   }
   
   return (
-    <div className="space-y-6">
-      {/* Free Predictions Info */}
-      <div className="card bg-blue-900 bg-opacity-20 border-blue-700">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center space-x-2">
-            <span className="text-blue-400">🎯</span>
-            <span className="font-semibold text-blue-400">Flexible Predictions</span>
-          </div>
-          <span className="text-sm text-blue-300">
-            {remainingFreePredictions} free predictions left
-          </span>
+    <div className="bg-gray-900/50 rounded-2xl border border-gray-800 p-6 shadow-lg">
+      {/* Match Header */}
+      <div className="flex items-center justify-between mb-4">
+        <div className="flex items-center gap-3">
+          <input
+            type="checkbox"
+            id={`match-${parseInt(matches[0].id)}`}
+            checked={predictions[parseInt(matches[0].id)] !== undefined}
+            onChange={() => toggleMatchSelection(parseInt(matches[0].id))}
+            disabled={isSubmitting || isPending}
+            className="w-5 h-5 text-yellow-500 bg-gray-700 border-gray-600 rounded focus:ring-yellow-500"
+          />
+          <label htmlFor={`match-${parseInt(matches[0].id)}`} className="text-sm font-medium text-gray-300">
+            Predict this match
+          </label>
         </div>
-        <p className="text-sm text-blue-300 mt-1">
-          Select any matches you want to predict. First 5 predictions are free, then 0.5 USDC per match.
-        </p>
+        <div className="text-sm text-gray-400">
+          {remainingFreePredictions} free left
+        </div>
       </div>
+      
+      {/* Match Card */}
+      <MatchCard
+        match={matches[0]}
+        selectedOutcome={predictions[parseInt(matches[0].id)]}
+        onOutcomeSelect={(outcome) => handleOutcomeSelect(parseInt(matches[0].id), outcome)}
+        disabled={isSubmitting || isPending}
+      />
       
       {/* Payment Summary */}
       {Object.keys(predictions).length > 0 && (
-        <div className="card bg-green-900 bg-opacity-20 border-green-700">
+        <div className="mt-4 p-3 bg-yellow-900/20 border border-yellow-500/30 rounded-xl">
           <div className="flex items-center justify-between">
-            <span className="font-semibold text-green-400">Selected Matches: {Object.keys(predictions).length}</span>
-            <span className="text-green-300">
-              {predictionsToPayFor > 0 ? `Fee: ${formatUSDC(totalFee)} USDC` : 'FREE'}
+            <span className="font-semibold text-yellow-400">Selected: {Object.keys(predictions).length}</span>
+            <span className="text-yellow-300 font-bold">
+              {predictionsToPayFor > 0 ? `${formatUSDC(totalFee)} USDC` : 'FREE'}
             </span>
           </div>
         </div>
       )}
       
-      {/* Match Cards */}
-      <div className="space-y-4">
-        {matches.map((match) => {
-          const matchId = parseInt(match.id);
-          const selectedOutcome = predictions[matchId];
-          const isSelected = selectedOutcome !== undefined;
-          
-          return (
-            <div key={match.id} className="relative">
-              {/* Match Selection Checkbox */}
-              <div className="flex items-center space-x-3 mb-3">
-                <input
-                  type="checkbox"
-                  id={`match-${matchId}`}
-                  checked={isSelected}
-                  onChange={() => toggleMatchSelection(matchId)}
-                  disabled={isSubmitting || isPending}
-                  className="w-5 h-5 text-blue-600 bg-gray-700 border-gray-600 rounded focus:ring-blue-500"
-                />
-                <label htmlFor={`match-${matchId}`} className="text-sm font-medium text-gray-300">
-                  Predict this match
-                </label>
-              </div>
-              
-              {/* Match Card - Always visible */}
-              <MatchCard
-                match={match}
-                selectedOutcome={selectedOutcome}
-                onOutcomeSelect={(outcome) => handleOutcomeSelect(matchId, outcome)}
-                disabled={isSubmitting || isPending}
-              />
-            </div>
-          );
-        })}
-      </div>
-      
       {/* Submit Button */}
-      <div className="text-center">
+      <div className="mt-4 text-center">
         <button
           onClick={handleSubmit}
           disabled={!isFormValid || isSubmitting || isPending}
-          className="btn-primary px-8 py-3 text-lg disabled:opacity-50"
-          title={`Form valid: ${isFormValid}, Submitting: ${isSubmitting}, Pending: ${isPending}`}
+          className="w-full py-3 px-6 bg-gradient-to-r from-yellow-400 to-yellow-600 text-black font-bold rounded-xl hover:shadow-yellow-500/30 hover:shadow-lg transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
         >
           {isSubmitting || isPending ? (
-            <div className="flex items-center space-x-2">
+            <div className="flex items-center justify-center space-x-2">
               <div className="spinner"></div>
               <span>Submitting...</span>
             </div>
           ) : (
             <>
-              {totalFee > 0 ? `Submit Predictions (${formatUSDC(totalFee)} USDC)` : 'Submit FREE Predictions'}
+              {totalFee > 0 ? `Submit (${formatUSDC(totalFee)} USDC)` : 'Submit FREE'}
             </>
           )}
         </button>
         
         {!isFormValid && (
           <p className="text-sm text-gray-400 mt-2">
-            Please select at least one match and choose outcomes
+            Select match and choose outcome
           </p>
         )}
       </div>
@@ -454,7 +429,6 @@ export function PredictionForm({ matches }: PredictionFormProps) {
       {showPaymentModal && (
         <PaymentModal
           onSuccess={async () => {
-            // After approval, close modal and re-run submission which now should succeed
             setShowPaymentModal(false);
             await submitPredictions();
           }}

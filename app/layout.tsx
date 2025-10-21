@@ -40,25 +40,26 @@ export default function RootLayout({
         <MiniKitProvider>
           <div className="min-h-screen flex flex-col">
             
-            <header className="sticky top-0 z-50 bg-dark-900/95 backdrop-blur-xl border-b border-gold-500/20 shadow-lg">
-              <div className="container mx-auto px-6 py-8">
+            <header className="sticky top-0 z-50 bg-black/98 backdrop-blur-2xl border-b border-yellow-500/30 shadow-2xl">
+              <div className="container mx-auto px-4 py-6">
                 <div className="flex items-center justify-center">
                   <div className="relative group">
-                    <Image
-                      src="/logomuz.png"
-                      alt="SeersLeague"
-                      width={400}
-                      height={120}
-                      priority
-                      className="h-24 w-auto object-contain animate-fade-in group-hover:scale-105 transition-transform duration-300"
-                    />
-                    <div className="absolute inset-0 bg-gold-gradient opacity-0 group-hover:opacity-10 rounded-2xl blur-xl transition-opacity duration-300"></div>
+                    {/* Logo with enhanced effects */}
+                    <div className="relative">
+                      <Image
+                        src="/logomuz.png"
+                        alt="SeersLeague"
+                        width={500}
+                        height={150}
+                        priority
+                        className="h-28 w-auto object-contain animate-fade-in group-hover:scale-110 transition-all duration-500 filter drop-shadow-2xl"
+                      />
+                      {/* Animated glow effect */}
+                      <div className="absolute inset-0 bg-gradient-to-r from-yellow-400 via-yellow-500 to-yellow-600 opacity-0 group-hover:opacity-20 rounded-3xl blur-2xl transition-all duration-500 animate-pulse-glow"></div>
+                      {/* Pulsing border */}
+                      <div className="absolute inset-0 border-2 border-yellow-500/50 rounded-3xl opacity-0 group-hover:opacity-100 transition-all duration-500 animate-ping"></div>
+                    </div>
                   </div>
-                </div>
-                <div className="text-center mt-4">
-                  <p className="text-gold-400 text-sm font-semibold tracking-wider uppercase">
-                    Daily Football Predictions
-                  </p>
                 </div>
               </div>
             </header>
@@ -68,35 +69,35 @@ export default function RootLayout({
               {children}
             </main>
 
-            <nav className="fixed bottom-0 left-0 right-0 z-50 bg-dark-900/95 backdrop-blur-xl border-t border-gold-500/20 shadow-lg">
+            <nav className="fixed bottom-0 left-0 right-0 z-50 bg-black/98 backdrop-blur-2xl border-t border-yellow-500/30 shadow-2xl">
               <div className="container mx-auto">
                 <div className="flex items-center justify-around h-20">
                   <Link 
                     href="/"
-                    className="flex flex-col items-center gap-2 px-6 py-4 text-surface-400 hover:text-gold-500 transition-all duration-300 group"
+                    className="flex flex-col items-center gap-2 px-6 py-4 text-gray-400 hover:text-yellow-500 transition-all duration-500 group"
                   >
-                    <div className="p-2 rounded-xl group-hover:bg-gold-500/10 transition-colors duration-300">
-                      <Home className="w-6 h-6 group-hover:scale-110 transition-transform duration-300" />
+                    <div className="p-3 rounded-2xl group-hover:bg-yellow-500/20 transition-all duration-500 group-hover:shadow-yellow-500/30 group-hover:shadow-lg">
+                      <Home className="w-7 h-7 group-hover:scale-125 transition-all duration-500 group-hover:drop-shadow-lg" />
                     </div>
-                    <span className="text-xs font-semibold group-hover:text-gold-500 transition-colors duration-300">Home</span>
+                    <span className="text-xs font-bold group-hover:text-yellow-500 transition-colors duration-500 tracking-wider">HOME</span>
                   </Link>
                   <Link 
                     href="/leaderboard"
-                    className="flex flex-col items-center gap-2 px-6 py-4 text-surface-400 hover:text-gold-500 transition-all duration-300 group"
+                    className="flex flex-col items-center gap-2 px-6 py-4 text-gray-400 hover:text-yellow-500 transition-all duration-500 group"
                   >
-                    <div className="p-2 rounded-xl group-hover:bg-gold-500/10 transition-colors duration-300">
-                      <Trophy className="w-6 h-6 group-hover:scale-110 transition-transform duration-300" />
+                    <div className="p-3 rounded-2xl group-hover:bg-yellow-500/20 transition-all duration-500 group-hover:shadow-yellow-500/30 group-hover:shadow-lg">
+                      <Trophy className="w-7 h-7 group-hover:scale-125 transition-all duration-500 group-hover:drop-shadow-lg" />
                     </div>
-                    <span className="text-xs font-semibold group-hover:text-gold-500 transition-colors duration-300">Leaderboard</span>
+                    <span className="text-xs font-bold group-hover:text-yellow-500 transition-colors duration-500 tracking-wider">LEADERBOARD</span>
                   </Link>
                   <Link 
                     href="/profile"
-                    className="flex flex-col items-center gap-2 px-6 py-4 text-surface-400 hover:text-gold-500 transition-all duration-300 group"
+                    className="flex flex-col items-center gap-2 px-6 py-4 text-gray-400 hover:text-yellow-500 transition-all duration-500 group"
                   >
-                    <div className="p-2 rounded-xl group-hover:bg-gold-500/10 transition-colors duration-300">
-                      <User className="w-6 h-6 group-hover:scale-110 transition-transform duration-300" />
+                    <div className="p-3 rounded-2xl group-hover:bg-yellow-500/20 transition-all duration-500 group-hover:shadow-yellow-500/30 group-hover:shadow-lg">
+                      <User className="w-7 h-7 group-hover:scale-125 transition-all duration-500 group-hover:drop-shadow-lg" />
                     </div>
-                    <span className="text-xs font-semibold group-hover:text-gold-500 transition-colors duration-300">Profile</span>
+                    <span className="text-xs font-bold group-hover:text-yellow-500 transition-colors duration-500 tracking-wider">PROFILE</span>
                   </Link>
                 </div>
               </div>
