@@ -40,10 +40,13 @@ export default function RootLayout({
         <MiniKitProvider>
           <div className="min-h-screen flex flex-col">
             
-            <header className="sticky top-0 z-50 bg-black/95 backdrop-blur-xl border-b border-white/10 relative overflow-hidden h-32">
-              {/* PNG Effect Background - Full Header Size */}
-              <div 
-                className="absolute inset-0 opacity-30"
+            <header className="sticky top-0 z-50 bg-black/95 backdrop-blur-xl border-b border-yellow-500/20 relative overflow-hidden">
+              {/* Animated Gradient Background */}
+              <div className="absolute inset-0 bg-gradient-to-br from-yellow-500/10 via-amber-600/5 to-orange-500/10 animate-pulse"></div>
+
+              {/* PNG Effect Background */}
+              <div
+                className="absolute inset-0 opacity-20"
                 style={{
                   backgroundImage: 'url(/logo-effect.png)',
                   backgroundSize: 'cover',
@@ -51,21 +54,25 @@ export default function RootLayout({
                   backgroundRepeat: 'no-repeat'
                 }}
               />
-              
-              <div className="max-w-4xl mx-auto px-4 h-full flex items-center justify-center relative z-10">
-                <div className="relative">
-                  {/* Logo Glow Effect */}
-                  <div className="absolute inset-0 bg-gradient-to-r from-yellow-500/20 to-amber-500/20 blur-xl rounded-lg"></div>
-                  
+
+              {/* Radial Glow Effect */}
+              <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-full bg-gradient-radial from-yellow-500/20 via-transparent to-transparent blur-2xl"></div>
+
+              <div className="max-w-4xl mx-auto px-6 py-8 flex items-center justify-center relative z-10">
+                <div className="relative group">
+                  {/* Enhanced Logo Glow - Multiple Layers */}
+                  <div className="absolute -inset-4 bg-gradient-to-r from-yellow-500/30 via-amber-500/30 to-yellow-500/30 blur-3xl opacity-75 group-hover:opacity-100 transition-opacity duration-300 animate-pulse"></div>
+                  <div className="absolute -inset-2 bg-gradient-to-r from-yellow-400/40 to-amber-400/40 blur-xl"></div>
+
                   <Image
                     src="/logomuz.png"
                     alt="SeersLeague"
-                    width={280}
-                    height={72}
+                    width={600}
+                    height={150}
                     priority
-                    className="h-16 w-auto object-contain relative z-10"
+                    className="h-28 w-auto object-contain relative z-10 transform group-hover:scale-105 transition-transform duration-300"
                     style={{
-                      filter: 'drop-shadow(0 0 10px rgba(255, 215, 0, 0.4))'
+                      filter: 'drop-shadow(0 0 20px rgba(255, 215, 0, 0.6)) drop-shadow(0 0 40px rgba(255, 215, 0, 0.3))'
                     }}
                   />
                 </div>
