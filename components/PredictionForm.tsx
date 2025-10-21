@@ -360,27 +360,27 @@ export function PredictionForm({ matches }: PredictionFormProps) {
   return (
     <div className="space-y-4">
       {/* Free Predictions Info */}
-      <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+      <div className="bg-gradient-to-r from-blue-500/10 to-cyan-500/5 border border-blue-500/20 rounded-xl p-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-2">
-            <span className="text-blue-600">🎯</span>
-            <span className="font-medium text-blue-800">Flexible Predictions</span>
+            <span className="text-blue-400">🎯</span>
+            <span className="font-semibold text-white">Flexible Predictions</span>
           </div>
-          <span className="text-sm text-blue-600">
+          <span className="text-sm text-blue-300">
             {remainingFreePredictions} free predictions left
           </span>
         </div>
-        <p className="text-sm text-blue-700 mt-1">
+        <p className="text-sm text-gray-300 mt-1">
           Select any matches you want to predict. First 5 predictions are free, then 0.5 USDC per match.
         </p>
       </div>
       
       {/* Payment Summary */}
       {Object.keys(predictions).length > 0 && (
-        <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+        <div className="bg-gradient-to-r from-green-500/10 to-emerald-500/5 border border-green-500/20 rounded-xl p-4">
           <div className="flex items-center justify-between">
-            <span className="font-medium text-green-800">Selected Matches: {Object.keys(predictions).length}</span>
-            <span className="text-green-700 font-semibold">
+            <span className="font-semibold text-white">Selected Matches: {Object.keys(predictions).length}</span>
+            <span className="text-green-400 font-bold">
               {predictionsToPayFor > 0 ? `Fee: ${formatUSDC(totalFee)} USDC` : 'FREE'}
             </span>
           </div>
@@ -388,25 +388,25 @@ export function PredictionForm({ matches }: PredictionFormProps) {
       )}
       
       {/* Match Cards */}
-      <div className="space-y-3">
+      <div className="space-y-4">
         {matches.map((match) => {
           const matchId = parseInt(match.id);
           const selectedOutcome = predictions[matchId];
           const isSelected = selectedOutcome !== undefined;
           
           return (
-            <div key={match.id} className="bg-white border border-gray-200 rounded-lg p-4">
+            <div key={match.id} className="space-y-3">
               {/* Match Selection Checkbox */}
-              <div className="flex items-center space-x-3 mb-3">
+              <div className="flex items-center space-x-3">
                 <input
                   type="checkbox"
                   id={`match-${matchId}`}
                   checked={isSelected}
                   onChange={() => toggleMatchSelection(matchId)}
                   disabled={isSubmitting || isPending}
-                  className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500"
+                  className="w-5 h-5 text-blue-500 bg-gray-800 border-gray-600 rounded focus:ring-blue-500"
                 />
-                <label htmlFor={`match-${matchId}`} className="text-sm font-medium text-gray-700">
+                <label htmlFor={`match-${matchId}`} className="text-sm font-medium text-gray-300">
                   Predict this match
                 </label>
               </div>
@@ -428,22 +428,56 @@ export function PredictionForm({ matches }: PredictionFormProps) {
         <button
           onClick={handleSubmit}
           disabled={!isFormValid || isSubmitting || isPending}
-          className="bg-blue-600 hover:bg-blue-700 text-white font-medium py-3 px-6 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+          className="relative w-full group"
         >
-          {isSubmitting || isPending ? (
-            <div className="flex items-center justify-center space-x-2">
-              <div className="spinner"></div>
-              <span>Submitting...</span>
+          {/* Main button container */}
+          <div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-blue-500 to-cyan-500 p-[1px]">
+            
+            {/* Inner button */}
+            <div className="relative bg-gray-900 rounded-2xl px-6 py-4 flex items-center justify-between
+                            group-hover:bg-transparent transition-all duration-300">
+              
+              {/* Left side - Icon + Text */}
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-500/20 to-cyan-500/20 
+                             flex items-center justify-center border border-blue-500/30">
+                  <span className="text-lg">🎯</span>
+                </div>
+                
+                <div className="text-left">
+                  <div className="text-sm font-semibold text-white group-hover:text-white transition-colors">
+                    Make Prediction
+                  </div>
+                  <div className="text-xs text-white/50">
+                    Join the competition
+                  </div>
+                </div>
+              </div>
+              
+              {/* Right side - Entry fee */}
+              <div className="flex items-center gap-2">
+                <span className="text-cyan-400">✨</span>
+                <div className="px-4 py-2 rounded-xl bg-gradient-to-r from-green-500/20 to-blue-500/20 
+                                border border-green-500/30">
+                  <span className="text-sm font-bold text-white">
+                    {totalFee > 0 ? `${formatUSDC(totalFee)} USDC` : 'FREE'}
+                  </span>
+                </div>
+              </div>
             </div>
-          ) : (
-            <>
-              {totalFee > 0 ? `Submit Seer! (${formatUSDC(totalFee)} USDC)` : 'Submit Seer!'}
-            </>
-          )}
+            
+            {/* Animated shine effect */}
+            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent
+                            animate-pulse" />
+          </div>
+          
+          {/* Glow effect */}
+          <div className="absolute inset-0 -z-10 rounded-2xl bg-gradient-to-r from-blue-500/50 to-cyan-500/50 
+                         blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
         </button>
         
         {!isFormValid && (
-          <p className="text-sm text-gray-500 mt-2">
+          <p className="text-sm text-gray-400 mt-3">
             Please select at least one match and choose outcomes
           </p>
         )}

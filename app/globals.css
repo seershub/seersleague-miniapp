@@ -3,84 +3,69 @@
 @tailwind utilities;
 
 @layer base {
-  * {
-    @apply border-surface-700;
-  }
-  
   body {
-    @apply bg-hero-gradient text-white antialiased;
-    font-feature-settings: 'rlig' 1, 'calt' 1;
-    -webkit-font-smoothing: antialiased;
-    -moz-osx-font-smoothing: grayscale;
+    @apply bg-black text-white antialiased;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
+    line-height: 1.5;
+    font-size: 1rem;
+    overflow-x: hidden;
   }
-  
   html {
     @apply scroll-smooth;
   }
 }
 
-@layer components {
-  .btn-primary {
-    @apply bg-gold-gradient text-black hover:shadow-gold-glow font-semibold py-3 px-6 rounded-xl transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed transform hover:scale-105;
-  }
-  
-  .btn-secondary {
-    @apply bg-surface-800 hover:bg-surface-700 text-white font-semibold py-3 px-6 rounded-xl transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed border border-surface-600 hover:border-gold-500/50;
-  }
-  
-  .card {
-    @apply bg-card-gradient border border-surface-700 rounded-2xl p-6 shadow-card-shadow hover:shadow-card-hover transition-all duration-300;
-  }
-  
-  .match-card {
-    @apply bg-card-gradient border border-surface-700 rounded-2xl p-6 hover:border-gold-500/40 transition-all duration-300 shadow-card-shadow hover:shadow-gold-glow;
-  }
-  
-  .prediction-option {
-    @apply flex-1 p-4 text-center rounded-xl border-2 border-surface-600 hover:border-gold-500 transition-all duration-300 cursor-pointer font-semibold;
-  }
-  
-  .prediction-option.selected {
-    @apply border-gold-500 bg-gold-gradient text-black shadow-gold-glow scale-105;
-  }
-  
-  .stat-card {
-    @apply bg-card-gradient border border-surface-700 rounded-xl p-4 text-center shadow-card-shadow;
-  }
-}
-
 @layer utilities {
-  .text-gradient {
-    @apply bg-gradient-to-r from-gold-400 to-gold-600 bg-clip-text text-transparent;
+  /* Glass Morphism - Subtle Premium */
+  .glass-effect {
+    background: rgba(255, 255, 255, 0.02);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   }
   
-  .text-glow {
-    text-shadow: 0 0 10px rgba(245, 158, 11, 0.5);
+  .glass-effect:hover {
+    background: rgba(255, 255, 255, 0.04);
+    border-color: rgba(255, 255, 255, 0.16);
+    box-shadow: 0 20px 60px rgba(0, 82, 255, 0.1);
+    transform: translateY(-4px);
+  }
+  
+  .glass-effect-strong {
+    background: rgba(255, 255, 255, 0.05);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  
+  .glass-effect-strong:hover {
+    background: rgba(255, 255, 255, 0.08);
+    border-color: rgba(255, 255, 255, 0.2);
+    box-shadow: 0 20px 60px rgba(0, 82, 255, 0.15);
+    transform: translateY(-2px);
   }
 }
 
-/* Custom scrollbar */
 ::-webkit-scrollbar {
-  width: 8px;
+  width: 6px;
 }
-
 ::-webkit-scrollbar-track {
-  background: #1E293B;
+  background: #1A1A1A;
 }
-
 ::-webkit-scrollbar-thumb {
-  background: #475569;
-  border-radius: 4px;
+  background: #34343D;
+  border-radius: 3px;
 }
-
 ::-webkit-scrollbar-thumb:hover {
-  background: #F59E0B;
+  background: #00D4FF;
 }
 
 /* Loading spinner */
 .spinner {
   border: 3px solid #334155;
-  border-top: 3px solid #F59E0B;
+  border-top: 3px solid #00D4FF;
   border-radius: 50%;
   width: 24px;
   height: 24px;
@@ -90,30 +75,4 @@
 @keyframes spin {
   0% { transform: rotate(0deg); }
   100% { transform: rotate(360deg); }
-}
-
-/* Custom animations */
-@keyframes fadeIn {
-  from { opacity: 0; transform: translateY(20px); }
-  to { opacity: 1; transform: translateY(0); }
-}
-
-@keyframes slideUp {
-  from { opacity: 0; transform: translateY(30px); }
-  to { opacity: 1; transform: translateY(0); }
-}
-
-@keyframes bounceGentle {
-  0%, 100% { transform: translateY(0); }
-  50% { transform: translateY(-5px); }
-}
-
-@keyframes pulseGlow {
-  0%, 100% { box-shadow: 0 0 20px rgba(245, 158, 11, 0.3); }
-  50% { box-shadow: 0 0 40px rgba(245, 158, 11, 0.6); }
-}
-
-@keyframes float {
-  0%, 100% { transform: translateY(0px); }
-  50% { transform: translateY(-10px); }
 }

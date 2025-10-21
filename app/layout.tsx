@@ -35,21 +35,21 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" className="dark">
+    <html lang="en">
       <body className="bg-black text-white antialiased">
         <MiniKitProvider>
           <div className="min-h-screen flex flex-col">
             
-            <header className="sticky top-0 z-50 bg-white/95 backdrop-blur-xl border-b border-gray-100">
-              <div className="max-w-md mx-auto px-4 py-3">
+            <header className="sticky top-0 z-50 bg-black/95 backdrop-blur-xl border-b border-white/10">
+              <div className="max-w-4xl mx-auto px-4 py-4">
                 <div className="flex items-center justify-center">
                   <Image
                     src="/logomuz.png"
                     alt="SeersLeague"
-                    width={120}
-                    height={32}
+                    width={140}
+                    height={36}
                     priority
-                    className="h-8 w-auto object-contain"
+                    className="h-10 w-auto object-contain"
                   />
                 </div>
               </div>
@@ -60,26 +60,26 @@ export default function RootLayout({
               {children}
             </main>
 
-            <nav className="fixed bottom-0 left-0 right-0 z-50 bg-white/95 backdrop-blur-xl border-t border-gray-100">
-              <div className="max-w-md mx-auto">
+            <nav className="fixed bottom-0 left-0 right-0 z-50 bg-black/95 backdrop-blur-xl border-t border-white/10">
+              <div className="max-w-4xl mx-auto">
                 <div className="flex items-center justify-around h-16">
                   <Link 
                     href="/"
-                    className="flex flex-col items-center gap-1 px-4 py-2 text-gray-600 hover:text-blue-600 transition-colors"
+                    className="flex flex-col items-center gap-1 px-4 py-2 text-gray-400 hover:text-blue-400 transition-colors"
                   >
                     <Home className="w-5 h-5" />
                     <span className="text-xs font-medium">Home</span>
                   </Link>
                   <Link 
                     href="/leaderboard"
-                    className="flex flex-col items-center gap-1 px-4 py-2 text-gray-600 hover:text-blue-600 transition-colors"
+                    className="flex flex-col items-center gap-1 px-4 py-2 text-gray-400 hover:text-blue-400 transition-colors"
                   >
                     <Trophy className="w-5 h-5" />
                     <span className="text-xs font-medium">Leaderboard</span>
                   </Link>
                   <Link 
                     href="/profile"
-                    className="flex flex-col items-center gap-1 px-4 py-2 text-gray-600 hover:text-blue-600 transition-colors"
+                    className="flex flex-col items-center gap-1 px-4 py-2 text-gray-400 hover:text-blue-400 transition-colors"
                   >
                     <User className="w-5 h-5" />
                     <span className="text-xs font-medium">Profile</span>
