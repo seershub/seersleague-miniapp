@@ -64,23 +64,55 @@ export async function GET(request: Request) {
 
     console.log(`Found ${allMatchIds.size} unique match IDs:`, Array.from(allMatchIds));
 
-    // Simplified validation - just show match IDs and basic info
+    // Get user's actual predictions and match results
     const validations: PredictionValidation[] = [];
     
     for (const matchId of allMatchIds) {
       try {
         console.log(`Processing match ${matchId}...`);
         
-        // For now, just show basic info without contract calls
+        // Get user's prediction for this match
+        const userPrediction = await publicClient.readContract({
+          address: CONTRACTS.SEERSLEAGUE,
+          abi: SEERSLEAGUE_ABI,
+          functionName: 'getUserPrediction',
+          args: [userAddress as `0x${string}`, BigInt(matchId)]
+        }) as unknown as {
+          matchId: bigint;
+          outcome: bigint;
+          timestamp: bigint;
+        };
+
+        // Get match result
+        const matchResult = await publicClient.readContract({
+          address: CONTRACTS.SEERSLEAGUE,
+          abi: SEERSLEAGUE_ABI,
+          functionName: 'getMatch',
+          args: [BigInt(matchId)]
+        }) as unknown as {
+          id: bigint;
+          startTime: bigint;
+          homeScore: bigint;
+          awayScore: bigint;
+          result: bigint;
+          recordedAt: bigint;
+        };
+
+        const predicted = Number(userPrediction.outcome || 0);
+        const actual = Number(matchResult.result || 0);
+        const isCorrect = actual > 0 && predicted === actual;
+
         validations.push({
           matchId,
-          predicted: 0, // Unknown for now
-          actual: 0, // Unknown for now
-          isCorrect: false,
-          homeTeam: 'Unknown',
+          predicted,
+          actual,
+          isCorrect,
+          homeTeam: 'Unknown', // Contract doesn't store team names
           awayTeam: 'Unknown',
-          score: 'Not validated yet'
+          score: actual === 1 ? 'Home Win' : actual === 2 ? 'Away Win' : actual === 3 ? 'Draw' : 'Not recorded'
         });
+
+        console.log(`Match ${matchId}: predicted=${predicted}, actual=${actual}, correct=${isCorrect}`);
       } catch (error) {
         console.error(`Error processing match ${matchId}:`, error);
         validations.push({
