@@ -72,6 +72,9 @@ const config: Config = {
         'pulse-glow': 'pulseGlow 2s infinite',
         'float': 'float 3s ease-in-out infinite',
         'shimmer': 'shimmer 3s linear infinite',
+        'border-flow': 'borderFlow 8s linear infinite',
+        'float-rotate-1': 'floatRotate1 6s ease-in-out infinite',
+        'float-rotate-2': 'floatRotate2 7s ease-in-out infinite',
       },
       keyframes: {
         fadeIn: {
@@ -97,6 +100,22 @@ const config: Config = {
         shimmer: {
           '0%': { backgroundPosition: '-200% 0' },
           '100%': { backgroundPosition: '200% 0' },
+        },
+        borderFlow: {
+          '0%': { backgroundPosition: '0% 0%' },
+          '100%': { backgroundPosition: '200% 0%' },
+        },
+        floatRotate1: {
+          '0%, 100%': { transform: 'translateY(0px) rotate(0deg)' },
+          '25%': { transform: 'translateY(-8px) rotate(90deg)' },
+          '50%': { transform: 'translateY(0px) rotate(180deg)' },
+          '75%': { transform: 'translateY(-8px) rotate(270deg)' },
+        },
+        floatRotate2: {
+          '0%, 100%': { transform: 'translateY(0px) rotate(0deg)' },
+          '25%': { transform: 'translateY(-6px) rotate(-90deg)' },
+          '50%': { transform: 'translateY(0px) rotate(-180deg)' },
+          '75%': { transform: 'translateY(-6px) rotate(-270deg)' },
         },
       },
       fontFamily: {

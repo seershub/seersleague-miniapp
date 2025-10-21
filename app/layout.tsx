@@ -40,65 +40,75 @@ export default function RootLayout({
         <MiniKitProvider>
           <div className="min-h-screen flex flex-col">
             
-            {/* Header - Premium Modern Design */}
-            <header className="relative bg-black overflow-hidden">
-              {/* Animated Background Gradient Mesh */}
-              <div className="absolute inset-0">
-                {/* Base gradient */}
-                <div className="absolute inset-0 bg-gradient-to-br from-yellow-500/[0.08] via-black to-amber-500/[0.08]"></div>
-
-                {/* Animated gradient orbs */}
-                <div className="absolute top-0 left-1/4 w-96 h-96 bg-yellow-500/10 rounded-full blur-3xl animate-pulse" style={{animationDuration: '4s'}}></div>
-                <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-amber-500/10 rounded-full blur-3xl animate-pulse" style={{animationDuration: '6s', animationDelay: '1s'}}></div>
-              </div>
-
-              {/* Noise texture overlay for depth */}
-              <div className="absolute inset-0 opacity-[0.015]" style={{
-                backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 400 400' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='4' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E")`
-              }}></div>
-
-              {/* Content */}
-              <div className="relative">
-                {/* Top gradient border */}
-                <div className="h-px bg-gradient-to-r from-transparent via-yellow-500/40 to-transparent"></div>
-
-                <div className="max-w-7xl mx-auto px-6 py-10">
-                  {/* Logo - Large and Centered */}
-                  <div className="flex items-center justify-center">
-                    <div className="relative group">
-                      {/* Premium glow effect - multiple layers */}
-                      <div className="absolute -inset-8 bg-gradient-to-r from-yellow-500/0 via-yellow-500/20 to-yellow-500/0 blur-3xl opacity-0 group-hover:opacity-100 transition-opacity duration-700"></div>
-                      <div className="absolute -inset-6 bg-gradient-to-r from-amber-500/0 via-amber-500/15 to-amber-500/0 blur-2xl opacity-60 group-hover:opacity-80 transition-opacity duration-700"></div>
-
-                      {/* Logo */}
-                      <div className="relative">
-                        <Image
-                          src="/logomuz.png"
-                          alt="SeersLeague"
-                          width={800}
-                          height={200}
-                          priority
-                          className="h-32 sm:h-36 md:h-40 w-auto object-contain relative z-10 transform group-hover:scale-[1.01] transition-all duration-700 ease-out"
-                          style={{
-                            filter: 'drop-shadow(0 10px 30px rgba(251, 191, 36, 0.3)) drop-shadow(0 0 60px rgba(251, 191, 36, 0.1))'
-                          }}
-                        />
-                      </div>
-                    </div>
+            {/* Header - Seershub Style Adapted */}
+            <header className="relative bg-black py-6 px-4">
+              <div className="max-w-4xl mx-auto">
+                {/* Main Container with Animated Border */}
+                <div className="relative rounded-2xl overflow-hidden py-6 px-6">
+                  {/* Animated Gradient Border */}
+                  <div
+                    className="absolute inset-0 rounded-2xl animate-border-flow"
+                    style={{
+                      background: 'linear-gradient(90deg, transparent, rgba(251, 191, 36, 0.3), rgba(245, 158, 11, 0.3), transparent) 0.6% 0% / 200% 100%'
+                    }}
+                  >
+                    {/* Inner glassmorphism layer */}
+                    <div className="absolute inset-[1px] rounded-2xl bg-white/[0.02] backdrop-blur-sm"></div>
                   </div>
 
-                  {/* Tagline - Elegant Typography */}
-                  <div className="mt-4 text-center">
-                    <p className="text-sm sm:text-base font-light tracking-wide text-gray-400/80">
-                      <span className="text-yellow-400/90 font-medium">Daily Football Predictions</span>
-                      <span className="mx-2 text-gray-600">•</span>
-                      <span className="text-gray-500">Compete & Win</span>
+                  {/* Subtle gradient overlay */}
+                  <div className="absolute inset-0 bg-gradient-to-b from-yellow-500/[0.02] to-transparent pointer-events-none"></div>
+
+                  {/* Content */}
+                  <div className="relative z-10 flex flex-col items-center">
+                    {/* Welcome Text */}
+                    <div className="text-base md:text-lg font-light text-white/60 tracking-wide mb-1">
+                      Welcome to
+                    </div>
+
+                    {/* Logo Container with Overflow Control */}
+                    <div className="relative -my-3 overflow-hidden max-h-32 md:max-h-40 lg:max-h-48">
+                      <Image
+                        src="/logomuz.png"
+                        alt="SeersLeague"
+                        width={800}
+                        height={200}
+                        priority
+                        className="h-48 md:h-60 lg:h-72 w-auto"
+                        style={{
+                          filter: 'brightness(1.15) contrast(1.05) drop-shadow(0 8px 24px rgba(0, 0, 0, 0.2))',
+                          transform: 'translateY(-10%)'
+                        }}
+                      />
+                    </div>
+
+                    {/* Decorative Line with Soccer Balls */}
+                    <div className="flex items-center justify-center w-full max-w-md -mt-4">
+                      <span
+                        className="text-2xl opacity-35 animate-float-rotate-1"
+                        style={{
+                          filter: 'drop-shadow(0 2px 8px rgba(251, 191, 36, 0.2))'
+                        }}
+                      >
+                        ⚽
+                      </span>
+                      <div className="flex-1 h-[1px] bg-gradient-to-r from-transparent via-white/20 to-transparent mx-4"></div>
+                      <span
+                        className="text-2xl opacity-35 animate-float-rotate-2"
+                        style={{
+                          filter: 'drop-shadow(0 2px 8px rgba(245, 158, 11, 0.2))'
+                        }}
+                      >
+                        ⚽
+                      </span>
+                    </div>
+
+                    {/* Tagline */}
+                    <p className="text-xs md:text-sm text-white/40 font-light tracking-wide text-center mt-2">
+                      Decentralized Football Prediction Platform
                     </p>
                   </div>
                 </div>
-
-                {/* Bottom gradient border */}
-                <div className="h-px bg-gradient-to-r from-transparent via-yellow-500/30 to-transparent"></div>
               </div>
             </header>
 
