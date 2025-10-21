@@ -105,8 +105,8 @@ export default function Home({ initialMatches = [] }: HomeProps) {
       <div className="mb-8">
         <div className="flex items-center justify-between mb-6">
           <div>
-            <h2 className="text-3xl font-black mb-2 bg-gradient-to-r from-white to-gray-400 bg-clip-text text-transparent">
-              Today's Matches
+            <h2 className="text-3xl font-black mb-2 bg-gradient-to-r from-gold-500 to-gold-600 bg-clip-text text-transparent">
+              🚀 TODAY'S MATCHES 🚀
             </h2>
             <p className="text-gray-500">Make your predictions</p>
           </div>
