@@ -94,47 +94,30 @@ export default function Home({ initialMatches = [] }: HomeProps) {
   }, []);
   
   return (
-    <div className="min-h-screen bg-black">
-      <div className="container mx-auto px-4 py-6">
+    <div className="min-h-screen bg-gray-50">
+      <div className="max-w-screen-sm mx-auto px-4 py-6">
         
-        {/* HERO SECTION */}
-        <section className="text-center mb-8 animate-fade-in">
-          <div className="inline-flex items-center gap-3 px-6 py-3 bg-gradient-to-r from-yellow-400 to-yellow-600 rounded-full text-black text-sm font-bold mb-6 shadow-2xl shadow-yellow-500/30">
-            <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-            <span>First 5 Predictions FREE</span>
-          </div>
-          <h1 className="text-4xl md:text-6xl font-black mb-4 bg-gradient-to-r from-yellow-400 via-yellow-500 to-yellow-600 bg-clip-text text-transparent drop-shadow-2xl">
-            Today's Matches
-          </h1>
-        </section>
-
         {/* WALLET STATUS */}
-        <section className="mb-8">
+        <section className="mb-6">
           <WalletConnect />
         </section>
 
         {/* MATCHES SECTION */}
-        <section className="mb-8">
-          <div className="flex items-center justify-between mb-6">
-            <div>
-              <h2 className="text-2xl font-bold text-white mb-2">Featured Matches</h2>
-              <p className="text-gray-400">Select your predictions</p>
-            </div>
-            <div className="px-4 py-2 bg-gray-900/50 rounded-xl border border-yellow-500/30 shadow-lg">
-              <span className="text-yellow-500 font-bold text-lg">{matches.length}</span>
-              <span className="text-gray-400 text-sm ml-2">matches</span>
-            </div>
+        <section className="mb-6">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-lg font-semibold text-gray-900">Today's Matches</h2>
+            <span className="text-sm text-gray-500">{matches.length} matches</span>
           </div>
 
-          {/* MATCHES GRID - FIXED LAYOUT */}
+          {/* MATCHES LIST */}
           {loading ? (
-            <div className="space-y-4">
+            <div className="space-y-3">
               {[1,2,3,4,5].map(i => (
-                <div key={i} className="h-48 bg-gray-900/50 rounded-2xl animate-pulse border border-gray-800" />
+                <div key={i} className="h-32 bg-gray-200 rounded-lg animate-pulse" />
               ))}
             </div>
           ) : (
-            <div className="space-y-4">
+            <div className="space-y-3">
               {matches.map((match) => (
                 <PredictionForm key={match.id} matches={[match]} />
               ))}
@@ -142,35 +125,28 @@ export default function Home({ initialMatches = [] }: HomeProps) {
           )}
 
           {error && (
-            <div className="bg-red-900/20 border border-red-500/30 rounded-2xl p-4 mb-4">
-              <p className="text-red-400 font-semibold">Error: {error}</p>
-              <p className="text-gray-400 text-sm mt-2">
-                Please check your connection and try again
-              </p>
+            <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-4">
+              <p className="text-red-800 text-sm">Error: {error}</p>
             </div>
           )}
           
           {!loading && !error && matches.length === 0 && (
-            <div className="text-center py-12">
-              <div className="w-16 h-16 bg-gray-800 rounded-full flex items-center justify-center mx-auto mb-4">
-                <span className="text-3xl">⚽</span>
-              </div>
-              <p className="text-gray-400 text-lg">No matches available today</p>
-              <p className="text-gray-500 text-sm mt-2">Check back later for new matches</p>
+            <div className="text-center py-8">
+              <p className="text-gray-500">No matches available today</p>
             </div>
           )}
         </section>
 
         {/* CHAIN WARNING */}
         {chainId && chainId !== '0x2105' && (
-          <div className="bg-yellow-900/20 border border-yellow-500/30 rounded-2xl p-4 mb-4">
-            <div className="flex items-center gap-3">
-              <div className="w-6 h-6 bg-yellow-500 rounded-full flex items-center justify-center">
-                <span className="text-black text-sm font-bold">!</span>
+          <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-4">
+            <div className="flex items-center gap-2">
+              <div className="w-4 h-4 bg-yellow-500 rounded-full flex items-center justify-center">
+                <span className="text-white text-xs font-bold">!</span>
               </div>
               <div>
-                <p className="text-yellow-200 font-semibold">Network Warning</p>
-                <p className="text-yellow-300 text-sm">
+                <p className="text-yellow-800 text-sm font-medium">Network Warning</p>
+                <p className="text-yellow-700 text-xs">
                   You're not on Base Mainnet. Current: {chainId} (Expected: 0x2105)
                 </p>
               </div>

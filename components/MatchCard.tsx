@@ -26,64 +26,64 @@ export function MatchCard({ match, selectedOutcome, onOutcomeSelect, disabled = 
   });
 
   return (
-    <div className="bg-gray-800/50 rounded-2xl border border-gray-700 p-6 hover:border-yellow-500/30 transition-all duration-300 group">
+    <div className="bg-white border border-gray-200 rounded-lg p-4">
       
       {/* League Badge & Time */}
-      <div className="flex items-center justify-between mb-6">
-        <span className="text-xs font-bold text-yellow-400 uppercase tracking-wider bg-yellow-500/10 px-3 py-1.5 rounded-full">
+      <div className="flex items-center justify-between mb-4">
+        <span className="text-xs font-medium text-gray-600 bg-gray-100 px-2 py-1 rounded">
           {match.league}
         </span>
-        <div className="flex items-center gap-2 text-gray-400">
+        <div className="flex items-center gap-1 text-gray-500">
           <Clock className="w-4 h-4" />
-          <span className="text-sm font-semibold">{time}</span>
+          <span className="text-sm">{time}</span>
         </div>
       </div>
 
       {/* Teams */}
-      <div className="flex items-center justify-between mb-6">
+      <div className="flex items-center justify-between mb-4">
         <div className="flex-1">
-          <div className="flex items-center gap-4 p-4 rounded-xl bg-gray-900/50 border border-gray-700 hover:border-yellow-500/30 transition-all duration-300">
-            <div className="w-12 h-12 rounded-full bg-gray-700 flex items-center justify-center border-2 border-gray-600 group-hover:border-yellow-500/50 transition-colors duration-300">
-              <span className="text-xl">🏠</span>
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center">
+              <span className="text-lg">🏠</span>
             </div>
             <div>
-              <p className="text-xs text-gray-500 font-semibold mb-1 uppercase tracking-wider">HOME</p>
-              <p className="font-bold text-white text-base">{match.homeTeam}</p>
+              <p className="text-xs text-gray-500 mb-1">HOME</p>
+              <p className="font-medium text-gray-900 text-sm">{match.homeTeam}</p>
             </div>
           </div>
         </div>
 
-        <div className="px-4">
-          <div className="w-12 h-12 rounded-full bg-gradient-to-r from-yellow-400 to-yellow-600 flex items-center justify-center shadow-lg shadow-yellow-500/30">
-            <span className="text-xs font-black text-black">VS</span>
+        <div className="px-3">
+          <div className="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center">
+            <span className="text-xs font-medium text-gray-600">VS</span>
           </div>
         </div>
 
         <div className="flex-1">
-          <div className="flex items-center justify-end gap-4 p-4 rounded-xl bg-gray-900/50 border border-gray-700 hover:border-yellow-500/30 transition-all duration-300">
+          <div className="flex items-center justify-end gap-3">
             <div className="text-right">
-              <p className="text-xs text-gray-500 font-semibold mb-1 uppercase tracking-wider">AWAY</p>
-              <p className="font-bold text-white text-base">{match.awayTeam}</p>
+              <p className="text-xs text-gray-500 mb-1">AWAY</p>
+              <p className="font-medium text-gray-900 text-sm">{match.awayTeam}</p>
             </div>
-            <div className="w-12 h-12 rounded-full bg-gray-700 flex items-center justify-center border-2 border-gray-600 group-hover:border-yellow-500/50 transition-colors duration-300">
-              <span className="text-xl">✈️</span>
+            <div className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center">
+              <span className="text-lg">✈️</span>
             </div>
           </div>
         </div>
       </div>
 
       {/* Prediction Buttons */}
-      <div className="grid grid-cols-3 gap-3">
+      <div className="grid grid-cols-3 gap-2">
         <button
           onClick={() => {
             setSelected('home');
             onOutcomeSelect(1);
           }}
           disabled={disabled}
-          className={`py-3 rounded-xl font-bold text-sm transition-all duration-300 ${
+          className={`py-2 rounded-lg text-sm font-medium transition-colors ${
             selectedOutcome === 1 
-              ? 'bg-gradient-to-r from-yellow-400 to-yellow-600 text-black shadow-lg shadow-yellow-500/30 scale-105' 
-              : 'bg-gray-700 border-2 border-gray-600 text-gray-300 hover:text-white hover:border-yellow-500/50 hover:bg-gray-600'
+              ? 'bg-blue-600 text-white' 
+              : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
           } ${disabled ? 'opacity-50 cursor-not-allowed' : ''}`}
         >
           Home
@@ -94,10 +94,10 @@ export function MatchCard({ match, selectedOutcome, onOutcomeSelect, disabled = 
             onOutcomeSelect(2);
           }}
           disabled={disabled}
-          className={`py-3 rounded-xl font-bold text-sm transition-all duration-300 ${
+          className={`py-2 rounded-lg text-sm font-medium transition-colors ${
             selectedOutcome === 2 
-              ? 'bg-gradient-to-r from-yellow-400 to-yellow-600 text-black shadow-lg shadow-yellow-500/30 scale-105' 
-              : 'bg-gray-700 border-2 border-gray-600 text-gray-300 hover:text-white hover:border-yellow-500/50 hover:bg-gray-600'
+              ? 'bg-blue-600 text-white' 
+              : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
           } ${disabled ? 'opacity-50 cursor-not-allowed' : ''}`}
         >
           Draw
@@ -108,10 +108,10 @@ export function MatchCard({ match, selectedOutcome, onOutcomeSelect, disabled = 
             onOutcomeSelect(3);
           }}
           disabled={disabled}
-          className={`py-3 rounded-xl font-bold text-sm transition-all duration-300 ${
+          className={`py-2 rounded-lg text-sm font-medium transition-colors ${
             selectedOutcome === 3 
-              ? 'bg-gradient-to-r from-yellow-400 to-yellow-600 text-black shadow-lg shadow-yellow-500/30 scale-105' 
-              : 'bg-gray-700 border-2 border-gray-600 text-gray-300 hover:text-white hover:border-yellow-500/50 hover:bg-gray-600'
+              ? 'bg-blue-600 text-white' 
+              : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
           } ${disabled ? 'opacity-50 cursor-not-allowed' : ''}`}
         >
           Away
@@ -120,11 +120,11 @@ export function MatchCard({ match, selectedOutcome, onOutcomeSelect, disabled = 
 
       {/* Selection Indicator */}
       {selectedOutcome && (
-        <div className="mt-4 text-center animate-fade-in">
-          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-gradient-to-r from-yellow-400 to-yellow-600 shadow-lg shadow-yellow-500/30">
-            <div className="w-2 h-2 bg-black rounded-full animate-pulse" />
-            <span className="text-xs font-bold text-black uppercase tracking-wider">
-              Locked
+        <div className="mt-3 text-center">
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-100 text-blue-800">
+            <div className="w-2 h-2 bg-blue-600 rounded-full" />
+            <span className="text-xs font-medium">
+              Selected
             </span>
           </div>
         </div>

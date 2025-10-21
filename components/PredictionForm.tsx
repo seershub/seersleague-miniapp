@@ -358,53 +358,77 @@ export function PredictionForm({ matches }: PredictionFormProps) {
   }
   
   return (
-    <div className="bg-gray-900/50 rounded-2xl border border-gray-800 p-6 shadow-lg">
-      {/* Match Header */}
-      <div className="flex items-center justify-between mb-4">
-        <div className="flex items-center gap-3">
-          <input
-            type="checkbox"
-            id={`match-${parseInt(matches[0].id)}`}
-            checked={predictions[parseInt(matches[0].id)] !== undefined}
-            onChange={() => toggleMatchSelection(parseInt(matches[0].id))}
-            disabled={isSubmitting || isPending}
-            className="w-5 h-5 text-yellow-500 bg-gray-700 border-gray-600 rounded focus:ring-yellow-500"
-          />
-          <label htmlFor={`match-${parseInt(matches[0].id)}`} className="text-sm font-medium text-gray-300">
-            Predict this match
-          </label>
+    <div className="space-y-4">
+      {/* Free Predictions Info */}
+      <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center space-x-2">
+            <span className="text-blue-600">🎯</span>
+            <span className="font-medium text-blue-800">Flexible Predictions</span>
+          </div>
+          <span className="text-sm text-blue-600">
+            {remainingFreePredictions} free predictions left
+          </span>
         </div>
-        <div className="text-sm text-gray-400">
-          {remainingFreePredictions} free left
-        </div>
+        <p className="text-sm text-blue-700 mt-1">
+          Select any matches you want to predict. First 5 predictions are free, then 0.5 USDC per match.
+        </p>
       </div>
-      
-      {/* Match Card */}
-      <MatchCard
-        match={matches[0]}
-        selectedOutcome={predictions[parseInt(matches[0].id)]}
-        onOutcomeSelect={(outcome) => handleOutcomeSelect(parseInt(matches[0].id), outcome)}
-        disabled={isSubmitting || isPending}
-      />
       
       {/* Payment Summary */}
       {Object.keys(predictions).length > 0 && (
-        <div className="mt-4 p-3 bg-yellow-900/20 border border-yellow-500/30 rounded-xl">
+        <div className="bg-green-50 border border-green-200 rounded-lg p-4">
           <div className="flex items-center justify-between">
-            <span className="font-semibold text-yellow-400">Selected: {Object.keys(predictions).length}</span>
-            <span className="text-yellow-300 font-bold">
-              {predictionsToPayFor > 0 ? `${formatUSDC(totalFee)} USDC` : 'FREE'}
+            <span className="font-medium text-green-800">Selected Matches: {Object.keys(predictions).length}</span>
+            <span className="text-green-700 font-semibold">
+              {predictionsToPayFor > 0 ? `Fee: ${formatUSDC(totalFee)} USDC` : 'FREE'}
             </span>
           </div>
         </div>
       )}
       
+      {/* Match Cards */}
+      <div className="space-y-3">
+        {matches.map((match) => {
+          const matchId = parseInt(match.id);
+          const selectedOutcome = predictions[matchId];
+          const isSelected = selectedOutcome !== undefined;
+          
+          return (
+            <div key={match.id} className="bg-white border border-gray-200 rounded-lg p-4">
+              {/* Match Selection Checkbox */}
+              <div className="flex items-center space-x-3 mb-3">
+                <input
+                  type="checkbox"
+                  id={`match-${matchId}`}
+                  checked={isSelected}
+                  onChange={() => toggleMatchSelection(matchId)}
+                  disabled={isSubmitting || isPending}
+                  className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500"
+                />
+                <label htmlFor={`match-${matchId}`} className="text-sm font-medium text-gray-700">
+                  Predict this match
+                </label>
+              </div>
+              
+              {/* Match Card */}
+              <MatchCard
+                match={match}
+                selectedOutcome={selectedOutcome}
+                onOutcomeSelect={(outcome) => handleOutcomeSelect(matchId, outcome)}
+                disabled={isSubmitting || isPending}
+              />
+            </div>
+          );
+        })}
+      </div>
+      
       {/* Submit Button */}
-      <div className="mt-4 text-center">
+      <div className="text-center">
         <button
           onClick={handleSubmit}
           disabled={!isFormValid || isSubmitting || isPending}
-          className="w-full py-3 px-6 bg-gradient-to-r from-yellow-400 to-yellow-600 text-black font-bold rounded-xl hover:shadow-yellow-500/30 hover:shadow-lg transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
+          className="bg-blue-600 hover:bg-blue-700 text-white font-medium py-3 px-6 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
         >
           {isSubmitting || isPending ? (
             <div className="flex items-center justify-center space-x-2">
@@ -413,14 +437,14 @@ export function PredictionForm({ matches }: PredictionFormProps) {
             </div>
           ) : (
             <>
-              {totalFee > 0 ? `Submit (${formatUSDC(totalFee)} USDC)` : 'Submit FREE'}
+              {totalFee > 0 ? `Submit Seer! (${formatUSDC(totalFee)} USDC)` : 'Submit Seer!'}
             </>
           )}
         </button>
         
         {!isFormValid && (
-          <p className="text-sm text-gray-400 mt-2">
-            Select match and choose outcome
+          <p className="text-sm text-gray-500 mt-2">
+            Please select at least one match and choose outcomes
           </p>
         )}
       </div>
