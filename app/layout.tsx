@@ -77,24 +77,27 @@ export default function RootLayout({
                       />
                     </div>
 
-                    {/* Decorative Line with Soccer Balls */}
+                    {/* Decorative Line with Trophies - Premium Animation */}
                     <div className="flex items-center justify-center w-full max-w-md -mt-4">
                       <span
-                        className="text-2xl opacity-40 animate-float-rotate-1"
+                        className="text-3xl animate-trophy-bounce-1"
                         style={{
-                          filter: 'drop-shadow(0 2px 8px rgba(251, 191, 36, 0.35))'
+                          filter: 'drop-shadow(0 4px 12px rgba(251, 191, 36, 0.6)) drop-shadow(0 0 20px rgba(251, 191, 36, 0.4))'
                         }}
                       >
-                        ⚽
+                        🏆
                       </span>
-                      <div className="flex-1 h-[1px] bg-gradient-to-r from-transparent via-white/25 to-transparent mx-4"></div>
+                      <div className="flex-1 h-[2px] bg-gradient-to-r from-transparent via-yellow-400/40 to-transparent mx-4 relative">
+                        {/* Animated shimmer line */}
+                        <div className="absolute inset-0 bg-gradient-to-r from-transparent via-yellow-300/60 to-transparent animate-shimmer-fast"></div>
+                      </div>
                       <span
-                        className="text-2xl opacity-40 animate-float-rotate-2"
+                        className="text-3xl animate-trophy-bounce-2"
                         style={{
-                          filter: 'drop-shadow(0 2px 8px rgba(245, 158, 11, 0.35))'
+                          filter: 'drop-shadow(0 4px 12px rgba(245, 158, 11, 0.6)) drop-shadow(0 0 20px rgba(245, 158, 11, 0.4))'
                         }}
                       >
-                        ⚽
+                        🏆
                       </span>
                     </div>
 

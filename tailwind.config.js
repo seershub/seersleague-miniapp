@@ -72,9 +72,12 @@ const config: Config = {
         'pulse-glow': 'pulseGlow 2s infinite',
         'float': 'float 3s ease-in-out infinite',
         'shimmer': 'shimmer 3s linear infinite',
+        'shimmer-fast': 'shimmer 2s linear infinite',
         'border-flow': 'borderFlow 8s linear infinite',
         'float-rotate-1': 'floatRotate1 6s ease-in-out infinite',
         'float-rotate-2': 'floatRotate2 7s ease-in-out infinite',
+        'trophy-bounce-1': 'trophyBounce1 3s ease-in-out infinite',
+        'trophy-bounce-2': 'trophyBounce2 3s ease-in-out infinite 0.5s',
       },
       keyframes: {
         fadeIn: {
@@ -116,6 +119,26 @@ const config: Config = {
           '25%': { transform: 'translateY(-6px) rotate(-90deg)' },
           '50%': { transform: 'translateY(0px) rotate(-180deg)' },
           '75%': { transform: 'translateY(-6px) rotate(-270deg)' },
+        },
+        trophyBounce1: {
+          '0%, 100%': {
+            transform: 'translateY(0) scale(1)',
+            opacity: '0.9'
+          },
+          '50%': {
+            transform: 'translateY(-10px) scale(1.1)',
+            opacity: '1'
+          },
+        },
+        trophyBounce2: {
+          '0%, 100%': {
+            transform: 'translateY(0) scale(1) rotate(0deg)',
+            opacity: '0.9'
+          },
+          '50%': {
+            transform: 'translateY(-10px) scale(1.1) rotate(-5deg)',
+            opacity: '1'
+          },
         },
       },
       fontFamily: {
