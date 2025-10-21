@@ -4,7 +4,7 @@ import { publicClient } from '@/lib/viem-config';
 import { CONTRACTS, SEERSLEAGUE_ABI } from '@/lib/contract-interactions';
 
 export const dynamic = 'force-dynamic';
-export const maxDuration = 30; // Longer timeout for blockchain queries
+export const maxDuration = 10; // Keep it fast
 
 interface PredictionHistoryEntry {
   matchId: number;
@@ -98,21 +98,25 @@ export async function GET(
       }
     });
 
-    // Build prediction history - batch process to avoid timeout
+    // Build prediction history - only fetch recent predictions to stay fast
     const history: PredictionHistoryEntry[] = [];
     const uniqueMatchIds = new Set<number>();
 
-    // First, collect all unique match IDs
+    // Collect all unique match IDs from events
     for (const event of predictionEvents) {
       if (!event.args || !event.args.matchIds) continue;
       const matchIds = event.args.matchIds as bigint[];
       matchIds.forEach(id => uniqueMatchIds.add(Number(id)));
     }
 
-    console.log(`Processing ${uniqueMatchIds.size} unique matches...`);
+    console.log(`Found ${uniqueMatchIds.size} unique matches`);
 
-    // Fetch all predictions in parallel (much faster)
-    const predictionPromises = Array.from(uniqueMatchIds).map(async (matchIdNum) => {
+    // Limit to last 10 matches to avoid timeout
+    const recentMatchIds = Array.from(uniqueMatchIds).slice(-10);
+    console.log(`Processing ${recentMatchIds.length} recent matches...`);
+
+    // Fetch predictions in parallel
+    const predictionPromises = recentMatchIds.map(async (matchIdNum) => {
       try {
         const prediction = await publicClient.readContract({
           address: CONTRACTS.SEERSLEAGUE,
