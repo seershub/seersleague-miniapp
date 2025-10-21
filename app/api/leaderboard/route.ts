@@ -1,5 +1,7 @@
 import { NextResponse } from 'next/server';
 import { kv } from '@vercel/kv';
+import { publicClient } from '@/lib/viem-config';
+import { CONTRACTS, SEERSLEAGUE_ABI } from '@/lib/contract-interactions';
 
 export interface LeaderboardEntry {
   rank: number;
@@ -13,6 +15,111 @@ export interface LeaderboardEntry {
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
+
+// Generate leaderboard directly from contract (fallback when KV fails)
+async function generateLeaderboardFromContract(): Promise<LeaderboardEntry[]> {
+  console.log('Generating leaderboard directly from contract...');
+  
+  try {
+    // Get contract deployment block
+    const deploymentBlock = BigInt(process.env.NEXT_PUBLIC_DEPLOYMENT_BLOCK || '0');
+    const currentBlock = await publicClient.getBlockNumber();
+
+    // Fetch PredictionsSubmitted events
+    const predictionEvents = await publicClient.getLogs({
+      address: CONTRACTS.SEERSLEAGUE,
+      event: {
+        type: 'event',
+        name: 'PredictionsSubmitted',
+        inputs: [
+          { name: 'user', type: 'address', indexed: true },
+          { name: 'matchIds', type: 'uint256[]', indexed: false },
+          { name: 'predictionsCount', type: 'uint256', indexed: false },
+          { name: 'freeUsed', type: 'uint256', indexed: false },
+          { name: 'feePaid', type: 'uint256', indexed: false }
+        ]
+      },
+      fromBlock: deploymentBlock > 0n ? deploymentBlock : currentBlock - 10000n,
+      toBlock: 'latest'
+    });
+
+    console.log(`Found ${predictionEvents.length} prediction events`);
+
+    // Extract unique user addresses
+    const uniqueUsers = new Set<string>();
+    predictionEvents.forEach(event => {
+      if (event.args && event.args.user) {
+        uniqueUsers.add(event.args.user.toLowerCase());
+      }
+    });
+
+    console.log(`Found ${uniqueUsers.size} unique users`);
+
+    // Fetch stats for each user
+    const leaderboardData: LeaderboardEntry[] = [];
+
+    for (const userAddress of uniqueUsers) {
+      try {
+        const stats = await publicClient.readContract({
+          address: CONTRACTS.SEERSLEAGUE,
+          abi: SEERSLEAGUE_ABI,
+          functionName: 'getUserStats',
+          args: [userAddress as `0x${string}`]
+        }) as unknown as {
+          correctPredictions: bigint;
+          totalPredictions: bigint;
+          freePredictionsUsed: bigint;
+          currentStreak: bigint;
+          longestStreak: bigint;
+        };
+
+        const correctPredictions = Number(stats.correctPredictions || 0);
+        const totalPredictions = Number(stats.totalPredictions || 0);
+
+        if (totalPredictions > 0) {
+          const accuracy = totalPredictions > 0
+            ? Math.round((correctPredictions / totalPredictions) * 100)
+            : 0;
+
+          leaderboardData.push({
+            rank: 0, // Will be set after sorting
+            address: userAddress,
+            accuracy,
+            totalPredictions,
+            correctPredictions,
+            currentStreak: Number(stats.currentStreak || 0),
+            longestStreak: Number(stats.longestStreak || 0)
+          });
+        }
+      } catch (error) {
+        console.error(`Error fetching stats for ${userAddress}:`, error);
+      }
+    }
+
+    // Sort leaderboard
+    leaderboardData.sort((a, b) => {
+      if (a.accuracy !== b.accuracy) {
+        return b.accuracy - a.accuracy;
+      }
+      if (a.totalPredictions !== b.totalPredictions) {
+        return b.totalPredictions - a.totalPredictions;
+      }
+      return b.currentStreak - a.currentStreak;
+    });
+
+    // Assign ranks
+    leaderboardData.forEach((entry, index) => {
+      entry.rank = index + 1;
+    });
+
+    console.log(`Generated leaderboard with ${leaderboardData.length} entries`);
+    return leaderboardData;
+
+  } catch (error) {
+    console.error('Error generating leaderboard from contract:', error);
+    return [];
+  }
+}
 
 // Trigger background update if data is stale (> 1 hour old)
 async function triggerUpdateIfStale() {
@@ -68,7 +175,14 @@ export async function GET(request: Request) {
       leaderboard = kvData || [];
     } catch (kvError) {
       console.error('KV fetch error:', kvError);
-      // Return empty data if KV fails
+      // Try to generate leaderboard directly from contract if KV fails
+      console.log('KV failed, trying direct contract fetch...');
+      try {
+        leaderboard = await generateLeaderboardFromContract();
+      } catch (contractError) {
+        console.error('Direct contract fetch failed:', contractError);
+        leaderboard = [];
+      }
     }
 
     if (!leaderboard || leaderboard.length === 0) {
