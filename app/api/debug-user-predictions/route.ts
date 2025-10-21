@@ -38,40 +38,25 @@ export async function GET(request: Request) {
 
     console.log(`Found ${predictionEvents.length} prediction events for user`);
 
-    // Get user's individual predictions
+    // Get user's individual predictions from events
     const userPredictions = [];
     for (const event of predictionEvents) {
       if (event.args) {
         const matchIds = event.args.matchIds || [];
         const predictionsCount = Number(event.args.predictionsCount || 0);
+        const freeUsed = Number(event.args.freeUsed || 0);
+        const feePaid = Number(event.args.feePaid || 0);
         
-        console.log(`Event: ${matchIds.length} matches, ${predictionsCount} predictions`);
+        console.log(`Event: ${matchIds.length} matches, ${predictionsCount} predictions, free: ${freeUsed}, fee: ${feePaid}`);
         
-        // For each match, get the user's prediction
+        // For now, just show the match IDs from events
         for (const matchId of matchIds) {
-          try {
-            const prediction = await publicClient.readContract({
-              address: CONTRACTS.SEERSLEAGUE,
-              abi: SEERSLEAGUE_ABI,
-              functionName: 'getUserPrediction',
-              args: [userAddress as `0x${string}`, matchId]
-            }) as unknown as {
-              outcome: bigint;
-              timestamp: bigint;
-            };
-            
-            if (prediction && prediction.outcome > 0n) {
-              userPredictions.push({
-                matchId: matchId.toString(),
-                outcome: Number(prediction.outcome),
-                timestamp: Number(prediction.timestamp),
-                outcomeText: Number(prediction.outcome) === 1 ? 'Home Win' : 
-                           Number(prediction.outcome) === 2 ? 'Away Win' : 'Draw'
-              });
-            }
-          } catch (error) {
-            console.error(`Error fetching prediction for match ${matchId}:`, error);
-          }
+          userPredictions.push({
+            matchId: matchId.toString(),
+            outcome: 'Unknown', // We'll need to get this differently
+            timestamp: 'Unknown',
+            outcomeText: 'Unknown'
+          });
         }
       }
     }
@@ -97,7 +82,7 @@ export async function GET(request: Request) {
         const matchResult = await publicClient.readContract({
           address: CONTRACTS.SEERSLEAGUE,
           abi: SEERSLEAGUE_ABI,
-          functionName: 'getMatchResult',
+          functionName: 'getMatch',
           args: [BigInt(prediction.matchId)]
         }) as unknown as {
           result: bigint;
@@ -106,15 +91,13 @@ export async function GET(request: Request) {
         
         if (matchResult && matchResult.result > 0n) {
           const actualResult = Number(matchResult.result);
-          const predictedResult = prediction.outcome;
-          const isCorrect = actualResult === predictedResult;
           
           matchResults.push({
             matchId: prediction.matchId,
-            predicted: predictedResult,
+            predicted: 'Unknown',
             actual: actualResult,
-            isCorrect,
-            predictedText: prediction.outcomeText,
+            isCorrect: null,
+            predictedText: 'Unknown',
             actualText: actualResult === 1 ? 'Home Win' : 
                        actualResult === 2 ? 'Away Win' : 'Draw',
             recordedAt: Number(matchResult.recordedAt)
@@ -122,10 +105,10 @@ export async function GET(request: Request) {
         } else {
           matchResults.push({
             matchId: prediction.matchId,
-            predicted: prediction.outcome,
+            predicted: 'Unknown',
             actual: null,
             isCorrect: null,
-            predictedText: prediction.outcomeText,
+            predictedText: 'Unknown',
             actualText: 'Not recorded yet',
             recordedAt: null
           });
@@ -134,10 +117,10 @@ export async function GET(request: Request) {
         console.error(`Error fetching result for match ${prediction.matchId}:`, error);
         matchResults.push({
           matchId: prediction.matchId,
-          predicted: prediction.outcome,
+          predicted: 'Unknown',
           actual: null,
           isCorrect: null,
-          predictedText: prediction.outcomeText,
+          predictedText: 'Unknown',
           actualText: 'Error fetching result',
           recordedAt: null
         });
