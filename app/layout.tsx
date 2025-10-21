@@ -40,130 +40,70 @@ export default function RootLayout({
         <MiniKitProvider>
           <div className="min-h-screen flex flex-col">
             
-            <header className="sticky top-0 z-50 relative overflow-hidden border-b border-yellow-500/30">
-              {/* Animated Mesh Gradient Background */}
-              <div className="absolute inset-0 bg-gradient-to-br from-black via-yellow-950/20 to-black">
-                <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_left,_var(--tw-gradient-stops))] from-yellow-500/20 via-transparent to-transparent"></div>
-                <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-amber-500/20 via-transparent to-transparent"></div>
-                <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_bottom,_var(--tw-gradient-stops))] from-orange-500/10 via-transparent to-transparent"></div>
-              </div>
+            {/* Header - Non-Sticky, Minimal Design */}
+            <header className="relative border-b border-yellow-500/10 bg-black">
+              {/* Subtle Gradient Background */}
+              <div className="absolute inset-0 bg-gradient-to-b from-yellow-500/5 via-transparent to-transparent"></div>
 
-              {/* Geometric Pattern Overlay */}
-              <div className="absolute inset-0 opacity-10" style={{
-                backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23fbbf24' fill-opacity='1'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v6h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`,
-                backgroundSize: '30px 30px'
-              }}></div>
+              {/* Animated Accent Line Top */}
+              <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-yellow-500/60 to-transparent"></div>
 
-              {/* PNG Effect - Positioned Left */}
-              <div className="absolute left-0 top-0 bottom-0 w-2/3 opacity-15 blur-sm"
-                style={{
-                  backgroundImage: 'url(/logo-effect.png)',
-                  backgroundSize: 'contain',
-                  backgroundPosition: 'left center',
-                  backgroundRepeat: 'no-repeat'
-                }}
-              />
+              <div className="relative max-w-md mx-auto px-4 py-4">
+                {/* Logo Container - Centered with minimal effects */}
+                <div className="flex items-center justify-center">
+                  <div className="relative group">
+                    {/* Subtle Glow */}
+                    <div className="absolute -inset-3 bg-gradient-to-r from-yellow-500/20 via-amber-500/20 to-yellow-500/20 blur-2xl opacity-50 group-hover:opacity-70 transition-opacity duration-500"></div>
 
-              {/* Floating Particles */}
-              <div className="absolute inset-0 overflow-hidden">
-                <div className="absolute top-4 left-[15%] w-2 h-2 bg-yellow-400/40 rounded-full blur-sm animate-pulse"></div>
-                <div className="absolute top-8 right-[20%] w-3 h-3 bg-amber-400/30 rounded-full blur-sm animate-pulse" style={{animationDelay: '0.5s'}}></div>
-                <div className="absolute bottom-6 left-[40%] w-2 h-2 bg-orange-400/40 rounded-full blur-sm animate-pulse" style={{animationDelay: '1s'}}></div>
-                <div className="absolute top-12 left-[60%] w-1.5 h-1.5 bg-yellow-300/50 rounded-full blur-sm animate-pulse" style={{animationDelay: '1.5s'}}></div>
-              </div>
-
-              {/* Glass Morphism Effect */}
-              <div className="absolute inset-0 backdrop-blur-xl bg-black/60"></div>
-
-              {/* Main Content Container */}
-              <div className="max-w-6xl mx-auto px-4 sm:px-6 relative z-10">
-                <div className="flex items-center justify-between py-4 gap-6">
-
-                  {/* Left Side - Logo in Glass Card */}
-                  <div className="flex items-center">
-                    <div className="relative group">
-                      {/* Glass Card Background */}
-                      <div className="absolute inset-0 bg-gradient-to-br from-yellow-500/10 to-amber-600/5 rounded-2xl backdrop-blur-sm border border-yellow-500/20"></div>
-
-                      {/* Animated Border Glow */}
-                      <div className="absolute -inset-[2px] bg-gradient-to-r from-yellow-400 via-amber-400 to-yellow-400 rounded-2xl opacity-0 group-hover:opacity-30 blur-xl transition-opacity duration-500 bg-[length:200%_100%] animate-[shimmer_3s_linear_infinite]"></div>
-
-                      {/* Logo Container */}
-                      <div className="relative px-6 py-4">
-                        <Image
-                          src="/logomuz.png"
-                          alt="SeersLeague"
-                          width={600}
-                          height={150}
-                          priority
-                          className="h-20 sm:h-24 w-auto object-contain transform group-hover:scale-105 transition-all duration-300"
-                          style={{
-                            filter: 'drop-shadow(0 0 15px rgba(251, 191, 36, 0.4))'
-                          }}
-                        />
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Right Side - Animated Info Cards */}
-                  <div className="hidden md:flex items-center gap-4">
-
-                    {/* Live Matches Indicator */}
-                    <div className="relative group cursor-pointer">
-                      <div className="absolute inset-0 bg-gradient-to-br from-green-500/10 to-emerald-600/5 rounded-xl backdrop-blur-sm border border-green-500/20"></div>
-                      <div className="relative px-4 py-2 flex items-center gap-2">
-                        <span className="relative flex h-2 w-2">
-                          <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
-                          <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
-                        </span>
-                        <div>
-                          <p className="text-[10px] text-gray-400 uppercase tracking-wider font-medium">Live Now</p>
-                          <p className="text-sm font-bold text-green-400">5 Matches</p>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Prize Pool Card */}
-                    <div className="relative group cursor-pointer">
-                      <div className="absolute inset-0 bg-gradient-to-br from-yellow-500/10 to-amber-600/5 rounded-xl backdrop-blur-sm border border-yellow-500/20"></div>
-                      <div className="absolute -inset-[1px] bg-gradient-to-r from-yellow-400 to-amber-400 rounded-xl opacity-0 group-hover:opacity-20 blur transition-opacity"></div>
-                      <div className="relative px-4 py-2">
-                        <p className="text-[10px] text-gray-400 uppercase tracking-wider font-medium">Prize Pool</p>
-                        <p className="text-sm font-bold bg-gradient-to-r from-yellow-400 to-amber-400 bg-clip-text text-transparent">1000 USDC</p>
-                      </div>
-                    </div>
-
-                    {/* Daily Predictions Card */}
-                    <div className="relative group cursor-pointer">
-                      <div className="absolute inset-0 bg-gradient-to-br from-purple-500/10 to-pink-600/5 rounded-xl backdrop-blur-sm border border-purple-500/20"></div>
-                      <div className="relative px-4 py-2">
-                        <p className="text-[10px] text-gray-400 uppercase tracking-wider font-medium">Today</p>
-                        <p className="text-sm font-bold text-purple-400">Predict & Win</p>
-                      </div>
-                    </div>
-
-                  </div>
-
-                  {/* Mobile - Compact Version */}
-                  <div className="md:hidden flex items-center gap-2">
+                    {/* Logo */}
                     <div className="relative">
-                      <div className="absolute inset-0 bg-gradient-to-br from-yellow-500/10 to-amber-600/5 rounded-lg backdrop-blur-sm border border-yellow-500/20"></div>
-                      <div className="relative px-3 py-2">
-                        <span className="relative flex h-1.5 w-1.5 inline-flex">
-                          <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
-                          <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-green-500"></span>
-                        </span>
-                        <p className="text-xs font-bold text-green-400 ml-2 inline">Live</p>
-                      </div>
+                      <Image
+                        src="/logomuz.png"
+                        alt="SeersLeague"
+                        width={500}
+                        height={125}
+                        priority
+                        className="h-16 w-auto object-contain relative z-10 transform group-hover:scale-[1.02] transition-transform duration-300"
+                        style={{
+                          filter: 'drop-shadow(0 4px 12px rgba(251, 191, 36, 0.25))'
+                        }}
+                      />
                     </div>
                   </div>
+                </div>
 
+                {/* Compact Info Bar - Below Logo */}
+                <div className="mt-3 flex items-center justify-center gap-4 text-xs">
+                  {/* Live Indicator */}
+                  <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-gradient-to-r from-green-500/10 to-emerald-500/10 border border-green-500/20">
+                    <span className="relative flex h-1.5 w-1.5">
+                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
+                      <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-green-500"></span>
+                    </span>
+                    <span className="text-green-400 font-medium">LIVE</span>
+                  </div>
+
+                  {/* Prize Pool */}
+                  <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-gradient-to-r from-yellow-500/10 to-amber-500/10 border border-yellow-500/20">
+                    <svg className="w-3 h-3 text-yellow-400" fill="currentColor" viewBox="0 0 20 20">
+                      <path d="M8.433 7.418c.155-.103.346-.196.567-.267v1.698a2.305 2.305 0 01-.567-.267C8.07 8.34 8 8.114 8 8c0-.114.07-.34.433-.582zM11 12.849v-1.698c.22.071.412.164.567.267.364.243.433.468.433.582 0 .114-.07.34-.433.582a2.305 2.305 0 01-.567.267z" />
+                      <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-13a1 1 0 10-2 0v.092a4.535 4.535 0 00-1.676.662C6.602 6.234 6 7.009 6 8c0 .99.602 1.765 1.324 2.246.48.32 1.054.545 1.676.662v1.941c-.391-.127-.68-.317-.843-.504a1 1 0 10-1.51 1.31c.562.649 1.413 1.076 2.353 1.253V15a1 1 0 102 0v-.092a4.535 4.535 0 001.676-.662C13.398 13.766 14 12.991 14 12c0-.99-.602-1.765-1.324-2.246A4.535 4.535 0 0011 9.092V7.151c.391.127.68.317.843.504a1 1 0 101.511-1.31c-.563-.649-1.413-1.076-2.354-1.253V5z" clipRule="evenodd" />
+                    </svg>
+                    <span className="text-yellow-400 font-bold">1000</span>
+                  </div>
+
+                  {/* Active Users */}
+                  <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-gradient-to-r from-purple-500/10 to-pink-500/10 border border-purple-500/20">
+                    <svg className="w-3 h-3 text-purple-400" fill="currentColor" viewBox="0 0 20 20">
+                      <path d="M9 6a3 3 0 11-6 0 3 3 0 016 0zM17 6a3 3 0 11-6 0 3 3 0 016 0zM12.93 17c.046-.327.07-.66.07-1a6.97 6.97 0 00-1.5-4.33A5 5 0 0119 16v1h-6.07zM6 11a5 5 0 015 5v1H1v-1a5 5 0 015-5z" />
+                    </svg>
+                    <span className="text-purple-400 font-medium">247</span>
+                  </div>
                 </div>
               </div>
 
               {/* Bottom Accent Line */}
-              <div className="absolute bottom-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-yellow-500/50 to-transparent"></div>
-
+              <div className="absolute bottom-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-yellow-500/30 to-transparent"></div>
             </header>
 
             {/* Main content */}
