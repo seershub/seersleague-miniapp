@@ -49,15 +49,28 @@ export default function LeaderboardPage() {
     const fetchLeaderboard = async () => {
       try {
         setLoading(true);
-        const url = userAddress
-          ? `/api/leaderboard?address=${userAddress}`
-          : '/api/leaderboard';
-
-        const response = await fetch(url);
+        console.log('Fetching leaderboard from simple endpoint...');
+        
+        // Use the new simple-leaderboard endpoint that works
+        const response = await fetch('/api/simple-leaderboard');
         if (!response.ok) throw new Error('Failed to fetch leaderboard');
 
         const leaderboardData = await response.json();
-        setData(leaderboardData);
+        console.log('Leaderboard data received:', leaderboardData);
+        
+        // Transform the data to match the expected format
+        const transformedData = {
+          leaderboard: leaderboardData.leaderboard || [],
+          topPlayers: leaderboardData.topPlayers || [],
+          userRank: userAddress ? leaderboardData.leaderboard?.find(
+            (entry: LeaderboardEntry) => entry.address.toLowerCase() === userAddress.toLowerCase()
+          ) || null : null,
+          totalPlayers: leaderboardData.totalPlayers || 0,
+          lastUpdated: leaderboardData.lastUpdated
+        };
+        
+        console.log('Transformed data:', transformedData);
+        setData(transformedData);
       } catch (error) {
         console.error('Error fetching leaderboard:', error);
       } finally {
