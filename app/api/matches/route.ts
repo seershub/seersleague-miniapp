@@ -1,272 +1,201 @@
-import { NextResponse } from 'next/server'
-import { CONTRACTS } from '@/lib/contract-interactions'
-import { SEERSLEAGUE_ABI } from '@/lib/contracts/abi-new'
-import { getTodayMatches } from '@/lib/matches'
-import { createWalletClient, createPublicClient, http } from 'viem'
-import { base } from 'viem/chains'
-import { privateKeyToAccount } from 'viem/accounts'
+import { NextResponse } from 'next/server';
+import { createPublicClient, http } from 'viem';
+import { base } from 'viem/chains';
+import { CONTRACTS, SEERSLEAGUE_ABI } from '@/lib/contract-interactions';
 
-export const runtime = 'nodejs'
-export const dynamic = 'force-dynamic'
+export const runtime = 'nodejs';
+export const dynamic = 'force-dynamic';
 
-const FOOTBALL_DATA_BASE = 'https://api.football-data.org/v4'
-const API_KEY = process.env.FOOTBALL_DATA_API_KEY || ''
-const ENABLE_AUTO_REGISTRATION = process.env.ENABLE_AUTO_REGISTRATION === 'true'
-const RPC_URL = process.env.NEXT_PUBLIC_BASE_RPC || 'https://mainnet.base.org'
+const RPC_URL = process.env.NEXT_PUBLIC_BASE_RPC || 'https://mainnet.base.org';
+const FOOTBALL_DATA_API_KEY = process.env.FOOTBALL_DATA_API_KEY || '';
+const FOOTBALL_DATA_BASE = 'https://api.football-data.org/v4';
 
-const priorityCompetitions = [
-  { name: 'PREMIER_LEAGUE', id: 'PL' },
-  { name: 'LA_LIGA', id: 'PD' },
-  { name: 'BUNDESLIGA', id: 'BL1' },
-  { name: 'SERIE_A', id: 'SA' },
-  { name: 'LIGUE_1', id: 'FL1' },
-  { name: 'TURKISH_SUPER_LIG', id: 'TSL' },
-  { name: 'CHAMPIONS_LEAGUE', id: 'CL' },
-  { name: 'EUROPA_LEAGUE', id: 'EL' },
-]
+/**
+ * SMART MATCH FILTERING - No More Manual Registration!
+ *
+ * OLD PROBLEM:
+ * - Had to manually toggle ENABLE_AUTO_REGISTRATION
+ * - Spam transactions when left on
+ * - Started matches still showing up
+ *
+ * NEW SOLUTION:
+ * 1. Admin runs /api/batch-register-matches once per week
+ * 2. This endpoint fetches registered matches from blockchain
+ * 3. Filters out matches that already started
+ * 4. Enriches with Football-data.org
+ * 5. Returns only playable matches
+ *
+ * Result: Always shows REGISTERED + NOT STARTED matches only!
+ */
 
-function toUnixSeconds(iso: string): number {
-  return Math.floor(new Date(iso).getTime() / 1000)
+interface Match {
+  id: string;
+  homeTeam: string;
+  awayTeam: string;
+  league: string;
+  kickoff: string;
+  venue: string;
+  homeTeamBadge: string;
+  awayTeamBadge: string;
+  status: string;
 }
 
-function mockFallbackMatches(): any[] {
-  const baseTime = new Date()
-  baseTime.setDate(baseTime.getDate() + 1)
-  const mk = (offsetH: number, id: number, home: string, away: string, league: string, venue: string) => {
-    const dt = new Date(baseTime.getTime() + offsetH * 3600 * 1000)
-    return {
-      id: id.toString(),
-      homeTeam: home,
-      awayTeam: away,
-      league,
-      kickoff: dt.toISOString(),
-      venue,
-      homeTeamBadge: '/default-badge.svg',
-      awayTeamBadge: '/default-badge.svg',
-      status: 'Not Started',
-    }
-  }
-  return [
-    mk(1, 900000001, 'Liverpool', 'Arsenal', 'Premier League', 'Anfield'),
-    mk(3, 900000002, 'Real Madrid', 'Barcelona', 'La Liga', 'Bernabéu'),
-    mk(5, 900000003, 'Bayern Munich', 'Borussia Dortmund', 'Bundesliga', 'Allianz Arena'),
-    mk(7, 900000004, 'Inter', 'Juventus', 'Serie A', 'San Siro'),
-    mk(9, 900000005, 'PSG', 'Marseille', 'Ligue 1', 'Parc des Princes'),
-  ]
-}
+/**
+ * Get registered matches from blockchain that haven't started yet
+ */
+async function getUpcomingRegisteredMatches(): Promise<{ matchId: string; startTime: number }[]> {
+  const publicClient = createPublicClient({
+    chain: base,
+    transport: http(RPC_URL)
+  });
 
-async function ensureRegistered(matchIds: bigint[], startTimes: bigint[]) {
-  try {
-    if (!ENABLE_AUTO_REGISTRATION) return { registered: false, reason: 'auto-reg disabled' }
-    const pk = process.env.PRIVATE_KEY
-    if (!pk) return { registered: false, reason: 'no private key' }
-    const account = privateKeyToAccount(pk as `0x${string}`)
-    const wallet = createWalletClient({ account, chain: base, transport: http(RPC_URL) })
-    await wallet.writeContract({
-      address: CONTRACTS.SEERSLEAGUE,
-      abi: SEERSLEAGUE_ABI,
-      functionName: 'registerMatches',
-      args: [matchIds, startTimes],
-    })
-    return { registered: true }
-  } catch (e) {
-    return { registered: false, error: (e as Error).message }
-  }
-}
+  const currentBlock = await publicClient.getBlockNumber();
+  const deploymentBlock = BigInt(process.env.NEXT_PUBLIC_DEPLOYMENT_BLOCK || '0');
 
-async function filterUnregistered(ids: bigint[]) {
-  try {
-    const publicClient = createPublicClient({ chain: base, transport: http(RPC_URL) })
-    const checks = await Promise.all(ids.map(async (id) => {
-      try {
-        const info = await publicClient.readContract({
-          address: CONTRACTS.SEERSLEAGUE,
-          abi: SEERSLEAGUE_ABI,
-          functionName: 'getMatch',
-          args: [id],
-        }) as any
-        return { id, exists: !!info?.exists }
-      } catch {
-        return { id, exists: false }
-      }
+  // Fetch all MatchRegistered events
+  const events = await publicClient.getLogs({
+    address: CONTRACTS.SEERSLEAGUE,
+    event: {
+      type: 'event',
+      name: 'MatchRegistered',
+      inputs: [
+        { name: 'matchId', type: 'uint256', indexed: true },
+        { name: 'startTime', type: 'uint256', indexed: false }
+      ]
+    },
+    fromBlock: deploymentBlock > 0n ? deploymentBlock : currentBlock - 10000n,
+    toBlock: 'latest'
+  });
+
+  const now = Math.floor(Date.now() / 1000);
+
+  // Filter to only matches that haven't started
+  const upcoming = events
+    .filter(e => e.args?.matchId && e.args?.startTime)
+    .map(e => ({
+      matchId: e.args!.matchId.toString(),
+      startTime: Number(e.args!.startTime)
     }))
-    return checks.filter(c => !c.exists).map(c => c.id)
-  } catch {
-    // If read fails, avoid writing to be safe
-    return []
-  }
+    .filter(m => m.startTime > now) // Only future matches
+    .sort((a, b) => a.startTime - b.startTime); // Earliest first
+
+  console.log(`📊 Found ${events.length} registered matches, ${upcoming.length} upcoming`);
+
+  return upcoming;
 }
 
-export async function GET() {
+/**
+ * Enrich match data from Football-data.org (with caching + batching)
+ */
+async function enrichMatches(matches: { matchId: string; startTime: number }[], limit: number = 20): Promise<Match[]> {
+  const enriched: Match[] = [];
+  const toEnrich = matches.slice(0, Math.min(limit, matches.length));
+
+  console.log(`🌐 Enriching ${toEnrich.length} matches from Football-data.org...`);
+
+  for (const match of toEnrich) {
+    try {
+      const response = await fetch(`${FOOTBALL_DATA_BASE}/matches/${match.matchId}`, {
+        headers: { 'X-Auth-Token': FOOTBALL_DATA_API_KEY },
+        next: { revalidate: 1800 } // Cache for 30 minutes
+      });
+
+      if (!response.ok) {
+        console.log(`⚠️ Match ${match.matchId} not in API, using fallback`);
+
+        // Fallback: Basic data
+        enriched.push({
+          id: match.matchId,
+          homeTeam: 'Home Team',
+          awayTeam: 'Away Team',
+          league: 'Football',
+          kickoff: new Date(match.startTime * 1000).toISOString(),
+          venue: 'TBA',
+          homeTeamBadge: '/default-badge.svg',
+          awayTeamBadge: '/default-badge.svg',
+          status: 'Not Started'
+        });
+        continue;
+      }
+
+      const data = await response.json();
+      const m = data.match;
+
+      enriched.push({
+        id: match.matchId,
+        homeTeam: m.homeTeam?.name || 'Home',
+        awayTeam: m.awayTeam?.name || 'Away',
+        league: m.competition?.name || 'Football',
+        kickoff: m.utcDate || new Date(match.startTime * 1000).toISOString(),
+        venue: m.venue || 'TBA',
+        homeTeamBadge: m.homeTeam?.crest || '/default-badge.svg',
+        awayTeamBadge: m.awayTeam?.crest || '/default-badge.svg',
+        status: 'Not Started'
+      });
+
+      // Rate limiting (10 req/min for free tier)
+      await new Promise(resolve => setTimeout(resolve, 6500));
+
+    } catch (error) {
+      console.error(`Error enriching match ${match.matchId}:`, error);
+    }
+  }
+
+  console.log(`✅ Enriched ${enriched.length} matches`);
+
+  return enriched;
+}
+
+/**
+ * GET /api/matches
+ *
+ * Returns registered + upcoming matches only.
+ *
+ * Query params:
+ * - limit: Max matches to return (default: 20, max: 50)
+ */
+export async function GET(request: Request) {
   try {
-    const all: any[] = []
-    const today = new Date().toISOString().split('T')[0]
-    const tomorrow = new Date()
-    tomorrow.setDate(tomorrow.getDate() + 1)
-    const tomorrowStr = tomorrow.toISOString().split('T')[0]
+    const { searchParams } = new URL(request.url);
+    const limit = Math.min(parseInt(searchParams.get('limit') || '20', 10), 50);
 
-    const fetchWithTimeout = async (url: string, headers: Record<string, string>, ms = 2200) => {
-      const ctrl = new AbortController()
-      const id = setTimeout(() => ctrl.abort(), ms)
-      try {
-        const res = await fetch(url, { headers, signal: ctrl.signal })
-        if (!res.ok) return null
-        return await res.json()
-      } catch {
-        return null
-      } finally {
-        clearTimeout(id)
-      }
+    console.log(`\n📥 Fetching matches (limit: ${limit})\n`);
+
+    // Step 1: Get upcoming registered matches from blockchain
+    const upcoming = await getUpcomingRegisteredMatches();
+
+    if (upcoming.length === 0) {
+      console.log('⚠️ No upcoming matches found. Run /api/batch-register-matches');
+
+      // Return empty with helpful message
+      return NextResponse.json({
+        matches: [],
+        total: 0,
+        message: 'No upcoming matches registered. Admin should run batch-register-matches.',
+        adminHint: 'POST /api/batch-register-matches?days=14'
+      });
     }
 
-    const mapMatches = (data: any) => {
-      if (!data || !Array.isArray(data.matches)) return [] as any[]
-      return data.matches.map((match: any) => {
-        const homeCrest = match.homeTeam?.crest;
-        const awayCrest = match.awayTeam?.crest;
-        
-        console.log('🏠 Home team crest:', homeCrest);
-        console.log('✈️ Away team crest:', awayCrest);
-        
-        return {
-          id: match.id.toString(),
-          homeTeam: match.homeTeam?.name || 'TBA',
-          awayTeam: match.awayTeam?.name || 'TBA',
-          league: match.competition?.name || 'Unknown',
-          kickoff: match.utcDate,
-          venue: match.venue || 'TBA',
-          homeTeamBadge: homeCrest || '/default-badge.svg',
-          awayTeamBadge: awayCrest || '/default-badge.svg',
-          status: (match.status === 'SCHEDULED' || match.status === 'TIMED') ? 'Not Started' : match.status,
-        }
-      })
-    }
+    // Step 2: Enrich with Football-data.org
+    const enriched = await enrichMatches(upcoming, limit);
 
-    // Parallel fetch for today
-    const todayUrls = priorityCompetitions.map(c => `${FOOTBALL_DATA_BASE}/competitions/${c.id}/matches?dateFrom=${today}&dateTo=${today}`)
-    const todayRes = await Promise.allSettled(todayUrls.map(u => fetchWithTimeout(u, { 'X-Auth-Token': API_KEY })))
-    for (const r of todayRes) {
-      if (r.status === 'fulfilled' && r.value) {
-        all.push(...mapMatches(r.value))
-      }
-    }
+    // Step 3: Final safety filter - remove any that may have started during enrichment
+    const now = Math.floor(Date.now() / 1000);
+    const final = enriched.filter((_, idx) => upcoming[idx].startTime > now);
 
-    // If still <5, also parallel fetch tomorrow (timeboxed)
-    if (all.length < 5) {
-      const tmrUrls = priorityCompetitions.map(c => `${FOOTBALL_DATA_BASE}/competitions/${c.id}/matches?dateFrom=${tomorrowStr}&dateTo=${tomorrowStr}`)
-      const tmrRes = await Promise.allSettled(tmrUrls.map(u => fetchWithTimeout(u, { 'X-Auth-Token': API_KEY })))
-      for (const r of tmrRes) {
-        if (r.status === 'fulfilled' && r.value) {
-          all.push(...mapMatches(r.value))
-        }
-      }
-    }
+    return NextResponse.json({
+      matches: final,
+      total: upcoming.length,
+      returned: final.length,
+      hasMore: upcoming.length > limit,
+      registeredTotal: upcoming.length
+    });
 
-    const featured = all
-      .filter(m => !m.status || m.status === 'Not Started')
-      .sort((a, b) => new Date(a.kickoff).getTime() - new Date(b.kickoff).getTime())
-      .slice(0, 5)
-
-    if (featured.length > 0) {
-      const ids = featured.map(m => BigInt(parseInt(m.id)))
-      const times = featured.map(m => BigInt(toUnixSeconds(m.kickoff)))
-      const idsToReg = await filterUnregistered(ids)
-      if (idsToReg.length > 0) {
-        const set = new Set(idsToReg.map(String))
-        const regIds: bigint[] = []
-        const regTimes: bigint[] = []
-        ids.forEach((id, idx) => {
-          if (set.has(String(id))) {
-            regIds.push(id)
-            regTimes.push(times[idx])
-          }
-        })
-        if (regIds.length > 0) await ensureRegistered(regIds, regTimes)
-      }
-      return NextResponse.json(featured)
-    }
-
-    // Fallback to TheSportsDB if Football-Data provided no upcoming matches (today)
-    try {
-      const alt = await getTodayMatches()
-      const altUpcoming = alt
-        .filter(m => m.status === 'Not Started')
-        .sort((a, b) => new Date(a.kickoff).getTime() - new Date(b.kickoff).getTime())
-        .slice(0, 5)
-
-      if (altUpcoming.length > 0) {
-        const ids = altUpcoming.map(m => BigInt(parseInt(m.id)))
-        const times = altUpcoming.map(m => BigInt(toUnixSeconds(m.kickoff)))
-        const idsToReg = await filterUnregistered(ids)
-        if (idsToReg.length > 0) {
-          const set = new Set(idsToReg.map(String))
-          const regIds: bigint[] = []
-          const regTimes: bigint[] = []
-          ids.forEach((id, idx) => {
-            if (set.has(String(id))) {
-              regIds.push(id)
-              regTimes.push(times[idx])
-            }
-          })
-          if (regIds.length > 0) await ensureRegistered(regIds, regTimes)
-        }
-        return NextResponse.json(altUpcoming)
-      }
-    } catch (e) {
-      console.error('Fallback matches fetch failed:', e)
-    }
-
-    // Second fallback: use upcoming matches for next 3 days from TheSportsDB
-    try {
-      const { getUpcomingMatches } = await import('@/lib/matches')
-      const ups = await getUpcomingMatches(3)
-      const ups5 = ups
-        .filter(m => m.status === 'Not Started')
-        .sort((a, b) => new Date(a.kickoff).getTime() - new Date(b.kickoff).getTime())
-        .slice(0, 5)
-      if (ups5.length > 0) {
-        const ids = ups5.map(m => BigInt(parseInt(m.id)))
-        const times = ups5.map(m => BigInt(toUnixSeconds(m.kickoff)))
-        const idsToReg = await filterUnregistered(ids)
-        if (idsToReg.length > 0) {
-          const set = new Set(idsToReg.map(String))
-          const regIds: bigint[] = []
-          const regTimes: bigint[] = []
-          ids.forEach((id, idx) => {
-            if (set.has(String(id))) {
-              regIds.push(id)
-              regTimes.push(times[idx])
-            }
-          })
-          if (regIds.length > 0) await ensureRegistered(regIds, regTimes)
-        }
-        return NextResponse.json(ups5)
-      }
-    } catch (e) {
-      console.error('Upcoming fallback fetch failed:', e)
-    }
-
-    // Final fallback: static mock to avoid empty UI and keep flow testable
-    const mock = mockFallbackMatches()
-    try {
-      const ids = mock.map(m => BigInt(parseInt(m.id)))
-      const times = mock.map(m => BigInt(toUnixSeconds(m.kickoff)))
-      const idsToReg = await filterUnregistered(ids)
-      if (idsToReg.length > 0) {
-        const set = new Set(idsToReg.map(String))
-        const regIds: bigint[] = []
-        const regTimes: bigint[] = []
-        ids.forEach((id, idx) => {
-          if (set.has(String(id))) {
-            regIds.push(id)
-            regTimes.push(times[idx])
-          }
-        })
-        if (regIds.length > 0) await ensureRegistered(regIds, regTimes)
-      }
-    } catch {}
-    return NextResponse.json(mock)
-  } catch (e) {
-    return NextResponse.json({ error: (e as Error).message }, { status: 500 })
+  } catch (error) {
+    console.error('Error fetching matches:', error);
+    return NextResponse.json(
+      { error: (error as Error).message },
+      { status: 500 }
+    );
   }
 }
