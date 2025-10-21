@@ -64,58 +64,23 @@ export async function GET(request: Request) {
 
     console.log(`Found ${allMatchIds.size} unique match IDs:`, Array.from(allMatchIds));
 
-    // For each match, get the actual result from Sports API
+    // Simplified validation - just show match IDs and basic info
     const validations: PredictionValidation[] = [];
     
     for (const matchId of allMatchIds) {
       try {
-        // Get match info from contract
-        const matchInfo = await publicClient.readContract({
-          address: CONTRACTS.SEERSLEAGUE,
-          abi: SEERSLEAGUE_ABI,
-          functionName: 'getMatch',
-          args: [BigInt(matchId)]
-        }) as unknown as {
-          homeTeam: string;
-          awayTeam: string;
-          startTime: bigint;
-          result: bigint;
-          recordedAt: bigint;
-        };
-
-        const homeTeam = matchInfo.homeTeam;
-        const awayTeam = matchInfo.awayTeam;
-        const result = Number(matchInfo.result || 0);
-        const recordedAt = Number(matchInfo.recordedAt || 0);
-
-        console.log(`Match ${matchId}: ${homeTeam} vs ${awayTeam}, result: ${result}, recorded: ${recordedAt}`);
-
-        if (result > 0) {
-          // Result is recorded, we can validate
-          // For now, we'll need to get the user's prediction
-          // This is a simplified version - in reality we'd need to store predictions differently
-          
-          validations.push({
-            matchId,
-            predicted: 0, // We need to get this from somewhere
-            actual: result,
-            isCorrect: false, // We can't determine without the actual prediction
-            homeTeam,
-            awayTeam,
-            score: result === 1 ? 'Home Win' : result === 2 ? 'Away Win' : 'Draw'
-          });
-        } else {
-          // Result not recorded yet
-          validations.push({
-            matchId,
-            predicted: 0,
-            actual: 0,
-            isCorrect: false,
-            homeTeam,
-            awayTeam,
-            score: 'Not recorded yet'
-          });
-        }
+        console.log(`Processing match ${matchId}...`);
+        
+        // For now, just show basic info without contract calls
+        validations.push({
+          matchId,
+          predicted: 0, // Unknown for now
+          actual: 0, // Unknown for now
+          isCorrect: false,
+          homeTeam: 'Unknown',
+          awayTeam: 'Unknown',
+          score: 'Not validated yet'
+        });
       } catch (error) {
         console.error(`Error processing match ${matchId}:`, error);
         validations.push({
@@ -123,8 +88,8 @@ export async function GET(request: Request) {
           predicted: 0,
           actual: 0,
           isCorrect: false,
-          homeTeam: 'Unknown',
-          awayTeam: 'Unknown',
+          homeTeam: 'Error',
+          awayTeam: 'Error',
           score: 'Error'
         });
       }
