@@ -6,7 +6,6 @@ import { PredictionForm } from '@/components/PredictionForm';
 import { useMiniKit } from '@/components/MiniKitProvider';
 import { sdk } from '@farcaster/miniapp-sdk';
 import { Match } from '@/lib/matches';
-import { useAccount } from 'wagmi';
 import { Wallet } from 'lucide-react';
 
 interface HomeProps {
@@ -20,7 +19,6 @@ export default function Home({ initialMatches = [] }: HomeProps) {
   const [error, setError] = useState<string | null>(null);
   const [chainId, setChainId] = useState<string | null>(null);
   const { isReady } = useMiniKit();
-  const { address, isConnected } = useAccount();
   
   // Check chain ID and fetch matches
   useEffect(() => {
@@ -98,42 +96,10 @@ export default function Home({ initialMatches = [] }: HomeProps) {
   return (
     <div className="container mx-auto px-4 py-6 pb-24">
       
-      {/* COMPACT WALLET STATUS */}
-      {isConnected && address ? (
-        <div className="mb-6 flex items-center justify-between px-5 py-4 rounded-2xl bg-zinc-900/50 border border-white/10">
-          <div className="flex items-center gap-3">
-            <div className="w-2.5 h-2.5 bg-green-500 rounded-full animate-pulse" />
-            <span className="text-sm text-gray-400 font-mono tracking-wider">
-              {address.slice(0, 6)}...{address.slice(-4)}
-            </span>
-          </div>
-          <div className="flex items-center gap-8">
-            <div className="text-center">
-              <div className="text-xl font-black text-gold-500">68%</div>
-              <div className="text-xs text-gray-500 mt-0.5">Accuracy</div>
-            </div>
-            <div className="text-center">
-              <div className="text-xl font-black">🔥 7</div>
-              <div className="text-xs text-gray-500 mt-0.5">Streak</div>
-            </div>
-            <div className="text-center">
-              <div className="text-xl font-black text-gold-500">#42</div>
-              <div className="text-xs text-gray-500 mt-0.5">Rank</div>
-            </div>
-          </div>
-        </div>
-      ) : (
-        <div className="mb-10 bg-zinc-900/30 rounded-3xl p-10 border border-white/10 text-center">
-          <div className="w-20 h-20 bg-gold-500/10 rounded-full flex items-center justify-center mx-auto mb-5 border-2 border-gold-500/20">
-            <Wallet className="w-10 h-10 text-gold-500" />
-          </div>
-          <h3 className="text-2xl font-black mb-3">Connect to Start</h3>
-          <p className="text-gray-400 mb-6">First 5 predictions FREE</p>
-          <button className="px-10 py-4 bg-gold-gradient rounded-2xl font-black text-black text-lg hover:shadow-gold-glow transition-all transform hover:scale-105">
-            Connect Wallet
-          </button>
-        </div>
-      )}
+      {/* WALLET STATUS */}
+      <div className="mb-8">
+        <WalletConnect />
+      </div>
 
       {/* MATCHES SECTION */}
       <div className="mb-8">
