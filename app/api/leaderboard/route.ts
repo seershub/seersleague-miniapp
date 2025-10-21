@@ -168,21 +168,15 @@ export async function GET(request: Request) {
     // Trigger update if data is stale (non-blocking)
     triggerUpdateIfStale();
 
-    // Get leaderboard from KV with error handling
+    // Always generate leaderboard directly from contract (KV is unreliable)
+    console.log('Generating leaderboard directly from contract...');
     let leaderboard: LeaderboardEntry[] = [];
     try {
-      const kvData = await kv.get<LeaderboardEntry[]>('leaderboard:all');
-      leaderboard = kvData || [];
-    } catch (kvError) {
-      console.error('KV fetch error:', kvError);
-      // Try to generate leaderboard directly from contract if KV fails
-      console.log('KV failed, trying direct contract fetch...');
-      try {
-        leaderboard = await generateLeaderboardFromContract();
-      } catch (contractError) {
-        console.error('Direct contract fetch failed:', contractError);
-        leaderboard = [];
-      }
+      leaderboard = await generateLeaderboardFromContract();
+      console.log(`Generated leaderboard with ${leaderboard.length} entries`);
+    } catch (contractError) {
+      console.error('Contract fetch failed:', contractError);
+      leaderboard = [];
     }
 
     if (!leaderboard || leaderboard.length === 0) {
