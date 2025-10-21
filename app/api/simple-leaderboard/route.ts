@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { kv } from '@vercel/kv';
 import { publicClient } from '@/lib/viem-config';
 import { CONTRACTS, SEERSLEAGUE_ABI } from '@/lib/contract-interactions';
 
@@ -16,7 +17,29 @@ interface SimpleLeaderboardEntry {
 
 export async function GET() {
   try {
-    console.log('Simple leaderboard - fetching from contract directly...');
+    console.log('Simple leaderboard - checking cache first...');
+    
+    // Try to get cached leaderboard from KV first
+    try {
+      const cachedLeaderboard = await kv.get<SimpleLeaderboardEntry[]>('leaderboard:all');
+      const lastUpdated = await kv.get<string>('leaderboard:lastUpdated');
+      
+      if (cachedLeaderboard && cachedLeaderboard.length > 0) {
+        console.log(`Returning cached leaderboard with ${cachedLeaderboard.length} entries`);
+        return NextResponse.json({
+          success: true,
+          totalPlayers: cachedLeaderboard.length,
+          leaderboard: cachedLeaderboard,
+          topPlayers: cachedLeaderboard.slice(0, 65),
+          lastUpdated: lastUpdated || new Date().toISOString(),
+          cached: true
+        });
+      }
+    } catch (kvError) {
+      console.log('KV cache miss or error:', kvError);
+    }
+    
+    console.log('No cache found, fetching from contract...');
     
     // Get contract deployment block
     const deploymentBlock = BigInt(process.env.NEXT_PUBLIC_DEPLOYMENT_BLOCK || '0');
@@ -117,12 +140,23 @@ export async function GET() {
 
     console.log(`Final leaderboard with ${leaderboardData.length} entries:`, leaderboardData);
 
+    // Cache the result in KV for 5 minutes
+    const now = new Date().toISOString();
+    try {
+      await kv.set('leaderboard:all', leaderboardData, { ex: 300 }); // 5 minutes
+      await kv.set('leaderboard:lastUpdated', now, { ex: 300 });
+      console.log('Leaderboard cached successfully');
+    } catch (cacheError) {
+      console.error('Failed to cache leaderboard:', cacheError);
+    }
+    
     return NextResponse.json({
       success: true,
       totalPlayers: leaderboardData.length,
       leaderboard: leaderboardData,
-      topPlayers: leaderboardData.slice(0, 10),
-      lastUpdated: new Date().toISOString(),
+      topPlayers: leaderboardData.slice(0, 65),
+      lastUpdated: now,
+      cached: false,
       debug: {
         eventsCount: predictionEvents.length,
         uniqueUsers: uniqueUsers.size,
@@ -133,12 +167,16 @@ export async function GET() {
 
   } catch (error) {
     console.error('Simple leaderboard error:', error);
-    return NextResponse.json(
-      { 
-        error: 'Failed to fetch simple leaderboard', 
-        details: error instanceof Error ? error.message : 'Unknown error' 
-      },
-      { status: 500 }
-    );
+    
+    // Return empty leaderboard instead of error to prevent UI from breaking
+    return NextResponse.json({
+      success: false,
+      totalPlayers: 0,
+      leaderboard: [],
+      topPlayers: [],
+      lastUpdated: new Date().toISOString(),
+      error: error instanceof Error ? error.message : 'Unknown error',
+      message: 'No data available. Please try again later.'
+    });
   }
 }
