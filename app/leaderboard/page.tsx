@@ -49,44 +49,30 @@ export default function LeaderboardPage() {
     const fetchLeaderboard = async () => {
       try {
         setLoading(true);
-        console.log('Fetching leaderboard...');
+        console.log('Fetching leaderboard from simple endpoint...');
         
-        // Use the leaderboard endpoint with user address for personalized ranking
-        const url = userAddress 
-          ? `/api/leaderboard?address=${userAddress}`
-          : '/api/leaderboard';
-        
-        const response = await fetch(url);
+        // Use simple-leaderboard endpoint (faster and more reliable)
+        const response = await fetch('/api/simple-leaderboard');
         if (!response.ok) throw new Error('Failed to fetch leaderboard');
 
         const leaderboardData = await response.json();
         console.log('Leaderboard data received:', leaderboardData);
         
-        setData(leaderboardData);
+        // Transform the data to match the expected format
+        const transformedData = {
+          leaderboard: leaderboardData.leaderboard || [],
+          topPlayers: leaderboardData.topPlayers || [],
+          userRank: userAddress ? leaderboardData.leaderboard?.find(
+            (entry: LeaderboardEntry) => entry.address.toLowerCase() === userAddress.toLowerCase()
+          ) || null : null,
+          totalPlayers: leaderboardData.totalPlayers || 0,
+          lastUpdated: leaderboardData.lastUpdated
+        };
+        
+        console.log('Transformed data:', transformedData);
+        setData(transformedData);
       } catch (error) {
         console.error('Error fetching leaderboard:', error);
-        // Fallback to simple-leaderboard if main endpoint fails
-        try {
-          console.log('Trying fallback endpoint...');
-          const response = await fetch('/api/simple-leaderboard');
-          if (!response.ok) throw new Error('Fallback failed');
-
-          const leaderboardData = await response.json();
-          
-          const transformedData = {
-            leaderboard: leaderboardData.leaderboard || [],
-            topPlayers: leaderboardData.topPlayers || [],
-            userRank: userAddress ? leaderboardData.leaderboard?.find(
-              (entry: LeaderboardEntry) => entry.address.toLowerCase() === userAddress.toLowerCase()
-            ) || null : null,
-            totalPlayers: leaderboardData.totalPlayers || 0,
-            lastUpdated: leaderboardData.lastUpdated
-          };
-          
-          setData(transformedData);
-        } catch (fallbackError) {
-          console.error('Fallback also failed:', fallbackError);
-        }
       } finally {
         setLoading(false);
       }
