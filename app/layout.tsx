@@ -41,10 +41,10 @@ export default function RootLayout({
           <div className="min-h-screen flex flex-col">
             
             {/* Header - Seershub Style Adapted */}
-            <header className="relative bg-black py-3 px-4">
+            <header className="relative bg-black py-2 px-4">
               <div className="max-w-4xl mx-auto">
                 {/* Main Container with Animated Border - Ultra Compact */}
-                <div className="relative rounded-2xl overflow-hidden py-2 px-4">
+                <div className="relative rounded-2xl overflow-hidden py-1.5 px-4">
                   {/* Animated Gradient Border - Brighter */}
                   <div
                     className="absolute inset-0 rounded-2xl animate-border-flow"
@@ -78,7 +78,7 @@ export default function RootLayout({
                     </div>
 
                     {/* Decorative Line with Soccer Balls */}
-                    <div className="flex items-center justify-center w-full max-w-md -mt-3">
+                    <div className="flex items-center justify-center w-full max-w-md -mt-4">
                       <span
                         className="text-2xl opacity-40 animate-float-rotate-1"
                         style={{
@@ -98,9 +98,9 @@ export default function RootLayout({
                       </span>
                     </div>
 
-                    {/* Tagline */}
-                    <p className="text-xs md:text-sm text-white/45 font-light tracking-wide text-center mt-0.5">
-                      Decentralized Football Prediction Platform
+                    {/* Tagline - Enhanced Readability */}
+                    <p className="text-sm md:text-base text-white/70 font-normal tracking-wider text-center mt-0 leading-relaxed">
+                      <span className="text-yellow-400/90">Decentralized</span> Football <span className="text-amber-400/90">Prediction</span> Platform
                     </p>
                   </div>
                 </div>
