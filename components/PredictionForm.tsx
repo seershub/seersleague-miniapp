@@ -4,9 +4,10 @@ import { useState, useEffect } from 'react';
 import { Match } from '@/lib/matches';
 import { MatchCard } from './MatchCard';
 import { PaymentModal } from './PaymentModal';
-import { CONTRACTS, SEERSLEAGUE_ABI, PREDICTION_FEE, UserStats, formatUSDC } from '@/lib/contract-interactions';
+import { CONTRACTS, SEERSLEAGUE_ABI, PREDICTION_FEE, UserStats, formatUSDC, USDC_ABI } from '@/lib/contract-interactions';
 import { useMiniKit } from './MiniKitProvider';
 import { encodeFunctionData } from 'viem';
+import { publicClient } from '@/lib/viem-config';
 import toast from 'react-hot-toast';
 
 interface PredictionFormProps {
@@ -49,19 +50,25 @@ export function PredictionForm({ matches }: PredictionFormProps) {
   
   const getUserStats = async (userAddress: string) => {
     if (!sdk) return;
-    
     try {
-      // For now, simulate user stats since we don't have real contract integration yet
-      // In real implementation, would call getUserStats(address) function
-      console.log('Fetching user stats for:', userAddress);
-      
-      // Parse stats (simplified for now)
+      const stats = await publicClient.readContract({
+        address: CONTRACTS.SEERSLEAGUE,
+        abi: SEERSLEAGUE_ABI,
+        functionName: 'getUserStats',
+        args: [userAddress as `0x${string}`]
+      }) as unknown as {
+        correctPredictions: bigint;
+        totalPredictions: bigint;
+        freePredictionsUsed: bigint;
+        currentStreak: bigint;
+        longestStreak: bigint;
+      };
       setUserStats({
-        correctPredictions: 0,
-        totalPredictions: 0,
-        freePredictionsUsed: 0,
-        currentStreak: 0,
-        longestStreak: 0
+        correctPredictions: Number(stats.correctPredictions || 0n),
+        totalPredictions: Number(stats.totalPredictions || 0n),
+        freePredictionsUsed: Number(stats.freePredictionsUsed || 0n),
+        currentStreak: Number(stats.currentStreak || 0n),
+        longestStreak: Number(stats.longestStreak || 0n)
       });
     } catch (error) {
       console.error('Error fetching user stats:', error);
@@ -137,9 +144,9 @@ export function PredictionForm({ matches }: PredictionFormProps) {
       const matchIds = Object.keys(predictions).map(id => BigInt(parseInt(id)));
       const outcomes = Object.keys(predictions).map(matchId => predictions[parseInt(matchId)]);
       
-      // Calculate total fee needed
+      // Calculate total fee needed (align with contract logic using on-chain stats)
       const predictionCount = Object.keys(predictions).length;
-      const remainingFreePredictions = userStats ? Math.max(0, 5 - userStats.freePredictionsUsed) : 5;
+      const remainingFreePredictions = userStats ? Math.max(0, 5 - userStats.freePredictionsUsed) : 0;
       const predictionsToPayFor = Math.max(0, predictionCount - remainingFreePredictions);
       const totalFee = BigInt(predictionsToPayFor) * PREDICTION_FEE;
       
@@ -165,18 +172,21 @@ export function PredictionForm({ matches }: PredictionFormProps) {
         totalFee: totalFee.toString()
       });
       
-      // For now, only allow free predictions to avoid USDC approval issues
-      if (totalFee > 0) {
-        toast.dismiss(loadingToast);
-        toast.error('Paid predictions temporarily disabled. Please use your free predictions first.', { duration: 8000 });
-        return;
-      }
-      
-      // Only submit if all predictions are free
-      if (predictionsToPayFor > 0) {
-        toast.dismiss(loadingToast);
-        toast.error('Cannot submit paid predictions. Please use only free predictions.', { duration: 8000 });
-        return;
+      // If fee required, check current allowance first
+      if (totalFee > 0n) {
+        const currentAllowance = await publicClient.readContract({
+          address: CONTRACTS.USDC,
+          abi: USDC_ABI,
+          functionName: 'allowance',
+          args: [address as `0x${string}`, CONTRACTS.SEERSLEAGUE]
+        }) as bigint;
+        if (currentAllowance < totalFee) {
+          toast.dismiss(loadingToast);
+          setShowPaymentModal(true);
+          setIsSubmitting(false);
+          setIsPending(false);
+          return;
+        }
       }
       
       // Encode function call data for submitPredictions(uint256[] matchIds, uint8[] outcomes)
@@ -331,7 +341,6 @@ export function PredictionForm({ matches }: PredictionFormProps) {
     } finally {
       setIsSubmitting(false);
       setIsPending(false);
-      setShowPaymentModal(false);
     }
   };
   
@@ -349,29 +358,29 @@ export function PredictionForm({ matches }: PredictionFormProps) {
   }
   
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       {/* Free Predictions Info */}
-      <div className="card bg-blue-900 bg-opacity-20 border-blue-700">
+      <div className="bg-gradient-to-r from-blue-500/10 to-cyan-500/5 border border-blue-500/20 rounded-xl p-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-2">
             <span className="text-blue-400">🎯</span>
-            <span className="font-semibold text-blue-400">Flexible Predictions</span>
+            <span className="font-semibold text-white">Flexible Predictions</span>
           </div>
           <span className="text-sm text-blue-300">
             {remainingFreePredictions} free predictions left
           </span>
         </div>
-        <p className="text-sm text-blue-300 mt-1">
+        <p className="text-sm text-gray-300 mt-1">
           Select any matches you want to predict. First 5 predictions are free, then 0.5 USDC per match.
         </p>
       </div>
       
       {/* Payment Summary */}
       {Object.keys(predictions).length > 0 && (
-        <div className="card bg-green-900 bg-opacity-20 border-green-700">
+        <div className="bg-gradient-to-r from-green-500/10 to-emerald-500/5 border border-green-500/20 rounded-xl p-4">
           <div className="flex items-center justify-between">
-            <span className="font-semibold text-green-400">Selected Matches: {Object.keys(predictions).length}</span>
-            <span className="text-green-300">
+            <span className="font-semibold text-white">Selected Matches: {Object.keys(predictions).length}</span>
+            <span className="text-green-400 font-bold">
               {predictionsToPayFor > 0 ? `Fee: ${formatUSDC(totalFee)} USDC` : 'FREE'}
             </span>
           </div>
@@ -386,23 +395,23 @@ export function PredictionForm({ matches }: PredictionFormProps) {
           const isSelected = selectedOutcome !== undefined;
           
           return (
-            <div key={match.id} className="relative">
+            <div key={match.id} className="space-y-3">
               {/* Match Selection Checkbox */}
-              <div className="flex items-center space-x-3 mb-3">
+              <div className="flex items-center space-x-3">
                 <input
                   type="checkbox"
                   id={`match-${matchId}`}
                   checked={isSelected}
                   onChange={() => toggleMatchSelection(matchId)}
                   disabled={isSubmitting || isPending}
-                  className="w-5 h-5 text-blue-600 bg-gray-700 border-gray-600 rounded focus:ring-blue-500"
+                  className="w-5 h-5 text-blue-500 bg-gray-800 border-gray-600 rounded focus:ring-blue-500"
                 />
                 <label htmlFor={`match-${matchId}`} className="text-sm font-medium text-gray-300">
                   Predict this match
                 </label>
               </div>
               
-              {/* Match Card - Always visible */}
+              {/* Match Card */}
               <MatchCard
                 match={match}
                 selectedOutcome={selectedOutcome}
@@ -419,23 +428,56 @@ export function PredictionForm({ matches }: PredictionFormProps) {
         <button
           onClick={handleSubmit}
           disabled={!isFormValid || isSubmitting || isPending}
-          className="btn-primary px-8 py-3 text-lg disabled:opacity-50"
-          title={`Form valid: ${isFormValid}, Submitting: ${isSubmitting}, Pending: ${isPending}`}
+          className="relative w-full group"
         >
-          {isSubmitting || isPending ? (
-            <div className="flex items-center space-x-2">
-              <div className="spinner"></div>
-              <span>Submitting...</span>
+          {/* Main button container */}
+          <div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-blue-500 to-cyan-500 p-[1px]">
+            
+            {/* Inner button */}
+            <div className="relative bg-gray-900 rounded-2xl px-6 py-4 flex items-center justify-between
+                            group-hover:bg-transparent transition-all duration-300">
+              
+              {/* Left side - Icon + Text */}
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-500/20 to-cyan-500/20 
+                             flex items-center justify-center border border-blue-500/30">
+                  <span className="text-lg">🎯</span>
+                </div>
+                
+                <div className="text-left">
+                  <div className="text-sm font-semibold text-white group-hover:text-white transition-colors">
+                    Make Prediction
+                  </div>
+                  <div className="text-xs text-white/50">
+                    Join the competition
+                  </div>
+                </div>
+              </div>
+              
+              {/* Right side - Entry fee */}
+              <div className="flex items-center gap-2">
+                <span className="text-cyan-400">✨</span>
+                <div className="px-4 py-2 rounded-xl bg-gradient-to-r from-green-500/20 to-blue-500/20 
+                                border border-green-500/30">
+                  <span className="text-sm font-bold text-white">
+                    {totalFee > 0 ? `${formatUSDC(totalFee)} USDC` : 'FREE'}
+                  </span>
+                </div>
+              </div>
             </div>
-          ) : (
-            <>
-              {totalFee > 0 ? `Submit Predictions (${formatUSDC(totalFee)} USDC)` : 'Submit FREE Predictions'}
-            </>
-          )}
+            
+            {/* Animated shine effect */}
+            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent
+                            animate-pulse" />
+          </div>
+          
+          {/* Glow effect */}
+          <div className="absolute inset-0 -z-10 rounded-2xl bg-gradient-to-r from-blue-500/50 to-cyan-500/50 
+                         blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
         </button>
         
         {!isFormValid && (
-          <p className="text-sm text-gray-400 mt-2">
+          <p className="text-sm text-gray-400 mt-3">
             Please select at least one match and choose outcomes
           </p>
         )}
@@ -444,7 +486,10 @@ export function PredictionForm({ matches }: PredictionFormProps) {
       {/* Payment Modal */}
       {showPaymentModal && (
         <PaymentModal
-          onSuccess={submitPredictions}
+          onSuccess={async () => {
+            setShowPaymentModal(false);
+            await submitPredictions();
+          }}
           onCancel={() => setShowPaymentModal(false)}
           amount={totalFee}
         />

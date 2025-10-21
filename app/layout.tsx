@@ -2,6 +2,9 @@ import type { Metadata } from 'next';
 import './globals.css';
 import { MiniKitProvider } from '@/components/MiniKitProvider';
 import { Toaster } from 'react-hot-toast';
+import Link from 'next/link';
+import Image from 'next/image';
+import { Home, Trophy, User } from 'lucide-react';
 
 export const metadata: Metadata = {
   title: 'SeersLeague - Daily Football Predictions',
@@ -33,9 +36,60 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body>
+      <body className="bg-black text-white antialiased">
         <MiniKitProvider>
-          {children}
+          <div className="min-h-screen flex flex-col">
+            
+            <header className="sticky top-0 z-50 bg-black/95 backdrop-blur-xl border-b border-white/10">
+              <div className="max-w-4xl mx-auto px-4 py-4">
+                <div className="flex items-center justify-center">
+                  <Image
+                    src="/logomuz.png"
+                    alt="SeersLeague"
+                    width={140}
+                    height={36}
+                    priority
+                    className="h-10 w-auto object-contain"
+                  />
+                </div>
+              </div>
+            </header>
+
+            {/* Main content */}
+            <main className="flex-1 pb-24">
+              {children}
+            </main>
+
+            <nav className="fixed bottom-0 left-0 right-0 z-50 bg-black/95 backdrop-blur-xl border-t border-white/10">
+              <div className="max-w-4xl mx-auto">
+                <div className="flex items-center justify-around h-16">
+                  <Link 
+                    href="/"
+                    className="flex flex-col items-center gap-1 px-4 py-2 text-gray-400 hover:text-blue-400 transition-colors"
+                  >
+                    <Home className="w-5 h-5" />
+                    <span className="text-xs font-medium">Home</span>
+                  </Link>
+                  <Link 
+                    href="/leaderboard"
+                    className="flex flex-col items-center gap-1 px-4 py-2 text-gray-400 hover:text-blue-400 transition-colors"
+                  >
+                    <Trophy className="w-5 h-5" />
+                    <span className="text-xs font-medium">Leaderboard</span>
+                  </Link>
+                  <Link 
+                    href="/profile"
+                    className="flex flex-col items-center gap-1 px-4 py-2 text-gray-400 hover:text-blue-400 transition-colors"
+                  >
+                    <User className="w-5 h-5" />
+                    <span className="text-xs font-medium">Profile</span>
+                  </Link>
+                </div>
+              </div>
+            </nav>
+
+          </div>
+
           <Toaster position="top-center" />
         </MiniKitProvider>
       </body>
