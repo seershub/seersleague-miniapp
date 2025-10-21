@@ -18,6 +18,7 @@ export default function Home({ initialMatches = [] }: HomeProps) {
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [chainId, setChainId] = useState<string | null>(null);
+  const [showAll, setShowAll] = useState(false);
   const { isReady } = useMiniKit();
   
   // Check chain ID and fetch matches
@@ -149,9 +150,20 @@ export default function Home({ initialMatches = [] }: HomeProps) {
             </div>
           ) : (
             <div className="grid gap-4 sm:gap-6 max-w-4xl mx-auto">
-              {matches.map((match) => (
+              {(showAll ? matches : matches.slice(0, 5)).map((match) => (
                 <PredictionForm key={match.id} matches={[match]} />
               ))}
+              
+              {matches.length > 5 && (
+                <div className="text-center mt-8">
+                  <button
+                    onClick={() => setShowAll(!showAll)}
+                    className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-xl font-semibold transition-colors"
+                  >
+                    {showAll ? 'Show Less' : `Show All ${matches.length} Matches`}
+                  </button>
+                </div>
+              )}
             </div>
           )}
 

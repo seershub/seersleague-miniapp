@@ -2,180 +2,92 @@ import { Match } from '@/lib/matches';
 import Home from './page-client';
 
 const FOOTBALL_DATA_BASE = 'https://api.football-data.org/v4';
-const API_KEY = 'ab4bf8eeaf614f969dfe8de37c58107d'; // Football-data.org API key
+const API_KEY = 'ab4bf8eeaf614f969dfe8de37c58107d';
 
-// Competition IDs for Football-Data.org
-const COMPETITION_IDS = {
-  PREMIER_LEAGUE: 'PL',      // Premier League
-  LA_LIGA: 'PD',             // Primera División (La Liga)
-  BUNDESLIGA: 'BL1',         // Bundesliga
-  SERIE_A: 'SA',             // Serie A
-  LIGUE_1: 'FL1',            // Ligue 1
-  TURKISH_SUPER_LIG: 'TSL',  // Turkish Süper Lig
-  CHAMPIONS_LEAGUE: 'CL',    // Champions League
-  EUROPA_LEAGUE: 'EL',       // Europa League
-  EREDIVISIE: 'DED',         // Eredivisie
-  PRIMEIRA_LIGA: 'PPL',      // Primeira Liga
-  BELGIAN_PRO: 'B1',         // Belgian Pro League
-  SCOTTISH_PREMIER: 'SPL',   // Scottish Premiership
-  MLS: 'MLS',                // Major League Soccer
-};
+async function enrichMatchesWithFootballData(matches: Match[]): Promise<Match[]> {
+  console.log(`🌐 Enriching ${matches.length} matches with Football-data.org...`);
+  
+  const enriched: Match[] = [];
+  
+  for (const match of matches) {
+    try {
+      // Try to find match in Football-data.org by team names
+      const response = await fetch(`${FOOTBALL_DATA_BASE}/matches?dateFrom=${new Date().toISOString().split('T')[0]}&dateTo=${new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]}`, {
+        headers: { 'X-Auth-Token': API_KEY },
+        next: { revalidate: 1800 }
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        const foundMatch = data.matches?.find((m: any) => 
+          (m.homeTeam.name.toLowerCase().includes(match.homeTeam.toLowerCase()) ||
+           match.homeTeam.toLowerCase().includes(m.homeTeam.name.toLowerCase())) &&
+          (m.awayTeam.name.toLowerCase().includes(match.awayTeam.toLowerCase()) ||
+           match.awayTeam.toLowerCase().includes(m.awayTeam.name.toLowerCase()))
+        );
+        
+        if (foundMatch) {
+          // Use Football-data.org data with blockchain match ID
+          enriched.push({
+            ...match,
+            homeTeamBadge: foundMatch.homeTeam.crest || '/default-badge.svg',
+            awayTeamBadge: foundMatch.awayTeam.crest || '/default-badge.svg',
+            league: foundMatch.competition.name || match.league,
+            venue: foundMatch.venue || match.venue,
+            kickoff: foundMatch.utcDate || match.kickoff,
+          });
+        } else {
+          // Keep blockchain data with default badges
+          enriched.push(match);
+        }
+      } else {
+        // Keep blockchain data with default badges
+        enriched.push(match);
+      }
+      
+      // Rate limiting
+      await new Promise(resolve => setTimeout(resolve, 100));
+      
+    } catch (error) {
+      console.error(`Error enriching match ${match.id}:`, error);
+      // Keep blockchain data with default badges
+      enriched.push({
+        ...match,
+        homeTeamBadge: '/default-badge.svg',
+        awayTeamBadge: '/default-badge.svg',
+      });
+    }
+  }
+  
+  console.log(`✅ Enriched ${enriched.length} matches`);
+  return enriched;
+}
 
 async function fetchMatchesServer(): Promise<Match[]> {
-  console.log('=== FETCHING REAL MATCHES FROM FOOTBALL-DATA.ORG ===');
-  console.log('=== API KEY: SET ===');
+  console.log('=== FETCHING MATCHES FROM BLOCKCHAIN + ENRICHING ===');
   
   try {
-    const allMatches: Match[] = [];
+    // Step 1: Get match IDs from blockchain
+    const response = await fetch(`${process.env.NEXT_PUBLIC_URL || 'http://localhost:3000'}/api/matches?limit=50`);
     
-    // Priority competitions to fetch from (expanded with Turkish Super Lig)
-    const priorityCompetitions = [
-      { name: 'PREMIER_LEAGUE', id: COMPETITION_IDS.PREMIER_LEAGUE },
-      { name: 'LA_LIGA', id: COMPETITION_IDS.LA_LIGA },
-      { name: 'BUNDESLIGA', id: COMPETITION_IDS.BUNDESLIGA },
-      { name: 'SERIE_A', id: COMPETITION_IDS.SERIE_A },
-      { name: 'LIGUE_1', id: COMPETITION_IDS.LIGUE_1 },
-      { name: 'TURKISH_SUPER_LIG', id: COMPETITION_IDS.TURKISH_SUPER_LIG },
-      { name: 'CHAMPIONS_LEAGUE', id: COMPETITION_IDS.CHAMPIONS_LEAGUE },
-      { name: 'EUROPA_LEAGUE', id: COMPETITION_IDS.EUROPA_LEAGUE },
-    ];
-    
-    // Get today's date in YYYY-MM-DD format
-    const today = new Date().toISOString().split('T')[0];
-    const tomorrow = new Date();
-    tomorrow.setDate(tomorrow.getDate() + 1);
-    const tomorrowStr = tomorrow.toISOString().split('T')[0];
-    
-    console.log('Fetching matches for dates:', today, 'and', tomorrowStr);
-    
-    // First, try to get all today's matches from all competitions
-    console.log('🎯 PRIORITY: Fetching TODAY\'s matches first');
-    
-    for (const competition of priorityCompetitions) {
-      try {
-        // Fetch today's matches
-        const todayUrl = `${FOOTBALL_DATA_BASE}/competitions/${competition.id}/matches?date=${today}&status=SCHEDULED`;
-        console.log(`Fetching ${competition.name} for today: ${todayUrl}`);
-        
-        const todayResponse = await fetch(todayUrl, {
-          headers: {
-            'X-Auth-Token': API_KEY,
-          },
-          next: { revalidate: 3600 }, // 1 hour cache
-        });
-        
-        if (todayResponse.ok) {
-          const todayData = await todayResponse.json();
-          console.log(`✅ Today's ${competition.name} matches:`, todayData.matches?.length || 0);
-          
-          if (todayData.matches && Array.isArray(todayData.matches)) {
-            const matches = todayData.matches.map((match: any) => ({
-              id: match.id.toString(),
-              homeTeam: match.homeTeam.name,
-              awayTeam: match.awayTeam.name,
-              league: match.competition.name,
-              kickoff: match.utcDate,
-              venue: match.venue || 'TBA',
-              homeTeamBadge: match.homeTeam.crest || '/default-badge.svg',
-              awayTeamBadge: match.awayTeam.crest || '/default-badge.svg',
-              status: match.status === 'SCHEDULED' ? 'Not Started' : match.status,
-            }));
-            
-            allMatches.push(...matches);
-          }
-        } else {
-          console.error(`❌ Failed to fetch ${competition.name} today:`, todayResponse.status);
-        }
-        
-        // Add delay between requests to be respectful to API
-        await new Promise(resolve => setTimeout(resolve, 200));
-        
-      } catch (error) {
-        console.error(`❌ Error fetching ${competition.name}:`, error);
-      }
+    if (!response.ok) {
+      throw new Error(`API error: ${response.status}`);
     }
     
-    console.log(`📊 Total today's matches found: ${allMatches.length}`);
+    const data = await response.json();
+    console.log('Blockchain matches:', data.matches?.length || 0);
     
-    // If we have enough today's matches, use them
-    if (allMatches.length >= 5) {
-      console.log('🎯 Using today\'s matches only');
-    } else {
-      console.log('📅 Not enough today\'s matches, adding tomorrow\'s matches');
-      
-      // If we don't have enough today's matches, add tomorrow's
-      for (const competition of priorityCompetitions) {
-        try {
-          const tomorrowUrl = `${FOOTBALL_DATA_BASE}/competitions/${competition.id}/matches?date=${tomorrowStr}&status=SCHEDULED`;
-          console.log(`Fetching ${competition.name} for tomorrow: ${tomorrowUrl}`);
-          
-          const tomorrowResponse = await fetch(tomorrowUrl, {
-            headers: {
-              'X-Auth-Token': API_KEY,
-            },
-            next: { revalidate: 3600 }, // 1 hour cache
-          });
-          
-          if (tomorrowResponse.ok) {
-            const tomorrowData = await tomorrowResponse.json();
-            console.log(`✅ Tomorrow's ${competition.name} matches:`, tomorrowData.matches?.length || 0);
-            
-            if (tomorrowData.matches && Array.isArray(tomorrowData.matches)) {
-              const matches = tomorrowData.matches.map((match: any) => ({
-                id: match.id.toString(),
-                homeTeam: match.homeTeam.name,
-                awayTeam: match.awayTeam.name,
-                league: match.competition.name,
-                kickoff: match.utcDate,
-                venue: match.venue || 'TBA',
-                homeTeamBadge: match.homeTeam.crest || '/default-badge.svg',
-                awayTeamBadge: match.awayTeam.crest || '/default-badge.svg',
-                status: match.status === 'SCHEDULED' ? 'Not Started' : match.status,
-              }));
-              
-              allMatches.push(...matches);
-            }
-          } else {
-            console.error(`❌ Failed to fetch ${competition.name} tomorrow:`, tomorrowResponse.status);
-          }
-          
-          // Add delay between requests
-          await new Promise(resolve => setTimeout(resolve, 200));
-          
-          // If we have enough matches total, break
-          if (allMatches.length >= 5) {
-            console.log(`🎯 Found enough total matches (${allMatches.length}), stopping search`);
-            break;
-          }
-          
-        } catch (error) {
-          console.error(`❌ Error fetching ${competition.name} tomorrow:`, error);
-        }
-      }
-    }
-    
-    console.log('Total matches found:', allMatches.length);
-    
-    // Sort by kickoff time and take first 5
-    const featured = allMatches
-      .sort((a, b) => new Date(a.kickoff).getTime() - new Date(b.kickoff).getTime())
-      .slice(0, 5);
-    
-    console.log('Featured matches:', featured.length);
-    
-    // If no real matches found, return fallback data
-    if (featured.length === 0) {
-      console.log('No real matches found, using fallback mock data');
+    if (!data.matches || data.matches.length === 0) {
       return getFallbackMatches();
     }
     
-    console.log('=== FINAL REAL MATCHES ===');
-    console.log('Featured matches:', JSON.stringify(featured, null, 2));
+    // Step 2: Enrich with Football-data.org for logos and details
+    const enrichedMatches = await enrichMatchesWithFootballData(data.matches);
     
-    return featured;
+    return enrichedMatches;
     
   } catch (error) {
-    console.error('Error in Football-Data.org API fetch:', error);
+    console.error('Error fetching blockchain matches:', error);
     console.log('Using fallback mock data due to error');
     return getFallbackMatches();
   }
@@ -222,11 +134,11 @@ function getFallbackMatches(): Match[] {
     },
     {
       id: '4',
-      homeTeam: 'Inter Milan',
-      awayTeam: 'Juventus',
+      homeTeam: 'Juventus',
+      awayTeam: 'AC Milan',
       league: 'Serie A',
       kickoff: new Date(tomorrow.getTime() + 14400000).toISOString(),
-      venue: 'San Siro',
+      venue: 'Allianz Stadium',
       homeTeamBadge: '/default-badge.svg',
       awayTeamBadge: '/default-badge.svg',
       status: 'Not Started',

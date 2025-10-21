@@ -135,8 +135,8 @@ async function enrichMatches(matches: { matchId: string; startTime: number }[], 
         status: 'Not Started'
       });
 
-      // Rate limiting (10 req/min for free tier)
-      await new Promise(resolve => setTimeout(resolve, 6500));
+      // Rate limiting (25 req/min for free tier)
+      await new Promise(resolve => setTimeout(resolve, 2500));
 
     } catch (error) {
       console.error(`Error enriching match ${match.matchId}:`, error);
