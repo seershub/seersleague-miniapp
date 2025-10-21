@@ -61,23 +61,18 @@ export default function RootLayout({
 
                   {/* Content */}
                   <div className="relative z-10 flex flex-col items-center">
-                    {/* Welcome Text */}
-                    <div className="text-base md:text-lg font-light text-white/60 tracking-wide mb-1">
-                      Welcome to
-                    </div>
 
-                    {/* Logo Container with Overflow Control */}
-                    <div className="relative -my-3 overflow-hidden max-h-32 md:max-h-40 lg:max-h-48">
+                    {/* Logo Container - Fixed height to prevent cropping */}
+                    <div className="relative overflow-visible py-2">
                       <Image
                         src="/logomuz.png"
                         alt="SeersLeague"
-                        width={800}
-                        height={200}
+                        width={700}
+                        height={180}
                         priority
-                        className="h-48 md:h-60 lg:h-72 w-auto"
+                        className="h-24 md:h-28 lg:h-32 w-auto"
                         style={{
-                          filter: 'brightness(1.15) contrast(1.05) drop-shadow(0 8px 24px rgba(0, 0, 0, 0.2))',
-                          transform: 'translateY(-10%)'
+                          filter: 'brightness(1.15) contrast(1.05) drop-shadow(0 8px 24px rgba(0, 0, 0, 0.2))'
                         }}
                       />
                     </div>

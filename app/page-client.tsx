@@ -104,15 +104,21 @@ export default function Home({ initialMatches = [] }: HomeProps) {
 
           {/* FLEXIBLE PREDICTIONS INFO - SINGLE INSTANCE */}
           <section className="mb-8">
-            <div className="bg-gradient-to-r from-yellow-500/10 to-amber-500/5 border border-yellow-500/20 rounded-xl p-4">
-              <div className="flex items-center justify-between">
+            <div className="bg-gradient-to-r from-yellow-500/10 to-amber-500/5 border border-yellow-500/20 rounded-xl p-5">
+              <div className="flex flex-col space-y-3">
+                {/* Title Row */}
                 <div className="flex items-center space-x-2">
-                  <span className="text-yellow-400">🎯</span>
-                  <span className="font-semibold text-white">Flexible Predictions</span>
+                  <span className="text-2xl">🎯</span>
+                  <span className="text-lg font-bold text-white">Flexible Predictions</span>
                 </div>
-                <span className="text-sm text-yellow-300">
-                  Select any matches you want to predict. First 5 predictions are free, then 0.5 USDC per match.
-                </span>
+
+                {/* Description */}
+                <p className="text-sm md:text-base text-gray-300 leading-relaxed pl-9">
+                  Select any matches you want to predict.
+                  <span className="block mt-1">
+                    <span className="text-green-400 font-semibold">First 5 predictions are free</span>, then <span className="text-yellow-400 font-semibold">0.5 USDC</span> per match.
+                  </span>
+                </p>
               </div>
             </div>
           </section>

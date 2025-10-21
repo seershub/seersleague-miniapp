@@ -381,18 +381,65 @@ export function PredictionForm({ matches }: PredictionFormProps) {
           
           return (
             <div key={match.id} className="space-y-3">
-              {/* Match Selection Checkbox */}
-              <div className="flex items-center space-x-3">
+              {/* Match Selection Toggle - Modern Design */}
+              <div className="relative">
                 <input
                   type="checkbox"
                   id={`match-${matchId}`}
                   checked={isSelected}
                   onChange={() => toggleMatchSelection(matchId)}
                   disabled={isSubmitting || isPending}
-                  className="w-5 h-5 text-blue-500 bg-gray-800 border-gray-600 rounded focus:ring-blue-500"
+                  className="peer sr-only"
                 />
-                <label htmlFor={`match-${matchId}`} className="text-sm font-medium text-gray-300">
-                  Predict this match
+                <label
+                  htmlFor={`match-${matchId}`}
+                  className={`
+                    flex items-center justify-between px-4 py-3 rounded-xl cursor-pointer
+                    transition-all duration-300 group
+                    ${isSelected
+                      ? 'bg-gradient-to-r from-green-500/20 to-emerald-500/10 border-2 border-green-500/40'
+                      : 'bg-gradient-to-r from-gray-800/50 to-gray-800/30 border-2 border-gray-700/40 hover:border-yellow-500/30'
+                    }
+                    ${(isSubmitting || isPending) ? 'opacity-50 cursor-not-allowed' : ''}
+                  `}
+                >
+                  <div className="flex items-center gap-3">
+                    {/* Custom Checkbox Icon */}
+                    <div className={`
+                      flex items-center justify-center w-6 h-6 rounded-lg
+                      transition-all duration-300
+                      ${isSelected
+                        ? 'bg-green-500 shadow-lg shadow-green-500/50'
+                        : 'bg-gray-700 group-hover:bg-gray-600'
+                      }
+                    `}>
+                      {isSelected ? (
+                        <svg className="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                        </svg>
+                      ) : (
+                        <svg className="w-4 h-4 text-gray-400 group-hover:text-yellow-400 transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                        </svg>
+                      )}
+                    </div>
+
+                    {/* Label Text */}
+                    <span className={`
+                      font-semibold transition-colors
+                      ${isSelected ? 'text-green-400' : 'text-gray-300 group-hover:text-white'}
+                    `}>
+                      {isSelected ? 'Prediction Selected' : 'Click to Predict This Match'}
+                    </span>
+                  </div>
+
+                  {/* Status Badge */}
+                  {isSelected && (
+                    <div className="flex items-center gap-2">
+                      <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
+                      <span className="text-xs font-medium text-green-400 uppercase tracking-wide">Active</span>
+                    </div>
+                  )}
                 </label>
               </div>
               
