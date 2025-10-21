@@ -3,58 +3,28 @@
 @tailwind utilities;
 
 @layer base {
-  * {
-    @apply border-gray-800;
-  }
-  
   body {
-    @apply bg-black text-white;
-    font-feature-settings: 'rlig' 1, 'calt' 1;
-    -webkit-font-smoothing: antialiased;
-    -moz-osx-font-smoothing: grayscale;
+    @apply bg-black text-white antialiased;
   }
   
   html {
-    scroll-behavior: smooth;
-    font-family: 'Inter', system-ui, sans-serif;
+    @apply scroll-smooth;
   }
 }
 
-@layer utilities {
-  .text-balance {
-    text-wrap: balance;
-  }
-}
-
-/* Custom scrollbar */
 ::-webkit-scrollbar {
   width: 6px;
 }
 
 ::-webkit-scrollbar-track {
-  background: #1A1A1E;
+  background: #000;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #34343D;
+  background: #333;
   border-radius: 3px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
   background: #F59E0B;
-}
-
-/* Loading spinner */
-.spinner {
-  border: 2px solid #34343D;
-  border-top: 2px solid #F59E0B;
-  border-radius: 50%;
-  width: 20px;
-  height: 20px;
-  animation: spin 1s linear infinite;
-}
-
-@keyframes spin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
 }
