@@ -71,6 +71,7 @@ const config: Config = {
         'bounce-gentle': 'bounceGentle 2s infinite',
         'pulse-glow': 'pulseGlow 2s infinite',
         'float': 'float 3s ease-in-out infinite',
+        'shimmer': 'shimmer 3s linear infinite',
       },
       keyframes: {
         fadeIn: {
@@ -92,6 +93,10 @@ const config: Config = {
         float: {
           '0%, 100%': { transform: 'translateY(0px)' },
           '50%': { transform: 'translateY(-10px)' },
+        },
+        shimmer: {
+          '0%': { backgroundPosition: '-200% 0' },
+          '100%': { backgroundPosition: '200% 0' },
         },
       },
       fontFamily: {
