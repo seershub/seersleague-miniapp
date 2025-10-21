@@ -11,7 +11,7 @@ export async function GET() {
     
     // 1. Check KV connection
     let kvStatus = 'unknown';
-    let kvData = null;
+    let kvData: any[] | null = null;
     try {
       kvData = await kv.get('leaderboard:all');
       kvStatus = 'connected';
