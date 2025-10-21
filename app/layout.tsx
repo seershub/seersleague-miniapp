@@ -40,70 +40,66 @@ export default function RootLayout({
         <MiniKitProvider>
           <div className="min-h-screen flex flex-col">
             
-            {/* Header - Non-Sticky, Minimal Design */}
-            <header className="relative border-b border-yellow-500/10 bg-black">
-              {/* Subtle Gradient Background */}
-              <div className="absolute inset-0 bg-gradient-to-b from-yellow-500/5 via-transparent to-transparent"></div>
+            {/* Header - Premium Modern Design */}
+            <header className="relative bg-black overflow-hidden">
+              {/* Animated Background Gradient Mesh */}
+              <div className="absolute inset-0">
+                {/* Base gradient */}
+                <div className="absolute inset-0 bg-gradient-to-br from-yellow-500/[0.08] via-black to-amber-500/[0.08]"></div>
 
-              {/* Animated Accent Line Top */}
-              <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-yellow-500/60 to-transparent"></div>
-
-              <div className="relative max-w-md mx-auto px-4 py-4">
-                {/* Logo Container - Centered with minimal effects */}
-                <div className="flex items-center justify-center">
-                  <div className="relative group">
-                    {/* Subtle Glow */}
-                    <div className="absolute -inset-3 bg-gradient-to-r from-yellow-500/20 via-amber-500/20 to-yellow-500/20 blur-2xl opacity-50 group-hover:opacity-70 transition-opacity duration-500"></div>
-
-                    {/* Logo */}
-                    <div className="relative">
-                      <Image
-                        src="/logomuz.png"
-                        alt="SeersLeague"
-                        width={500}
-                        height={125}
-                        priority
-                        className="h-16 w-auto object-contain relative z-10 transform group-hover:scale-[1.02] transition-transform duration-300"
-                        style={{
-                          filter: 'drop-shadow(0 4px 12px rgba(251, 191, 36, 0.25))'
-                        }}
-                      />
-                    </div>
-                  </div>
-                </div>
-
-                {/* Compact Info Bar - Below Logo */}
-                <div className="mt-3 flex items-center justify-center gap-4 text-xs">
-                  {/* Live Indicator */}
-                  <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-gradient-to-r from-green-500/10 to-emerald-500/10 border border-green-500/20">
-                    <span className="relative flex h-1.5 w-1.5">
-                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
-                      <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-green-500"></span>
-                    </span>
-                    <span className="text-green-400 font-medium">LIVE</span>
-                  </div>
-
-                  {/* Prize Pool */}
-                  <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-gradient-to-r from-yellow-500/10 to-amber-500/10 border border-yellow-500/20">
-                    <svg className="w-3 h-3 text-yellow-400" fill="currentColor" viewBox="0 0 20 20">
-                      <path d="M8.433 7.418c.155-.103.346-.196.567-.267v1.698a2.305 2.305 0 01-.567-.267C8.07 8.34 8 8.114 8 8c0-.114.07-.34.433-.582zM11 12.849v-1.698c.22.071.412.164.567.267.364.243.433.468.433.582 0 .114-.07.34-.433.582a2.305 2.305 0 01-.567.267z" />
-                      <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-13a1 1 0 10-2 0v.092a4.535 4.535 0 00-1.676.662C6.602 6.234 6 7.009 6 8c0 .99.602 1.765 1.324 2.246.48.32 1.054.545 1.676.662v1.941c-.391-.127-.68-.317-.843-.504a1 1 0 10-1.51 1.31c.562.649 1.413 1.076 2.353 1.253V15a1 1 0 102 0v-.092a4.535 4.535 0 001.676-.662C13.398 13.766 14 12.991 14 12c0-.99-.602-1.765-1.324-2.246A4.535 4.535 0 0011 9.092V7.151c.391.127.68.317.843.504a1 1 0 101.511-1.31c-.563-.649-1.413-1.076-2.354-1.253V5z" clipRule="evenodd" />
-                    </svg>
-                    <span className="text-yellow-400 font-bold">1000</span>
-                  </div>
-
-                  {/* Active Users */}
-                  <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-gradient-to-r from-purple-500/10 to-pink-500/10 border border-purple-500/20">
-                    <svg className="w-3 h-3 text-purple-400" fill="currentColor" viewBox="0 0 20 20">
-                      <path d="M9 6a3 3 0 11-6 0 3 3 0 016 0zM17 6a3 3 0 11-6 0 3 3 0 016 0zM12.93 17c.046-.327.07-.66.07-1a6.97 6.97 0 00-1.5-4.33A5 5 0 0119 16v1h-6.07zM6 11a5 5 0 015 5v1H1v-1a5 5 0 015-5z" />
-                    </svg>
-                    <span className="text-purple-400 font-medium">247</span>
-                  </div>
-                </div>
+                {/* Animated gradient orbs */}
+                <div className="absolute top-0 left-1/4 w-96 h-96 bg-yellow-500/10 rounded-full blur-3xl animate-pulse" style={{animationDuration: '4s'}}></div>
+                <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-amber-500/10 rounded-full blur-3xl animate-pulse" style={{animationDuration: '6s', animationDelay: '1s'}}></div>
               </div>
 
-              {/* Bottom Accent Line */}
-              <div className="absolute bottom-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-yellow-500/30 to-transparent"></div>
+              {/* Noise texture overlay for depth */}
+              <div className="absolute inset-0 opacity-[0.015]" style={{
+                backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 400 400' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='4' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E")`
+              }}></div>
+
+              {/* Content */}
+              <div className="relative">
+                {/* Top gradient border */}
+                <div className="h-px bg-gradient-to-r from-transparent via-yellow-500/40 to-transparent"></div>
+
+                <div className="max-w-7xl mx-auto px-6 py-10">
+                  {/* Logo - Large and Centered */}
+                  <div className="flex items-center justify-center">
+                    <div className="relative group">
+                      {/* Premium glow effect - multiple layers */}
+                      <div className="absolute -inset-8 bg-gradient-to-r from-yellow-500/0 via-yellow-500/20 to-yellow-500/0 blur-3xl opacity-0 group-hover:opacity-100 transition-opacity duration-700"></div>
+                      <div className="absolute -inset-6 bg-gradient-to-r from-amber-500/0 via-amber-500/15 to-amber-500/0 blur-2xl opacity-60 group-hover:opacity-80 transition-opacity duration-700"></div>
+
+                      {/* Logo */}
+                      <div className="relative">
+                        <Image
+                          src="/logomuz.png"
+                          alt="SeersLeague"
+                          width={800}
+                          height={200}
+                          priority
+                          className="h-32 sm:h-36 md:h-40 w-auto object-contain relative z-10 transform group-hover:scale-[1.01] transition-all duration-700 ease-out"
+                          style={{
+                            filter: 'drop-shadow(0 10px 30px rgba(251, 191, 36, 0.3)) drop-shadow(0 0 60px rgba(251, 191, 36, 0.1))'
+                          }}
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Tagline - Elegant Typography */}
+                  <div className="mt-4 text-center">
+                    <p className="text-sm sm:text-base font-light tracking-wide text-gray-400/80">
+                      <span className="text-yellow-400/90 font-medium">Daily Football Predictions</span>
+                      <span className="mx-2 text-gray-600">•</span>
+                      <span className="text-gray-500">Compete & Win</span>
+                    </p>
+                  </div>
+                </div>
+
+                {/* Bottom gradient border */}
+                <div className="h-px bg-gradient-to-r from-transparent via-yellow-500/30 to-transparent"></div>
+              </div>
             </header>
 
             {/* Main content */}
