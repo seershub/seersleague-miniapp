@@ -2,7 +2,6 @@
 
 import { useState } from 'react';
 import { Clock, Users, DollarSign, Zap } from 'lucide-react';
-import Image from 'next/image';
 
 interface MatchCardProps {
   match: {
@@ -99,20 +98,24 @@ export function MatchCard({ match, selectedOutcome, onOutcomeSelect, disabled = 
           {/* Home Team */}
           <div className="flex flex-col items-center text-center">
             <div className="w-16 h-16 sm:w-20 sm:h-20 md:w-24 md:h-24 lg:w-28 lg:h-28 mb-2 sm:mb-3 md:mb-4 flex items-center justify-center">
-              {match.homeTeamBadge ? (
-                <Image
+              {match.homeTeamBadge && match.homeTeamBadge !== '/default-badge.svg' ? (
+                <img
                   src={match.homeTeamBadge}
                   alt={`${match.homeTeam} logo`}
                   width={64}
                   height={64}
                   className="object-contain"
                   style={{ filter: 'drop-shadow(0 4px 12px rgba(0, 0, 0, 0.3))' }}
+                  onError={(e) => {
+                    console.log('Home team badge failed to load:', match.homeTeamBadge);
+                    e.currentTarget.style.display = 'none';
+                    e.currentTarget.nextElementSibling?.classList.remove('hidden');
+                  }}
                 />
-              ) : (
-                <div className="w-16 h-16 rounded-full bg-gray-100 flex items-center justify-center">
-                  <span className="text-2xl">🏠</span>
-                </div>
-              )}
+              ) : null}
+              <div className={`w-16 h-16 rounded-full bg-gray-100 flex items-center justify-center ${match.homeTeamBadge && match.homeTeamBadge !== '/default-badge.svg' ? 'hidden' : ''}`}>
+                <span className="text-2xl">🏠</span>
+              </div>
             </div>
             <h3 className="text-sm sm:text-base md:text-lg font-bold text-white mb-1">
               {match.homeTeam}
@@ -141,20 +144,24 @@ export function MatchCard({ match, selectedOutcome, onOutcomeSelect, disabled = 
           {/* Away Team */}
           <div className="flex flex-col items-center text-center">
             <div className="w-16 h-16 sm:w-20 sm:h-20 md:w-24 md:h-24 lg:w-28 lg:h-28 mb-2 sm:mb-3 md:mb-4 flex items-center justify-center">
-              {match.awayTeamBadge ? (
-                <Image
+              {match.awayTeamBadge && match.awayTeamBadge !== '/default-badge.svg' ? (
+                <img
                   src={match.awayTeamBadge}
                   alt={`${match.awayTeam} logo`}
                   width={64}
                   height={64}
                   className="object-contain"
                   style={{ filter: 'drop-shadow(0 4px 12px rgba(0, 0, 0, 0.3))' }}
+                  onError={(e) => {
+                    console.log('Away team badge failed to load:', match.awayTeamBadge);
+                    e.currentTarget.style.display = 'none';
+                    e.currentTarget.nextElementSibling?.classList.remove('hidden');
+                  }}
                 />
-              ) : (
-                <div className="w-16 h-16 rounded-full bg-gray-100 flex items-center justify-center">
-                  <span className="text-2xl">✈️</span>
-                </div>
-              )}
+              ) : null}
+              <div className={`w-16 h-16 rounded-full bg-gray-100 flex items-center justify-center ${match.awayTeamBadge && match.awayTeamBadge !== '/default-badge.svg' ? 'hidden' : ''}`}>
+                <span className="text-2xl">✈️</span>
+              </div>
             </div>
             <h3 className="text-sm sm:text-base md:text-lg font-bold text-white mb-1">
               {match.awayTeam}

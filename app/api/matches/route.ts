@@ -121,17 +121,25 @@ export async function GET() {
 
     const mapMatches = (data: any) => {
       if (!data || !Array.isArray(data.matches)) return [] as any[]
-      return data.matches.map((match: any) => ({
-        id: match.id.toString(),
-        homeTeam: match.homeTeam?.name || 'TBA',
-        awayTeam: match.awayTeam?.name || 'TBA',
-        league: match.competition?.name || 'Unknown',
-        kickoff: match.utcDate,
-        venue: match.venue || 'TBA',
-        homeTeamBadge: match.homeTeam?.crest || '/default-badge.svg',
-        awayTeamBadge: match.awayTeam?.crest || '/default-badge.svg',
-        status: (match.status === 'SCHEDULED' || match.status === 'TIMED') ? 'Not Started' : match.status,
-      }))
+      return data.matches.map((match: any) => {
+        const homeCrest = match.homeTeam?.crest;
+        const awayCrest = match.awayTeam?.crest;
+        
+        console.log('🏠 Home team crest:', homeCrest);
+        console.log('✈️ Away team crest:', awayCrest);
+        
+        return {
+          id: match.id.toString(),
+          homeTeam: match.homeTeam?.name || 'TBA',
+          awayTeam: match.awayTeam?.name || 'TBA',
+          league: match.competition?.name || 'Unknown',
+          kickoff: match.utcDate,
+          venue: match.venue || 'TBA',
+          homeTeamBadge: homeCrest || '/default-badge.svg',
+          awayTeamBadge: awayCrest || '/default-badge.svg',
+          status: (match.status === 'SCHEDULED' || match.status === 'TIMED') ? 'Not Started' : match.status,
+        }
+      })
     }
 
     // Parallel fetch for today

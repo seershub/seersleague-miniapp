@@ -64,11 +64,11 @@ export function PredictionForm({ matches }: PredictionFormProps) {
         longestStreak: bigint;
       };
       setUserStats({
-        correctPredictions: Number(stats.correctPredictions || 0n),
-        totalPredictions: Number(stats.totalPredictions || 0n),
-        freePredictionsUsed: Number(stats.freePredictionsUsed || 0n),
-        currentStreak: Number(stats.currentStreak || 0n),
-        longestStreak: Number(stats.longestStreak || 0n)
+        correctPredictions: Number(stats.correctPredictions || 0),
+        totalPredictions: Number(stats.totalPredictions || 0),
+        freePredictionsUsed: Number(stats.freePredictionsUsed || 0),
+        currentStreak: Number(stats.currentStreak || 0),
+        longestStreak: Number(stats.longestStreak || 0)
       });
     } catch (error) {
       console.error('Error fetching user stats:', error);
@@ -173,14 +173,14 @@ export function PredictionForm({ matches }: PredictionFormProps) {
       });
       
       // If fee required, check current allowance first
-      if (totalFee > 0n) {
+      if (totalFee > 0) {
         const currentAllowance = await publicClient.readContract({
           address: CONTRACTS.USDC,
           abi: USDC_ABI,
           functionName: 'allowance',
           args: [address as `0x${string}`, CONTRACTS.SEERSLEAGUE]
         }) as bigint;
-        if (currentAllowance < totalFee) {
+        if (currentAllowance < BigInt(totalFee)) {
           toast.dismiss(loadingToast);
           setShowPaymentModal(true);
           setIsSubmitting(false);
