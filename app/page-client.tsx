@@ -93,79 +93,55 @@ export default function Home({ initialMatches = [] }: HomeProps) {
   }, []);
   
   return (
-    <div className="min-h-screen bg-dark-500">
-      {/* Hero Section */}
-      <section className="pt-8 pb-6 text-center">
-        <div className="inline-flex items-center gap-2 px-4 py-2 bg-gradient-gold rounded-full text-black text-sm font-semibold mb-4 animate-fade-in">
-          <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>
-          First Day FREE • $1 USDC After
-        </div>
-        
-        <h1 className="text-3xl font-bold mb-2 animate-slide-up">
-          Daily Football Predictions
-        </h1>
-        
-        <p className="text-gray-400 text-lg animate-slide-up">
-          Compete on accuracy. Build reputation. Win prizes.
-        </p>
-      </section>
+    <div className="max-w-5xl mx-auto px-4 py-6 pb-24">
 
-      {/* Wallet Status - COMPACT VERSION */}
+      {/* NEW DESIGN: Minimal wallet status */}
       <section className="mb-8">
         <WalletConnect />
       </section>
 
-      {/* Today's Matches */}
-      <section className="mb-8">
-        <div className="flex items-center justify-between mb-6">
-          <div>
-            <h2 className="text-xl font-bold">Today's Matches</h2>
-            <p className="text-gray-400 text-sm">Select your predictions</p>
-          </div>
-          <div className="flex items-center gap-2 text-sm text-gray-400">
-            <span className="w-2 h-2 bg-primary-500 rounded-full"></span>
-            {matches.length}
-          </div>
+      {/* NEW DESIGN: Section header */}
+      <div className="flex items-center justify-between mb-6">
+        <div>
+          <h2 className="text-2xl font-bold mb-1">Today's Matches</h2>
+          <p className="text-sm text-gray-500">Select your predictions</p>
         </div>
+        <div className="px-3 py-1.5 rounded-lg bg-surface border border-white/5">
+          <span className="text-sm font-medium text-gray-400">{matches.length} matches</span>
+        </div>
+      </div>
 
-        {/* KEEP existing loading/error/matches logic */}
-        {loading ? (
-          <div className="space-y-4">
-            {[1, 2, 3, 4, 5].map((i) => (
-              <div key={i} className="bg-surface rounded-xl p-6 animate-pulse">
-                <div className="h-4 bg-surface-light rounded mb-4"></div>
-                <div className="h-8 bg-surface-light rounded mb-4"></div>
-                <div className="flex gap-2">
-                  <div className="h-10 bg-surface-light rounded flex-1"></div>
-                  <div className="h-10 bg-surface-light rounded flex-1"></div>
-                  <div className="h-10 bg-surface-light rounded flex-1"></div>
-                </div>
-              </div>
-            ))}
-          </div>
-        ) : (
-          <div className="space-y-4">
+      {/* NEW DESIGN: Match list */}
+      {loading ? (
+        <div className="space-y-4">
+          {[1,2,3,4,5].map(i => (
+            <div key={i} className="h-52 bg-surface/30 rounded-2xl animate-pulse border border-white/5" />
+          ))}
+        </div>
+      ) : (
+        <>
+          <div className="space-y-4 mb-6">
             {matches.map((match) => (
               <PredictionForm key={match.id} matches={[match]} />
             ))}
           </div>
-        )}
+        </>
+      )}
 
-        {error && (
-          <div className="bg-red-900/20 border border-red-500/30 rounded-xl p-4 mb-4">
-            <p className="text-red-400 text-sm">Error: {error}</p>
-            <p className="text-xs text-gray-400 mt-1">
-              Check console for details
-            </p>
-          </div>
-        )}
-        
-        {!loading && !error && matches.length === 0 && (
-          <div className="text-center py-12">
-            <p className="text-gray-400">No matches found</p>
-          </div>
-        )}
-      </section>
+      {error && (
+        <div className="bg-red-900/20 border border-red-500/30 rounded-xl p-4 mb-4">
+          <p className="text-red-400 text-sm">Error: {error}</p>
+          <p className="text-xs text-gray-400 mt-1">
+            Check console for details
+          </p>
+        </div>
+      )}
+      
+      {!loading && !error && matches.length === 0 && (
+        <div className="text-center py-12">
+          <p className="text-gray-400">No matches found</p>
+        </div>
+      )}
 
       {/* Chain Warning */}
       {chainId && chainId !== '0x2105' && (

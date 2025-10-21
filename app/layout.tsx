@@ -35,45 +35,53 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en">
-      <body className="bg-dark-500 text-white min-h-screen">
+    <html lang="en" className="dark">
+      <body className="bg-black text-white antialiased">
         <MiniKitProvider>
-          {/* Clean Centered Header */}
-          <header className="sticky top-0 z-40 bg-gradient-dark backdrop-blur-md border-b border-surface-light/20">
-            <div className="max-w-screen-sm mx-auto px-6 py-4 flex items-center justify-center">
-              <Image 
-                src="/logomuz.png" 
-                alt="SeersLeague" 
-                width={140} 
-                height={36} 
-                priority 
-                className="animate-fade-in"
-              />
-            </div>
-          </header>
+          <div className="min-h-screen flex flex-col">
+            
+            {/* NEW DESIGN: Clean header with centered logo */}
+            <header className="sticky top-0 z-50 bg-black/95 backdrop-blur-xl border-b border-white/5">
+              <div className="max-w-5xl mx-auto px-4 py-5">
+                <div className="flex items-center justify-center">
+                  <Image
+                    src="/logomuz.png"
+                    alt="SeersLeague"
+                    width={240}
+                    height={75}
+                    priority
+                    className="h-16 w-auto"
+                  />
+                </div>
+              </div>
+            </header>
 
-          {/* Main Content */}
-          <main className="max-w-screen-sm mx-auto w-full px-6 pb-24">
-            {children}
-          </main>
+            {/* Main content */}
+            <main className="flex-1 pb-24">
+              {children}
+            </main>
 
-          {/* Bottom Navigation */}
-          <footer className="fixed bottom-0 left-0 right-0 bg-surface/95 backdrop-blur-md border-t border-surface-light/20">
-            <nav className="max-w-screen-sm mx-auto px-6 py-3 flex items-center justify-around">
-              <Link href="/" className="flex flex-col items-center gap-1.5 text-gray-400 hover:text-primary-500 transition-all duration-200 group">
-                <Home className="w-5 h-5 group-hover:scale-110 transition-transform" />
-                <span className="text-xs font-medium">Home</span>
-              </Link>
-              <Link href="/leaderboard" className="flex flex-col items-center gap-1.5 text-gray-400 hover:text-primary-500 transition-all duration-200 group">
-                <Trophy className="w-5 h-5 group-hover:scale-110 transition-transform" />
-                <span className="text-xs font-medium">Leaderboard</span>
-              </Link>
-              <Link href="/profile" className="flex flex-col items-center gap-1.5 text-gray-400 hover:text-primary-500 transition-all duration-200 group">
-                <User className="w-5 h-5 group-hover:scale-110 transition-transform" />
-                <span className="text-xs font-medium">Profile</span>
-              </Link>
+            {/* NEW DESIGN: Bottom navigation */}
+            <nav className="fixed bottom-0 left-0 right-0 z-50 bg-surface/98 backdrop-blur-xl border-t border-white/5">
+              <div className="max-w-5xl mx-auto">
+                <div className="flex items-center justify-around h-18">
+                  <Link href="/" className="flex flex-col items-center gap-1.5 py-3 px-6 text-gray-500 hover:text-gold-500 transition-colors">
+                    <Home className="w-6 h-6" />
+                    <span className="text-xs font-medium">Home</span>
+                  </Link>
+                  <Link href="/leaderboard" className="flex flex-col items-center gap-1.5 py-3 px-6 text-gray-500 hover:text-gold-500 transition-colors">
+                    <Trophy className="w-6 h-6" />
+                    <span className="text-xs font-medium">Leaderboard</span>
+                  </Link>
+                  <Link href="/profile" className="flex flex-col items-center gap-1.5 py-3 px-6 text-gray-500 hover:text-gold-500 transition-colors">
+                    <User className="w-6 h-6" />
+                    <span className="text-xs font-medium">Profile</span>
+                  </Link>
+                </div>
+              </div>
             </nav>
-          </footer>
+
+          </div>
 
           <Toaster position="top-center" />
         </MiniKitProvider>
