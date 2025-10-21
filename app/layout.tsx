@@ -40,20 +40,17 @@ export default function RootLayout({
         <MiniKitProvider>
           <div className="min-h-screen flex flex-col">
             
-            <header className="sticky top-0 z-50 bg-[#04000A] backdrop-blur-md border-b border-[#1B1A1A] shadow-lg">
-              <div className="max-w-screen-sm mx-auto px-6 py-4">
+            <header className="sticky top-0 z-50 bg-white/95 backdrop-blur-xl border-b border-gray-100">
+              <div className="max-w-md mx-auto px-4 py-3">
                 <div className="flex items-center justify-center">
-                  <div className="relative group">
-                    <Image
-                      src="/logomuz.png"
-                      alt="SeersLeague"
-                      width={280}
-                      height={80}
-                      priority
-                      className="h-16 w-auto object-contain transition-transform duration-300 group-hover:scale-105"
-                    />
-                    <div className="absolute inset-0 bg-gradient-to-r from-yellow-400/20 to-yellow-600/20 rounded-2xl blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
-                  </div>
+                  <Image
+                    src="/logomuz.png"
+                    alt="SeersLeague"
+                    width={120}
+                    height={32}
+                    priority
+                    className="h-8 w-auto object-contain"
+                  />
                 </div>
               </div>
             </header>
@@ -63,35 +60,29 @@ export default function RootLayout({
               {children}
             </main>
 
-            <nav className="fixed bottom-0 left-0 right-0 z-50 bg-[#04000A]/95 backdrop-blur-md border-t border-[#1B1A1A] shadow-lg">
-              <div className="max-w-screen-sm mx-auto">
-                <div className="flex items-center justify-around h-20">
+            <nav className="fixed bottom-0 left-0 right-0 z-50 bg-white/95 backdrop-blur-xl border-t border-gray-100">
+              <div className="max-w-md mx-auto">
+                <div className="flex items-center justify-around h-16">
                   <Link 
                     href="/"
-                    className="flex flex-col items-center gap-2 px-6 py-3 text-[#A8A8A8] hover:text-yellow-400 transition-all duration-300 group"
+                    className="flex flex-col items-center gap-1 px-4 py-2 text-gray-600 hover:text-blue-600 transition-colors"
                   >
-                    <div className="p-2 rounded-xl group-hover:bg-yellow-400/10 transition-all duration-300">
-                      <Home className="w-6 h-6 group-hover:scale-110 transition-transform duration-300" />
-                    </div>
-                    <span className="text-xs font-medium group-hover:text-yellow-400 transition-colors duration-300">Home</span>
+                    <Home className="w-5 h-5" />
+                    <span className="text-xs font-medium">Home</span>
                   </Link>
                   <Link 
                     href="/leaderboard"
-                    className="flex flex-col items-center gap-2 px-6 py-3 text-[#A8A8A8] hover:text-yellow-400 transition-all duration-300 group"
+                    className="flex flex-col items-center gap-1 px-4 py-2 text-gray-600 hover:text-blue-600 transition-colors"
                   >
-                    <div className="p-2 rounded-xl group-hover:bg-yellow-400/10 transition-all duration-300">
-                      <Trophy className="w-6 h-6 group-hover:scale-110 transition-transform duration-300" />
-                    </div>
-                    <span className="text-xs font-medium group-hover:text-yellow-400 transition-colors duration-300">Leaderboard</span>
+                    <Trophy className="w-5 h-5" />
+                    <span className="text-xs font-medium">Leaderboard</span>
                   </Link>
                   <Link 
                     href="/profile"
-                    className="flex flex-col items-center gap-2 px-6 py-3 text-[#A8A8A8] hover:text-yellow-400 transition-all duration-300 group"
+                    className="flex flex-col items-center gap-1 px-4 py-2 text-gray-600 hover:text-blue-600 transition-colors"
                   >
-                    <div className="p-2 rounded-xl group-hover:bg-yellow-400/10 transition-all duration-300">
-                      <User className="w-6 h-6 group-hover:scale-110 transition-transform duration-300" />
-                    </div>
-                    <span className="text-xs font-medium group-hover:text-yellow-400 transition-colors duration-300">Profile</span>
+                    <User className="w-5 h-5" />
+                    <span className="text-xs font-medium">Profile</span>
                   </Link>
                 </div>
               </div>
