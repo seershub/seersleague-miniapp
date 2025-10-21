@@ -3,7 +3,7 @@ import { publicClient } from '@/lib/viem-config';
 import { CONTRACTS, SEERSLEAGUE_ABI } from '@/lib/contract-interactions';
 
 export const dynamic = 'force-dynamic';
-export const maxDuration = 10; // 10 seconds max
+export const maxDuration = 60; // 60 seconds max for blockchain queries
 
 interface SimpleLeaderboardEntry {
   rank: number;
@@ -23,11 +23,15 @@ export async function GET() {
   try {
     console.log('[Simple Leaderboard] Fetching from contract...');
     
-    // Get contract deployment block
-    const deploymentBlock = BigInt(process.env.NEXT_PUBLIC_DEPLOYMENT_BLOCK || '0');
+    // Get current block
     const currentBlock = await publicClient.getBlockNumber();
+    console.log(`Current block: ${currentBlock}`);
     
-    console.log(`Current block: ${currentBlock}, deployment block: ${deploymentBlock}`);
+    // Use a reasonable block range (last 100,000 blocks = ~12 days on Base)
+    // Base has ~2 second block time, so 100k blocks = ~2.3 days
+    const fromBlock = currentBlock - 100000n;
+    
+    console.log(`Fetching events from block ${fromBlock} to ${currentBlock}`);
 
     // Fetch PredictionsSubmitted events
     const predictionEvents = await publicClient.getLogs({
@@ -43,7 +47,7 @@ export async function GET() {
           { name: 'feePaid', type: 'uint256', indexed: false }
         ]
       },
-      fromBlock: deploymentBlock > 0n ? deploymentBlock : currentBlock - 10000n,
+      fromBlock,
       toBlock: 'latest'
     });
 
