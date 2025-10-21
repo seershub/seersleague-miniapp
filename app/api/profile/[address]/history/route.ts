@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { kv } from '@vercel/kv';
 import { publicClient } from '@/lib/viem-config';
-import { CONTRACTS } from '@/lib/contract-interactions';
+import { CONTRACTS, SEERSLEAGUE_ABI } from '@/lib/contract-interactions';
 
 export const dynamic = 'force-dynamic';
 
@@ -109,22 +109,10 @@ export async function GET(
         try {
           const prediction = await publicClient.readContract({
             address: CONTRACTS.SEERSLEAGUE,
-            abi: [{
-              type: 'function',
-              name: 'getUserPrediction',
-              stateMutability: 'view',
-              inputs: [
-                { name: 'user', type: 'address' },
-                { name: 'matchId', type: 'uint256' }
-              ],
-              outputs: [
-                { name: 'outcome', type: 'uint8' },
-                { name: 'timestamp', type: 'uint256' }
-              ]
-            }],
+            abi: SEERSLEAGUE_ABI,
             functionName: 'getUserPrediction',
             args: [address, matchId]
-          }) as unknown as { outcome: number; timestamp: bigint };
+          }) as unknown as { matchId: bigint; outcome: number; timestamp: bigint };
 
           const actualResult = matchResults.get(matchIdNum) || null;
           const isCorrect = actualResult !== null ? prediction.outcome === actualResult : null;
