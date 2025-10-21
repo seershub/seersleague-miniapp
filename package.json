@@ -16,6 +16,7 @@
   "dependencies": {
     "@farcaster/miniapp-sdk": "^0.2.1",
     "@openzeppelin/contracts": "^5.4.0",
+    "@vercel/kv": "^2.0.0",
     "autoprefixer": "^10.4.0",
     "clsx": "^2.1.0",
     "lucide-react": "^0.400.0",
