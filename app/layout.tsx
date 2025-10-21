@@ -41,10 +41,10 @@ export default function RootLayout({
           <div className="min-h-screen flex flex-col">
             
             {/* Header - Seershub Style Adapted */}
-            <header className="relative bg-black py-6 px-4">
+            <header className="relative bg-black py-4 px-4">
               <div className="max-w-4xl mx-auto">
-                {/* Main Container with Animated Border */}
-                <div className="relative rounded-2xl overflow-hidden py-6 px-6">
+                {/* Main Container with Animated Border - Compact */}
+                <div className="relative rounded-2xl overflow-hidden py-3 px-4">
                   {/* Animated Gradient Border */}
                   <div
                     className="absolute inset-0 rounded-2xl animate-border-flow"
@@ -63,7 +63,7 @@ export default function RootLayout({
                   <div className="relative z-10 flex flex-col items-center">
 
                     {/* Logo Container - Large and Prominent */}
-                    <div className="relative overflow-visible py-3">
+                    <div className="relative overflow-visible">
                       <Image
                         src="/logomuz.png"
                         alt="SeersLeague"
@@ -78,7 +78,7 @@ export default function RootLayout({
                     </div>
 
                     {/* Decorative Line with Soccer Balls */}
-                    <div className="flex items-center justify-center w-full max-w-md mt-1">
+                    <div className="flex items-center justify-center w-full max-w-md -mt-2">
                       <span
                         className="text-2xl opacity-35 animate-float-rotate-1"
                         style={{
@@ -99,7 +99,7 @@ export default function RootLayout({
                     </div>
 
                     {/* Tagline */}
-                    <p className="text-xs md:text-sm text-white/40 font-light tracking-wide text-center mt-2">
+                    <p className="text-xs md:text-sm text-white/40 font-light tracking-wide text-center mt-1">
                       Decentralized Football Prediction Platform
                     </p>
                   </div>
