@@ -121,12 +121,12 @@ async function enrichMatches(matches: { matchId: string; startTime: number }[], 
       }
 
       const data = await response.json();
-      const m = data.match;
+      const m = data.match || data;
 
       enriched.push({
         id: match.matchId,
-        homeTeam: m.homeTeam?.name || 'Home',
-        awayTeam: m.awayTeam?.name || 'Away',
+        homeTeam: m?.homeTeam?.name || m?.homeTeam || 'Home Team',
+        awayTeam: m?.awayTeam?.name || m?.awayTeam || 'Away Team',
         league: m.competition?.name || 'Football',
         kickoff: m.utcDate || new Date(match.startTime * 1000).toISOString(),
         venue: m.venue || 'TBA',
