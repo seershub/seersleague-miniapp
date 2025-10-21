@@ -3,10 +3,18 @@
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
 import { sdk } from '@farcaster/miniapp-sdk';
 
+interface FarcasterUser {
+  fid: number;
+  username: string | null;
+  displayName: string | null;
+  pfpUrl: string | null;
+}
+
 interface MiniKitContextType {
   isReady: boolean;
   sdk: typeof sdk | null;
   error: string | null;
+  user: FarcasterUser | null;
 }
 
 const MiniKitContext = createContext<MiniKitContextType | undefined>(undefined);
@@ -14,6 +22,7 @@ const MiniKitContext = createContext<MiniKitContextType | undefined>(undefined);
 export function MiniKitProvider({ children }: { children: ReactNode }) {
   const [isReady, setIsReady] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [user, setUser] = useState<FarcasterUser | null>(null);
 
   useEffect(() => {
     const initializeMiniKit = async () => {
@@ -31,9 +40,21 @@ export function MiniKitProvider({ children }: { children: ReactNode }) {
         // Initialize SDK with proper error handling
         await sdk.actions.ready();
         
-        // Additional verification
+        // Get Farcaster user context
         const context = await sdk.context;
         console.log('MiniKitProvider: SDK context:', context);
+        
+        // Extract user information from context
+        if (context?.user) {
+          const farcasterUser: FarcasterUser = {
+            fid: context.user.fid || 0,
+            username: context.user.username || null,
+            displayName: context.user.displayName || null,
+            pfpUrl: context.user.pfpUrl || null
+          };
+          setUser(farcasterUser);
+          console.log('MiniKitProvider: Farcaster user loaded:', farcasterUser);
+        }
         
         setIsReady(true);
         setError(null);
@@ -54,7 +75,7 @@ export function MiniKitProvider({ children }: { children: ReactNode }) {
   }, []);
 
   return (
-    <MiniKitContext.Provider value={{ isReady, sdk, error }}>
+    <MiniKitContext.Provider value={{ isReady, sdk, error, user }}>
       {children}
     </MiniKitContext.Provider>
   );
