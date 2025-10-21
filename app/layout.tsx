@@ -62,15 +62,15 @@ export default function RootLayout({
                   {/* Content */}
                   <div className="relative z-10 flex flex-col items-center">
 
-                    {/* Logo Container - Fixed height to prevent cropping */}
-                    <div className="relative overflow-visible py-2">
+                    {/* Logo Container - Large and Prominent */}
+                    <div className="relative overflow-visible py-3">
                       <Image
                         src="/logomuz.png"
                         alt="SeersLeague"
-                        width={700}
-                        height={180}
+                        width={800}
+                        height={200}
                         priority
-                        className="h-24 md:h-28 lg:h-32 w-auto"
+                        className="h-40 md:h-44 lg:h-48 w-auto"
                         style={{
                           filter: 'brightness(1.15) contrast(1.05) drop-shadow(0 8px 24px rgba(0, 0, 0, 0.2))'
                         }}
@@ -78,7 +78,7 @@ export default function RootLayout({
                     </div>
 
                     {/* Decorative Line with Soccer Balls */}
-                    <div className="flex items-center justify-center w-full max-w-md -mt-4">
+                    <div className="flex items-center justify-center w-full max-w-md mt-1">
                       <span
                         className="text-2xl opacity-35 animate-float-rotate-1"
                         style={{
