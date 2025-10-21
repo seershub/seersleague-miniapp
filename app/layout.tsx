@@ -40,18 +40,21 @@ export default function RootLayout({
         <MiniKitProvider>
           <div className="min-h-screen flex flex-col">
             
-            {/* NEW DESIGN: Clean header with centered logo */}
-            <header className="sticky top-0 z-50 bg-black/95 backdrop-blur-xl border-b border-white/5">
-              <div className="max-w-5xl mx-auto px-4 py-5">
+            {/* DRAMATIC HEADER */}
+            <header className="sticky top-0 z-50 bg-gradient-to-r from-black via-gray-900 to-black backdrop-blur-2xl border-b border-gold-500/20">
+              <div className="max-w-7xl mx-auto px-4 py-6">
                 <div className="flex items-center justify-center">
-                  <Image
-                    src="/logomuz.png"
-                    alt="SeersLeague"
-                    width={240}
-                    height={75}
-                    priority
-                    className="h-16 w-auto"
-                  />
+                  <div className="relative group">
+                    <div className="absolute inset-0 bg-gradient-to-r from-gold-500/20 to-gold-600/20 rounded-2xl blur-xl group-hover:blur-2xl transition-all duration-500"></div>
+                    <Image
+                      src="/logomuz.png"
+                      alt="SeersLeague"
+                      width={280}
+                      height={90}
+                      priority
+                      className="relative h-20 w-auto drop-shadow-2xl"
+                    />
+                  </div>
                 </div>
               </div>
             </header>
@@ -61,21 +64,27 @@ export default function RootLayout({
               {children}
             </main>
 
-            {/* NEW DESIGN: Bottom navigation */}
-            <nav className="fixed bottom-0 left-0 right-0 z-50 bg-surface/98 backdrop-blur-xl border-t border-white/5">
-              <div className="max-w-5xl mx-auto">
-                <div className="flex items-center justify-around h-18">
-                  <Link href="/" className="flex flex-col items-center gap-1.5 py-3 px-6 text-gray-500 hover:text-gold-500 transition-colors">
-                    <Home className="w-6 h-6" />
-                    <span className="text-xs font-medium">Home</span>
+            {/* DRAMATIC BOTTOM NAVIGATION */}
+            <nav className="fixed bottom-0 left-0 right-0 z-50 bg-gradient-to-r from-black via-gray-900 to-black backdrop-blur-2xl border-t border-gold-500/20">
+              <div className="max-w-7xl mx-auto">
+                <div className="flex items-center justify-around h-20">
+                  <Link href="/" className="group flex flex-col items-center gap-2 py-4 px-8 text-gray-400 hover:text-gold-500 transition-all duration-300 hover:scale-110">
+                    <div className="p-3 rounded-2xl bg-gradient-to-br from-gray-800/50 to-gray-900/50 group-hover:from-gold-500/20 group-hover:to-gold-600/20 border border-white/10 group-hover:border-gold-500/30 transition-all">
+                      <Home className="w-6 h-6" />
+                    </div>
+                    <span className="text-xs font-bold uppercase tracking-wider">Home</span>
                   </Link>
-                  <Link href="/leaderboard" className="flex flex-col items-center gap-1.5 py-3 px-6 text-gray-500 hover:text-gold-500 transition-colors">
-                    <Trophy className="w-6 h-6" />
-                    <span className="text-xs font-medium">Leaderboard</span>
+                  <Link href="/leaderboard" className="group flex flex-col items-center gap-2 py-4 px-8 text-gray-400 hover:text-gold-500 transition-all duration-300 hover:scale-110">
+                    <div className="p-3 rounded-2xl bg-gradient-to-br from-gray-800/50 to-gray-900/50 group-hover:from-gold-500/20 group-hover:to-gold-600/20 border border-white/10 group-hover:border-gold-500/30 transition-all">
+                      <Trophy className="w-6 h-6" />
+                    </div>
+                    <span className="text-xs font-bold uppercase tracking-wider">Leaderboard</span>
                   </Link>
-                  <Link href="/profile" className="flex flex-col items-center gap-1.5 py-3 px-6 text-gray-500 hover:text-gold-500 transition-colors">
-                    <User className="w-6 h-6" />
-                    <span className="text-xs font-medium">Profile</span>
+                  <Link href="/profile" className="group flex flex-col items-center gap-2 py-4 px-8 text-gray-400 hover:text-gold-500 transition-all duration-300 hover:scale-110">
+                    <div className="p-3 rounded-2xl bg-gradient-to-br from-gray-800/50 to-gray-900/50 group-hover:from-gold-500/20 group-hover:to-gold-600/20 border border-white/10 group-hover:border-gold-500/30 transition-all">
+                      <User className="w-6 h-6" />
+                    </div>
+                    <span className="text-xs font-bold uppercase tracking-wider">Profile</span>
                   </Link>
                 </div>
               </div>
