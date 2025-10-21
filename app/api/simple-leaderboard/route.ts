@@ -3,7 +3,7 @@ import { publicClient } from '@/lib/viem-config';
 import { CONTRACTS, SEERSLEAGUE_ABI } from '@/lib/contract-interactions';
 
 export const dynamic = 'force-dynamic';
-export const maxDuration = 60; // 60 seconds max for blockchain queries
+export const maxDuration = 30;
 
 interface SimpleLeaderboardEntry {
   rank: number;
@@ -16,24 +16,24 @@ interface SimpleLeaderboardEntry {
 }
 
 /**
- * Fast leaderboard endpoint - reads from KV cache only
- * Data is updated by /api/cron/update-leaderboard every 10 minutes
+ * Optimized leaderboard endpoint - scans recent events in small batches
+ * to avoid timeout while still getting real data
  */
 export async function GET() {
   try {
-    console.log('[Simple Leaderboard] Fetching from contract...');
+    console.log('[Simple Leaderboard] Starting optimized event scan...');
     
-    // Get current block
     const currentBlock = await publicClient.getBlockNumber();
     console.log(`Current block: ${currentBlock}`);
     
-    // Use a reasonable block range (last 100,000 blocks = ~12 days on Base)
-    // Base has ~2 second block time, so 100k blocks = ~2.3 days
-    const fromBlock = currentBlock - 100000n;
+    // Scan last 5000 blocks only (~2.7 hours on Base) to avoid timeout
+    // This is a reasonable window for active users
+    const BLOCK_RANGE = 5000n;
+    const fromBlock = currentBlock - BLOCK_RANGE;
     
-    console.log(`Fetching events from block ${fromBlock} to ${currentBlock}`);
+    console.log(`Scanning blocks ${fromBlock} to ${currentBlock}`);
 
-    // Fetch PredictionsSubmitted events
+    // Fetch PredictionsSubmitted events from recent blocks
     const predictionEvents = await publicClient.getLogs({
       address: CONTRACTS.SEERSLEAGUE,
       event: {
@@ -51,7 +51,7 @@ export async function GET() {
       toBlock: 'latest'
     });
 
-    console.log(`Found ${predictionEvents.length} prediction events`);
+    console.log(`Found ${predictionEvents.length} recent prediction events`);
 
     // Extract unique user addresses
     const uniqueUsers = new Set<string>();
@@ -61,12 +61,12 @@ export async function GET() {
       }
     });
 
-    console.log(`Found ${uniqueUsers.size} unique users`);
+    console.log(`Found ${uniqueUsers.size} unique users in recent activity`);
 
-    // Fetch stats for each user
     const leaderboardData: SimpleLeaderboardEntry[] = [];
 
-    for (const userAddress of uniqueUsers) {
+    // Fetch stats for each user in parallel (much faster)
+    const statsPromises = Array.from(uniqueUsers).map(async (userAddress) => {
       try {
         const stats = await publicClient.readContract({
           address: CONTRACTS.SEERSLEAGUE,
@@ -89,7 +89,7 @@ export async function GET() {
             ? Math.round((correctPredictions / totalPredictions) * 100)
             : 0;
 
-          leaderboardData.push({
+          return {
             rank: 0,
             address: userAddress,
             accuracy,
@@ -97,12 +97,23 @@ export async function GET() {
             correctPredictions,
             currentStreak: Number(stats.currentStreak || 0),
             longestStreak: Number(stats.longestStreak || 0)
-          });
+          };
         }
+        return null;
       } catch (error) {
         console.error(`Error fetching stats for ${userAddress}:`, error);
+        return null;
       }
-    }
+    });
+
+    const results = await Promise.all(statsPromises);
+    
+    // Filter out null results
+    results.forEach(result => {
+      if (result) {
+        leaderboardData.push(result);
+      }
+    });
 
     // Sort leaderboard
     leaderboardData.sort((a, b) => {
@@ -120,7 +131,7 @@ export async function GET() {
       entry.rank = index + 1;
     });
 
-    console.log(`Final leaderboard with ${leaderboardData.length} entries`);
+    console.log(`[Simple Leaderboard] Returning ${leaderboardData.length} entries`);
     
     return NextResponse.json({
       success: true,
@@ -128,7 +139,7 @@ export async function GET() {
       leaderboard: leaderboardData,
       topPlayers: leaderboardData.slice(0, 65),
       lastUpdated: new Date().toISOString(),
-      source: 'contract'
+      source: 'direct'
     });
 
   } catch (error) {
