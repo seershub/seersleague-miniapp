@@ -17,6 +17,9 @@ const RPC_URL = process.env.NEXT_PUBLIC_BASE_RPC || 'https://mainnet.base.org';
 const FOOTBALL_DATA_API_KEY = process.env.FOOTBALL_DATA_API_KEY || '';
 const FOOTBALL_DATA_BASE = 'https://api.football-data.org/v4';
 
+console.log('🔑 API Key status:', FOOTBALL_DATA_API_KEY ? 'Set' : 'Not set');
+console.log('🔑 API Key length:', FOOTBALL_DATA_API_KEY.length);
+
 const COMPETITION_IDS = {
   PREMIER_LEAGUE: 'PL',
   LA_LIGA: 'PD',
