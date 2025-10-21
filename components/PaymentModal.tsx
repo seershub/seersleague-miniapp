@@ -188,20 +188,30 @@ export function PaymentModal({ onSuccess, onCancel, amount }: PaymentModalProps)
               </p>
             </div>
             
-            <button
-              onClick={handleApprove}
-              disabled={!hasEnoughBalance || isApproving || isApprovePending || !address}
-              className="btn-primary w-full py-3"
-            >
-              {isApproving || isApprovePending ? (
-                <div className="flex items-center justify-center space-x-2">
-                  <div className="spinner"></div>
-                  <span>Approving...</span>
-                </div>
-              ) : (
-                'Approve USDC'
-              )}
-            </button>
+            <div className="flex space-x-3">
+              <button
+                onClick={handleApprove}
+                disabled={!hasEnoughBalance || isApproving || isApprovePending || !address}
+                className="flex-1 bg-gradient-to-r from-yellow-500 to-amber-500 hover:from-yellow-600 hover:to-amber-600 text-white font-semibold py-3 px-4 rounded-xl transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {isApproving || isApprovePending ? (
+                  <div className="flex items-center justify-center space-x-2">
+                    <div className="spinner"></div>
+                    <span>Approving...</span>
+                  </div>
+                ) : (
+                  'APPROVE USDC'
+                )}
+              </button>
+              
+              <button
+                onClick={onCancel}
+                disabled={isApproving || isApprovePending}
+                className="flex-1 bg-gray-700 hover:bg-gray-600 text-white font-semibold py-3 px-4 rounded-xl transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                CANCEL
+              </button>
+            </div>
           </div>
         )}
         
@@ -215,31 +225,32 @@ export function PaymentModal({ onSuccess, onCancel, amount }: PaymentModalProps)
               </p>
             </div>
             
-            <button
-              onClick={handleConfirm}
-              disabled={isConfirming || isConfirmPending}
-              className="btn-primary w-full py-3"
-            >
-              {isConfirming || isConfirmPending ? (
-                <div className="flex items-center justify-center space-x-2">
-                  <div className="spinner"></div>
-                  <span>Confirming...</span>
-                </div>
-              ) : (
-                'Confirm & Submit Predictions'
-              )}
-            </button>
+            <div className="flex space-x-3">
+              <button
+                onClick={handleConfirm}
+                disabled={isConfirming || isConfirmPending}
+                className="flex-1 bg-gradient-to-r from-yellow-500 to-amber-500 hover:from-yellow-600 hover:to-amber-600 text-white font-semibold py-3 px-4 rounded-xl transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {isConfirming || isConfirmPending ? (
+                  <div className="flex items-center justify-center space-x-2">
+                    <div className="spinner"></div>
+                    <span>Confirming...</span>
+                  </div>
+                ) : (
+                  'CONFIRM & SUBMIT'
+                )}
+              </button>
+              
+              <button
+                onClick={onCancel}
+                disabled={isConfirming || isConfirmPending}
+                className="flex-1 bg-gray-700 hover:bg-gray-600 text-white font-semibold py-3 px-4 rounded-xl transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                CANCEL
+              </button>
+            </div>
           </div>
         )}
-        
-        {/* Cancel Button */}
-        <button
-          onClick={onCancel}
-          disabled={isApproving || isConfirming || isApprovePending || isConfirmPending}
-          className="btn-secondary w-full mt-3 py-2"
-        >
-          Cancel
-        </button>
         
         {/* Security Notice */}
         <p className="text-xs text-gray-500 text-center mt-4">

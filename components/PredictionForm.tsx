@@ -359,21 +359,6 @@ export function PredictionForm({ matches }: PredictionFormProps) {
   
   return (
     <div className="space-y-4">
-      {/* Free Predictions Info */}
-      <div className="bg-gradient-to-r from-blue-500/10 to-cyan-500/5 border border-blue-500/20 rounded-xl p-4">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center space-x-2">
-            <span className="text-blue-400">🎯</span>
-            <span className="font-semibold text-white">Flexible Predictions</span>
-          </div>
-          <span className="text-sm text-blue-300">
-            {remainingFreePredictions} free predictions left
-          </span>
-        </div>
-        <p className="text-sm text-gray-300 mt-1">
-          Select any matches you want to predict. First 5 predictions are free, then 0.5 USDC per match.
-        </p>
-      </div>
       
       {/* Payment Summary */}
       {Object.keys(predictions).length > 0 && (

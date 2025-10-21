@@ -34,13 +34,13 @@ export function MatchCard({ match, selectedOutcome, onOutcomeSelect, disabled = 
   return (
     <div className="glass-effect-strong rounded-xl sm:rounded-2xl overflow-hidden hover:scale-[1.02] transition-all duration-300 group border border-white/5 w-full">
       {/* Match Header */}
-      <div className="bg-gradient-to-r from-blue-500/10 to-cyan-500/5 px-3 sm:px-4 md:px-6 py-3 border-b border-white/5">
+          <div className="bg-gradient-to-r from-yellow-500/10 to-amber-500/5 px-3 sm:px-4 md:px-6 py-3 border-b border-white/5">
         {/* Mobile: Stacked Layout */}
         <div className="flex flex-col gap-2 sm:hidden">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <div className="w-6 h-6 rounded-full bg-blue-500/20 flex items-center justify-center">
-                <span className="text-xs font-bold text-blue-400">⚽</span>
+              <div className="w-6 h-6 rounded-full bg-yellow-500/20 flex items-center justify-center">
+                <span className="text-xs font-bold text-yellow-400">⚽</span>
               </div>
               <span className="text-xs font-semibold uppercase tracking-wider text-white">
                 {match.league}
@@ -126,8 +126,8 @@ export function MatchCard({ match, selectedOutcome, onOutcomeSelect, disabled = 
           {/* VS Divider */}
           <div className="flex flex-col items-center gap-2 sm:gap-3 md:gap-4">
             <div className="relative">
-              <div className="w-12 h-12 sm:w-14 sm:h-14 md:w-16 md:h-16 rounded-full glass-effect border-2 border-cyan-400/30 flex items-center justify-center">
-                <span className="text-xs sm:text-sm font-black text-cyan-400">VS</span>
+              <div className="w-12 h-12 sm:w-14 sm:h-14 md:w-16 md:h-16 rounded-full glass-effect border-2 border-yellow-400/30 flex items-center justify-center">
+                <span className="text-xs sm:text-sm font-black text-yellow-400">VS</span>
               </div>
             </div>
 
@@ -181,8 +181,8 @@ export function MatchCard({ match, selectedOutcome, onOutcomeSelect, disabled = 
               disabled={disabled}
               className={`py-3 rounded-xl font-bold text-sm transition-all duration-300 ${
                 selectedOutcome === 1 
-                  ? 'bg-gradient-to-r from-blue-500 to-cyan-500 text-white shadow-lg shadow-blue-500/30 scale-105' 
-                  : 'bg-gray-800 border-2 border-gray-700 text-gray-300 hover:text-white hover:border-blue-500/50 hover:bg-gray-700'
+                  ? 'bg-gradient-to-r from-yellow-500 to-amber-500 text-white shadow-lg shadow-yellow-500/30 scale-105' 
+                  : 'bg-gray-800 border-2 border-gray-700 text-gray-300 hover:text-white hover:border-yellow-500/50 hover:bg-gray-700'
               } ${disabled ? 'opacity-50 cursor-not-allowed' : ''}`}
             >
               Home
@@ -195,8 +195,8 @@ export function MatchCard({ match, selectedOutcome, onOutcomeSelect, disabled = 
               disabled={disabled}
               className={`py-3 rounded-xl font-bold text-sm transition-all duration-300 ${
                 selectedOutcome === 2 
-                  ? 'bg-gradient-to-r from-blue-500 to-cyan-500 text-white shadow-lg shadow-blue-500/30 scale-105' 
-                  : 'bg-gray-800 border-2 border-gray-700 text-gray-300 hover:text-white hover:border-blue-500/50 hover:bg-gray-700'
+                  ? 'bg-gradient-to-r from-yellow-500 to-amber-500 text-white shadow-lg shadow-yellow-500/30 scale-105' 
+                  : 'bg-gray-800 border-2 border-gray-700 text-gray-300 hover:text-white hover:border-yellow-500/50 hover:bg-gray-700'
               } ${disabled ? 'opacity-50 cursor-not-allowed' : ''}`}
             >
               Draw
@@ -209,8 +209,8 @@ export function MatchCard({ match, selectedOutcome, onOutcomeSelect, disabled = 
               disabled={disabled}
               className={`py-3 rounded-xl font-bold text-sm transition-all duration-300 ${
                 selectedOutcome === 3 
-                  ? 'bg-gradient-to-r from-blue-500 to-cyan-500 text-white shadow-lg shadow-blue-500/30 scale-105' 
-                  : 'bg-gray-800 border-2 border-gray-700 text-gray-300 hover:text-white hover:border-blue-500/50 hover:bg-gray-700'
+                  ? 'bg-gradient-to-r from-yellow-500 to-amber-500 text-white shadow-lg shadow-yellow-500/30 scale-105' 
+                  : 'bg-gray-800 border-2 border-gray-700 text-gray-300 hover:text-white hover:border-yellow-500/50 hover:bg-gray-700'
               } ${disabled ? 'opacity-50 cursor-not-allowed' : ''}`}
             >
               Away
@@ -220,11 +220,11 @@ export function MatchCard({ match, selectedOutcome, onOutcomeSelect, disabled = 
       </div>
 
       {/* Footer Info */}
-      <div className="bg-gradient-to-r from-blue-500/5 to-transparent px-3 sm:px-4 md:px-6 py-3 flex flex-col sm:flex-row items-center justify-between gap-2 border-t border-white/5">
-        <div className="flex items-center gap-2 text-xs text-gray-400">
-          <div className="w-2 h-2 rounded-full bg-cyan-400 animate-pulse" />
-          <span className="text-xs">Powered by Base Network</span>
-        </div>
+          <div className="bg-gradient-to-r from-yellow-500/5 to-transparent px-3 sm:px-4 md:px-6 py-3 flex flex-col sm:flex-row items-center justify-between gap-2 border-t border-white/5">
+            <div className="flex items-center gap-2 text-xs text-gray-400">
+              <div className="w-2 h-2 rounded-full bg-yellow-400 animate-pulse" />
+              <span className="text-xs">Powered by Base Network</span>
+            </div>
         <div className="flex items-center gap-2 text-xs">
           <Zap className="w-3.5 h-3.5 text-orange-400" />
           <span className="text-gray-400">Instant settlement</span>

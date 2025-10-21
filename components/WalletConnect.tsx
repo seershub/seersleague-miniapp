@@ -85,16 +85,20 @@ export function WalletConnect() {
 
   if (isConnected) {
     return (
-      <div className="card text-center">
-        <div className="mb-4">
-          <div className="text-4xl mb-2">✅</div>
-          <h3 className="text-xl font-bold mb-2 text-green-400">Wallet Connected!</h3>
-          <p className="text-gray-400 mb-2">
-            Ready to make predictions and compete for prizes!
-          </p>
-          <p className="text-sm text-gray-500 font-mono">
-            {userAddress ? `${userAddress.slice(0, 6)}...${userAddress.slice(-4)}` : 'Connected'}
-          </p>
+      <div className="bg-gradient-to-r from-yellow-500/10 to-amber-500/5 border border-yellow-500/20 rounded-xl p-3 mb-6">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center space-x-3">
+            <div className="w-8 h-8 bg-gradient-to-r from-yellow-500 to-amber-500 rounded-full flex items-center justify-center">
+              <span className="text-white text-sm font-bold">✓</span>
+            </div>
+            <div>
+              <p className="text-sm font-semibold text-white">Wallet Connected</p>
+              <p className="text-xs text-yellow-300 font-mono">
+                {userAddress ? `${userAddress.slice(0, 6)}...${userAddress.slice(-4)}` : 'Connected'}
+              </p>
+            </div>
+          </div>
+          <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
         </div>
       </div>
     );

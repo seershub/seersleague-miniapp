@@ -95,25 +95,40 @@ export default function Home({ initialMatches = [] }: HomeProps) {
   
   return (
     <div className="min-h-screen bg-black">
-      <div className="max-w-4xl mx-auto px-4 py-8">
-        
-        {/* WALLET STATUS - MINIMAL */}
-        <section className="mb-8">
-          <WalletConnect />
-        </section>
+        <div className="max-w-4xl mx-auto px-4 py-8">
+          
+          {/* WALLET STATUS - MINIMAL */}
+          <section className="mb-8">
+            <WalletConnect />
+          </section>
+
+          {/* FLEXIBLE PREDICTIONS INFO - SINGLE INSTANCE */}
+          <section className="mb-8">
+            <div className="bg-gradient-to-r from-yellow-500/10 to-amber-500/5 border border-yellow-500/20 rounded-xl p-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-2">
+                  <span className="text-yellow-400">🎯</span>
+                  <span className="font-semibold text-white">Flexible Predictions</span>
+                </div>
+                <span className="text-sm text-yellow-300">
+                  Select any matches you want to predict. First 5 predictions are free, then 0.5 USDC per match.
+                </span>
+              </div>
+            </div>
+          </section>
 
         {/* MATCHES SECTION */}
         <section className="mb-8">
           <div className="text-center mb-8">
-            <div className="inline-flex items-center gap-2 glass-effect px-4 py-2 rounded-full mb-6 border border-cyan-400/20">
-              <div className="w-4 h-4 bg-cyan-400 rounded-full animate-pulse" />
-              <span className="text-sm font-medium text-cyan-400">Live Competitions</span>
-            </div>
-            
-            <h2 className="text-3xl sm:text-4xl font-bold mb-4 text-white">
-              <strong className="bg-blue-500 text-white px-3 py-1 rounded mr-2">Today</strong>
-              Matches
-            </h2>
+              <div className="inline-flex items-center gap-2 glass-effect px-4 py-2 rounded-full mb-6 border border-yellow-400/20">
+                <div className="w-4 h-4 bg-yellow-400 rounded-full animate-pulse" />
+                <span className="text-sm font-medium text-yellow-400">Live Competitions</span>
+              </div>
+              
+              <h2 className="text-3xl sm:text-4xl font-bold mb-4 text-white">
+                <strong className="bg-gradient-to-r from-yellow-500 to-amber-500 text-white px-3 py-1 rounded mr-2">Today</strong>
+                Matches
+              </h2>
             <p className="text-gray-400 text-lg max-w-2xl mx-auto">
               Join live prediction competitions. Make your picks, compete with others, win USDC rewards instantly.
             </p>

@@ -40,17 +40,36 @@ export default function RootLayout({
         <MiniKitProvider>
           <div className="min-h-screen flex flex-col">
             
-            <header className="sticky top-0 z-50 bg-black/95 backdrop-blur-xl border-b border-white/10">
-              <div className="max-w-4xl mx-auto px-4 py-4">
+            <header className="sticky top-0 z-50 bg-black/95 backdrop-blur-xl border-b border-white/10 relative overflow-hidden">
+              {/* PNG Effect Background */}
+              <div 
+                className="absolute inset-0 opacity-20"
+                style={{
+                  backgroundImage: 'url(/logo-effect.png)',
+                  backgroundSize: 'cover',
+                  backgroundPosition: 'center',
+                  backgroundRepeat: 'no-repeat'
+                }}
+              />
+              
+              <div className="max-w-4xl mx-auto px-4 py-6 relative z-10">
                 <div className="flex items-center justify-center">
-                  <Image
-                    src="/logomuz.png"
-                    alt="SeersLeague"
-                    width={140}
-                    height={36}
-                    priority
-                    className="h-10 w-auto object-contain"
-                  />
+                  <div className="relative">
+                    {/* Logo Glow Effect */}
+                    <div className="absolute inset-0 bg-gradient-to-r from-yellow-500/30 to-amber-500/30 blur-2xl rounded-2xl"></div>
+                    
+                    <Image
+                      src="/logomuz.png"
+                      alt="SeersLeague"
+                      width={700}
+                      height={180}
+                      priority
+                      className="h-50 w-auto object-contain relative z-10"
+                      style={{
+                        filter: 'drop-shadow(0 0 20px rgba(255, 215, 0, 0.3))'
+                      }}
+                    />
+                  </div>
                 </div>
               </div>
             </header>
