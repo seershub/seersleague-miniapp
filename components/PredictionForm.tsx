@@ -28,29 +28,54 @@ export function PredictionForm({ matches }: PredictionFormProps) {
   // Get user address and stats
   useEffect(() => {
     const getUserData = async () => {
+      console.log('PredictionForm: Getting user data...', { isReady, sdk: !!sdk });
+      
       if (isReady && sdk) {
         try {
-          // Get user address
-          const accounts = await sdk.wallet.ethProvider.request({ method: 'eth_accounts' });
-          if (accounts && accounts.length > 0) {
-            setAddress(accounts[0]);
-            setIsConnected(true);
+          // Check if wallet provider is available
+          if (sdk.wallet && sdk.wallet.ethProvider) {
+            console.log('PredictionForm: Requesting accounts...');
+            // Get user address
+            const accounts = await sdk.wallet.ethProvider.request({ method: 'eth_accounts' });
+            console.log('PredictionForm: Accounts received:', accounts);
             
-            // Get user stats from contract
-            await getUserStats(accounts[0]);
+            if (accounts && accounts.length > 0) {
+              setAddress(accounts[0]);
+              setIsConnected(true);
+              console.log('PredictionForm: User connected:', accounts[0]);
+              
+              // Get user stats from contract
+              await getUserStats(accounts[0]);
+            } else {
+              console.log('PredictionForm: No accounts found');
+              setIsConnected(false);
+            }
+          } else {
+            console.log('PredictionForm: Wallet provider not available');
+            setIsConnected(false);
           }
         } catch (error) {
-          console.error('Error getting user data:', error);
+          console.error('PredictionForm: Error getting user data:', error);
+          setIsConnected(false);
         }
+      } else {
+        console.log('PredictionForm: SDK not ready');
+        setIsConnected(false);
       }
     };
     
-    getUserData();
+    if (isReady) {
+      // Add delay to ensure wallet is ready
+      const timer = setTimeout(getUserData, 1000);
+      return () => clearTimeout(timer);
+    }
   }, [isReady, sdk]);
   
   const getUserStats = async (userAddress: string) => {
     if (!sdk) return;
     try {
+      console.log('PredictionForm: Fetching user stats for:', userAddress);
+      
       const stats = await publicClient.readContract({
         address: CONTRACTS.SEERSLEAGUE,
         abi: SEERSLEAGUE_ABI,
@@ -63,15 +88,27 @@ export function PredictionForm({ matches }: PredictionFormProps) {
         currentStreak: bigint;
         longestStreak: bigint;
       };
-      setUserStats({
+      
+      const userStatsData = {
         correctPredictions: Number(stats.correctPredictions || 0),
         totalPredictions: Number(stats.totalPredictions || 0),
         freePredictionsUsed: Number(stats.freePredictionsUsed || 0),
         currentStreak: Number(stats.currentStreak || 0),
         longestStreak: Number(stats.longestStreak || 0)
-      });
+      };
+      
+      console.log('PredictionForm: User stats received:', userStatsData);
+      setUserStats(userStatsData);
     } catch (error) {
-      console.error('Error fetching user stats:', error);
+      console.error('PredictionForm: Error fetching user stats:', error);
+      // Set default stats on error
+      setUserStats({
+        correctPredictions: 0,
+        totalPredictions: 0,
+        freePredictionsUsed: 0,
+        currentStreak: 0,
+        longestStreak: 0
+      });
     }
   };
   

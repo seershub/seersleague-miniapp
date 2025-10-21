@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import { useMiniKit } from './MiniKitProvider';
 
 export function WalletConnect() {
-  const { isReady, sdk } = useMiniKit();
+  const { isReady, sdk, error } = useMiniKit();
   const [isConnected, setIsConnected] = useState(false);
   const [userAddress, setUserAddress] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
@@ -12,13 +12,18 @@ export function WalletConnect() {
   useEffect(() => {
     const checkConnection = async () => {
       try {
+        console.log('WalletConnect: Checking connection...', { isReady, sdk: !!sdk, error });
+        
         if (isReady && sdk) {
           // Check if we have access to wallet provider
           if (sdk.wallet && sdk.wallet.ethProvider) {
             try {
+              console.log('WalletConnect: Requesting accounts...');
               const accounts = await sdk.wallet.ethProvider.request({ 
                 method: 'eth_accounts' 
               });
+              console.log('WalletConnect: Accounts received:', accounts);
+              
               if (accounts && accounts.length > 0) {
                 setIsConnected(true);
                 setUserAddress(accounts[0]);
@@ -26,17 +31,20 @@ export function WalletConnect() {
               } else {
                 setIsConnected(false);
                 setUserAddress(null);
+                console.log('No accounts found');
               }
             } catch (error) {
-              console.log('No wallet connection found');
+              console.log('No wallet connection found:', error);
               setIsConnected(false);
               setUserAddress(null);
             }
           } else {
+            console.log('Wallet provider not available');
             setIsConnected(false);
             setUserAddress(null);
           }
         } else {
+          console.log('SDK not ready or available');
           setIsConnected(false);
           setUserAddress(null);
         }
@@ -49,28 +57,45 @@ export function WalletConnect() {
     };
 
     if (isReady) {
-      checkConnection();
+      // Add a small delay to ensure wallet is ready
+      const timer = setTimeout(checkConnection, 500);
+      return () => clearTimeout(timer);
     }
-  }, [isReady, sdk]);
+  }, [isReady, sdk, error]);
 
   const handleConnect = async () => {
     try {
+      console.log('WalletConnect: Attempting to connect...');
+      setLoading(true);
+      
       if (sdk && sdk.wallet && sdk.wallet.ethProvider) {
+        console.log('WalletConnect: Requesting account access...');
         // Request account access
         const accounts = await sdk.wallet.ethProvider.request({ 
           method: 'eth_requestAccounts' 
         });
+        console.log('WalletConnect: Connection response:', accounts);
+        
         if (accounts && accounts.length > 0) {
           setIsConnected(true);
           setUserAddress(accounts[0]);
-          console.log('Wallet connected:', accounts[0]);
+          console.log('Wallet connected successfully:', accounts[0]);
+        } else {
+          console.log('No accounts returned from wallet');
         }
       } else {
-        alert('Wallet provider not available. Please open in Base App.');
+        console.log('Wallet provider not available');
+        alert('Wallet provider not available. Please open in Base App or Farcaster.');
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Connection error:', error);
-      alert('Connection failed. Please try again.');
+      if (error.message?.includes('User rejected') || error.message?.includes('User denied')) {
+        alert('Connection was rejected by user.');
+      } else {
+        alert('Connection failed. Please try again.');
+      }
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -78,7 +103,14 @@ export function WalletConnect() {
     return (
       <div className="card text-center">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-white mx-auto mb-4"></div>
-        <p className="text-gray-400">Initializing Mini App...</p>
+        <p className="text-gray-400">
+          {!isReady ? 'Initializing Mini App...' : 'Loading user data...'}
+        </p>
+        {error && (
+          <p className="text-red-400 text-sm mt-2">
+            SDK Error: {error}
+          </p>
+        )}
       </div>
     );
   }
