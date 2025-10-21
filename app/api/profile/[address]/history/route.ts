@@ -4,6 +4,7 @@ import { publicClient } from '@/lib/viem-config';
 import { CONTRACTS, SEERSLEAGUE_ABI } from '@/lib/contract-interactions';
 
 export const dynamic = 'force-dynamic';
+export const maxDuration = 30; // Longer timeout for blockchain queries
 
 interface PredictionHistoryEntry {
   matchId: number;
@@ -32,15 +33,19 @@ export async function GET(
     }
 
     // Try to get cached history from KV first
-    const cachedHistory = await kv.get<PredictionHistoryEntry[]>(`history:${address}`);
-    
-    if (cachedHistory && cachedHistory.length > 0) {
-      console.log(`Returning cached history for ${address}: ${cachedHistory.length} entries`);
-      return NextResponse.json({
-        history: cachedHistory,
-        cached: true,
-        lastUpdated: await kv.get(`history:${address}:lastUpdated`)
-      });
+    try {
+      const cachedHistory = await kv.get<PredictionHistoryEntry[]>(`history:${address}`);
+      
+      if (cachedHistory && cachedHistory.length > 0) {
+        console.log(`Returning cached history for ${address}: ${cachedHistory.length} entries`);
+        return NextResponse.json({
+          history: cachedHistory,
+          cached: true,
+          lastUpdated: await kv.get(`history:${address}:lastUpdated`)
+        });
+      }
+    } catch (kvError) {
+      console.log('KV cache error:', kvError);
     }
 
     // If no cache, fetch from blockchain events
@@ -93,56 +98,71 @@ export async function GET(
       }
     });
 
-    // Build prediction history
+    // Build prediction history - batch process to avoid timeout
     const history: PredictionHistoryEntry[] = [];
+    const uniqueMatchIds = new Set<number>();
 
+    // First, collect all unique match IDs
     for (const event of predictionEvents) {
       if (!event.args || !event.args.matchIds) continue;
-
       const matchIds = event.args.matchIds as bigint[];
-      const block = await publicClient.getBlock({ blockNumber: event.blockNumber });
-
-      for (const matchId of matchIds) {
-        const matchIdNum = Number(matchId);
-        
-        // Get user's prediction for this match
-        try {
-          const prediction = await publicClient.readContract({
-            address: CONTRACTS.SEERSLEAGUE,
-            abi: SEERSLEAGUE_ABI,
-            functionName: 'getUserPrediction',
-            args: [address, matchId]
-          }) as unknown as { matchId: bigint; outcome: number; timestamp: bigint };
-
-          const actualResult = matchResults.get(matchIdNum) || null;
-          const isCorrect = actualResult !== null ? prediction.outcome === actualResult : null;
-
-          // Get match details from KV or API
-          const matchDetails = await kv.get<any>(`match:${matchIdNum}`);
-
-          history.push({
-            matchId: matchIdNum,
-            matchName: matchDetails?.name || `Match #${matchIdNum}`,
-            homeTeam: matchDetails?.homeTeam || 'Unknown',
-            awayTeam: matchDetails?.awayTeam || 'Unknown',
-            userPrediction: prediction.outcome,
-            actualResult,
-            isCorrect,
-            timestamp: Number(prediction.timestamp || block.timestamp)
-          });
-        } catch (error) {
-          console.error(`Error fetching prediction for match ${matchIdNum}:`, error);
-        }
-      }
+      matchIds.forEach(id => uniqueMatchIds.add(Number(id)));
     }
+
+    console.log(`Processing ${uniqueMatchIds.size} unique matches...`);
+
+    // Fetch all predictions in parallel (much faster)
+    const predictionPromises = Array.from(uniqueMatchIds).map(async (matchIdNum) => {
+      try {
+        const prediction = await publicClient.readContract({
+          address: CONTRACTS.SEERSLEAGUE,
+          abi: SEERSLEAGUE_ABI,
+          functionName: 'getUserPrediction',
+          args: [address, BigInt(matchIdNum)]
+        }) as unknown as { matchId: bigint; outcome: number; timestamp: bigint };
+
+        const actualResult = matchResults.get(matchIdNum) || null;
+        const isCorrect = actualResult !== null ? prediction.outcome === actualResult : null;
+
+        // Get match details from KV
+        let matchDetails = null;
+        try {
+          matchDetails = await kv.get<any>(`match:${matchIdNum}`);
+        } catch (e) {
+          console.log(`No match details for ${matchIdNum}`);
+        }
+
+        return {
+          matchId: matchIdNum,
+          matchName: matchDetails?.name || `Match #${matchIdNum}`,
+          homeTeam: matchDetails?.homeTeam || 'Unknown',
+          awayTeam: matchDetails?.awayTeam || 'Unknown',
+          userPrediction: prediction.outcome,
+          actualResult,
+          isCorrect,
+          timestamp: Number(prediction.timestamp)
+        };
+      } catch (error) {
+        console.error(`Error fetching prediction for match ${matchIdNum}:`, error);
+        return null;
+      }
+    });
+
+    const results = await Promise.all(predictionPromises);
+    results.forEach(r => r && history.push(r));
 
     // Sort by timestamp (newest first)
     history.sort((a, b) => b.timestamp - a.timestamp);
 
-    // Cache the history in KV (expires in 1 hour)
+    // Cache the history in KV (expires in 5 minutes for faster updates)
     if (history.length > 0) {
-      await kv.set(`history:${address}`, history, { ex: 3600 });
-      await kv.set(`history:${address}:lastUpdated`, new Date().toISOString(), { ex: 3600 });
+      try {
+        await kv.set(`history:${address}`, history, { ex: 300 });
+        await kv.set(`history:${address}:lastUpdated`, new Date().toISOString(), { ex: 300 });
+        console.log(`Cached ${history.length} predictions for ${address}`);
+      } catch (cacheError) {
+        console.error('Failed to cache history:', cacheError);
+      }
     }
 
     return NextResponse.json({
