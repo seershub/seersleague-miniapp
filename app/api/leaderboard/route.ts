@@ -61,16 +61,25 @@ export async function GET(request: Request) {
     // Trigger update if data is stale (non-blocking)
     triggerUpdateIfStale();
 
-    // Get leaderboard from KV
-    const leaderboard = await kv.get<LeaderboardEntry[]>('leaderboard:all');
+    // Get leaderboard from KV with error handling
+    let leaderboard: LeaderboardEntry[] = [];
+    try {
+      const kvData = await kv.get<LeaderboardEntry[]>('leaderboard:all');
+      leaderboard = kvData || [];
+    } catch (kvError) {
+      console.error('KV fetch error:', kvError);
+      // Return empty data if KV fails
+    }
 
     if (!leaderboard || leaderboard.length === 0) {
+      console.log('No leaderboard data found, triggering update...');
       return NextResponse.json({
         leaderboard: [],
         topPlayers: [],
         userRank: null,
         totalPlayers: 0,
-        needsUpdate: true
+        needsUpdate: true,
+        message: 'No data available, update in progress...'
       });
     }
 

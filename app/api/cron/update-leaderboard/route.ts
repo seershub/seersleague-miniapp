@@ -22,38 +22,27 @@ export async function GET(request: Request) {
     const deploymentBlock = BigInt(process.env.NEXT_PUBLIC_DEPLOYMENT_BLOCK || '0');
     const currentBlock = await publicClient.getBlockNumber();
 
-    // Fetch ResultRecorded events to find all users
-    const resultEvents = await publicClient.getLogs({
+    console.log('Fetching contract events...');
+    
+    // Fetch PredictionsSubmitted events to get all unique users
+    const predictionEvents = await publicClient.getLogs({
       address: CONTRACTS.SEERSLEAGUE,
       event: {
         type: 'event',
-        name: 'ResultRecorded',
+        name: 'PredictionsSubmitted',
         inputs: [
-          { name: 'matchId', type: 'uint256', indexed: true },
-          { name: 'result', type: 'uint8', indexed: false },
-          { name: 'recordedAt', type: 'uint256', indexed: false }
+          { name: 'user', type: 'address', indexed: true },
+          { name: 'matchIds', type: 'uint256[]', indexed: false },
+          { name: 'predictionsCount', type: 'uint256', indexed: false },
+          { name: 'freeUsed', type: 'uint256', indexed: false },
+          { name: 'feePaid', type: 'uint256', indexed: false }
         ]
       },
       fromBlock: deploymentBlock > 0n ? deploymentBlock : currentBlock - 10000n,
       toBlock: 'latest'
     });
 
-    // Fetch PredictionSubmitted events to get all unique users
-    const predictionEvents = await publicClient.getLogs({
-      address: CONTRACTS.SEERSLEAGUE,
-      event: {
-        type: 'event',
-        name: 'PredictionSubmitted',
-        inputs: [
-          { name: 'user', type: 'address', indexed: true },
-          { name: 'matchId', type: 'uint256', indexed: true },
-          { name: 'outcome', type: 'uint8', indexed: false },
-          { name: 'timestamp', type: 'uint256', indexed: false }
-        ]
-      },
-      fromBlock: deploymentBlock > 0n ? deploymentBlock : currentBlock - 10000n,
-      toBlock: 'latest'
-    });
+    console.log(`Found ${predictionEvents.length} prediction events`);
 
     // Extract unique user addresses
     const uniqueUsers = new Set<string>();
@@ -126,9 +115,15 @@ export async function GET(request: Request) {
       entry.rank = index + 1;
     });
 
-    // Store in KV
-    await kv.set('leaderboard:all', leaderboardData);
-    await kv.set('leaderboard:lastUpdated', new Date().toISOString());
+    // Store in KV with error handling
+    try {
+      await kv.set('leaderboard:all', leaderboardData);
+      await kv.set('leaderboard:lastUpdated', new Date().toISOString());
+      console.log(`Leaderboard stored in KV successfully with ${leaderboardData.length} entries`);
+    } catch (kvError) {
+      console.error('KV storage error:', kvError);
+      // Continue without failing - data will be returned in response
+    }
 
     console.log(`Leaderboard updated successfully with ${leaderboardData.length} entries`);
 
