@@ -18,7 +18,7 @@ export const publicClient = createPublicClient({
     baseRpcUrls.map(url => http(url, {
       retryCount: 3,
       retryDelay: 1000,
-      timeout: 10000,
+      timeout: 180000, // 3 minutes - enough for large getLogs() queries on 140K blocks
     })),
     {
       rank: false, // Try all endpoints
