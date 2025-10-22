@@ -6,7 +6,7 @@ import type { LeaderboardEntry } from '../../leaderboard/route';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
-export const maxDuration = 60; // Vercel Pro plan - cron jobs need time to process all users
+export const maxDuration = 300; // Vercel Pro max: 5 minutes for cron jobs to process all users
 
 // This endpoint should be called by Vercel Cron
 export async function GET(request: Request) {

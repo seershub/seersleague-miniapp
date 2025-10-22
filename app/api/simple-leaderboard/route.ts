@@ -5,7 +5,7 @@ import { CONTRACTS, SEERSLEAGUE_ABI } from '@/lib/contract-interactions';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
-export const maxDuration = 60; // Vercel Pro plan - allows full leaderboard generation
+export const maxDuration = 300; // Vercel Pro max: 5 minutes for blockchain data processing
 
 interface SimpleLeaderboardEntry {
   rank: number;

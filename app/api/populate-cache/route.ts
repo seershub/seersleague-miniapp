@@ -4,7 +4,7 @@ import { publicClient } from '@/lib/viem-config';
 import { CONTRACTS, SEERSLEAGUE_ABI } from '@/lib/contract-interactions';
 
 export const dynamic = 'force-dynamic';
-export const maxDuration = 60;
+export const maxDuration = 300; // Vercel Pro max: 5 minutes for initial cache population
 
 /**
  * MANUAL TRIGGER - Populate Leaderboard Cache
