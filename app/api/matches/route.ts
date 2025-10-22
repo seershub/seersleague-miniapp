@@ -46,50 +46,25 @@ async function getUpcomingRegisteredMatches(): Promise<{ matchId: string; startT
   const currentBlock = await publicClient.getBlockNumber();
   const deploymentBlock = BigInt(process.env.NEXT_PUBLIC_DEPLOYMENT_BLOCK || '0');
 
-  // ALCHEMY FREE TIER FIX: Fetch in chunks of 10 blocks
-  const fromBlock = deploymentBlock > 0n ? deploymentBlock : currentBlock - 10000n;
-  const chunkSize = 10n;
-  const allEvents: any[] = [];
-  const chunks: Array<{ start: bigint; end: bigint }> = [];
+  // FAST FETCH: Use deployment block if set, otherwise last 1000 blocks only
+  const fromBlock = deploymentBlock > 0n ? deploymentBlock : currentBlock - 1000n;
 
-  // Create chunk ranges
-  for (let start = fromBlock; start < currentBlock; start += chunkSize) {
-    const end = start + chunkSize - 1n > currentBlock ? currentBlock : start + chunkSize - 1n;
-    chunks.push({ start, end });
-  }
+  console.log(`[Matches] Fetching from block ${fromBlock} to ${currentBlock}`);
 
-  console.log(`[Matches] Processing ${chunks.length} chunks...`);
-
-  // Fetch in parallel batches
-  const batchSize = 10;
-  for (let i = 0; i < chunks.length; i += batchSize) {
-    const batch = chunks.slice(i, i + batchSize);
-    const batchPromises = batch.map(async ({ start, end }) => {
-      try {
-        return await publicClient.getLogs({
-          address: CONTRACTS.SEERSLEAGUE,
-          event: {
-            type: 'event',
-            name: 'MatchRegistered',
-            inputs: [
-              { name: 'matchId', type: 'uint256', indexed: true },
-              { name: 'startTime', type: 'uint256', indexed: false }
-            ]
-          },
-          fromBlock: start,
-          toBlock: end
-        });
-      } catch (error) {
-        console.error(`[Matches] Error fetching chunk ${start}-${end}:`, error);
-        return [];
-      }
-    });
-
-    const batchResults = await Promise.all(batchPromises);
-    batchResults.forEach(events => allEvents.push(...events));
-  }
-
-  const events = allEvents;
+  // Single fetch - much faster for matches
+  const events = await publicClient.getLogs({
+    address: CONTRACTS.SEERSLEAGUE,
+    event: {
+      type: 'event',
+      name: 'MatchRegistered',
+      inputs: [
+        { name: 'matchId', type: 'uint256', indexed: true },
+        { name: 'startTime', type: 'uint256', indexed: false }
+      ]
+    },
+    fromBlock,
+    toBlock: 'latest'
+  });
 
   const now = Math.floor(Date.now() / 1000);
 

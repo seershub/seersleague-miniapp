@@ -67,64 +67,32 @@ export async function GET(
       });
     }
 
-    // ALCHEMY FREE TIER FIX: For user history, scan only last 2K blocks (~4 hours)
-    // User-specific events are much fewer, no need to scan 10K blocks
+    // FAST FETCH: Single user query with indexed parameter = FAST!
     const currentBlock = await publicClient.getBlockNumber();
-    const totalBlocks = 2000n; // Reduced from 10K - much faster for single user
-    const chunkSize = 10n; // Alchemy Free Tier limit: 10 blocks per request
-    const fromBlock = currentBlock - totalBlocks;
+    const fromBlock = currentBlock - 1000n; // Last 1000 blocks - user specific is indexed, very fast
 
     console.log(`[History] Fetching events from block ${fromBlock} to ${currentBlock}`);
-    console.log(`[History] Using chunked fetching: ${totalBlocks / chunkSize} chunks of ${chunkSize} blocks`);
 
-    // Fetch events in chunks to stay within Alchemy Free Tier limit
-    const allPredictionEvents: any[] = [];
-    const batchSize = 10; // Process 10 chunks in parallel
-    const chunks: Array<{ start: bigint; end: bigint }> = [];
+    // Single fetch - indexed user parameter makes this very fast
+    const predictionEvents = await publicClient.getLogs({
+      address: CONTRACTS.SEERSLEAGUE,
+      event: {
+        type: 'event',
+        name: 'PredictionsSubmitted',
+        inputs: [
+          { name: 'user', type: 'address', indexed: true },
+          { name: 'matchIds', type: 'uint256[]', indexed: false },
+          { name: 'predictionsCount', type: 'uint256', indexed: false },
+          { name: 'freeUsed', type: 'uint256', indexed: false },
+          { name: 'feePaid', type: 'uint256', indexed: false }
+        ]
+      },
+      args: { user: address }, // INDEXED parameter - very fast!
+      fromBlock,
+      toBlock: 'latest'
+    });
 
-    // Create all chunk ranges
-    for (let start = fromBlock; start < currentBlock; start += chunkSize) {
-      const end = start + chunkSize - 1n > currentBlock ? currentBlock : start + chunkSize - 1n;
-      chunks.push({ start, end });
-    }
-
-    console.log(`[History] Processing ${chunks.length} chunks in batches of ${batchSize}...`);
-
-    // Process chunks in batches
-    for (let i = 0; i < chunks.length; i += batchSize) {
-      const batch = chunks.slice(i, i + batchSize);
-
-      const batchPromises = batch.map(async ({ start, end }) => {
-        try {
-          return await publicClient.getLogs({
-            address: CONTRACTS.SEERSLEAGUE,
-            event: {
-              type: 'event',
-              name: 'PredictionsSubmitted',
-              inputs: [
-                { name: 'user', type: 'address', indexed: true },
-                { name: 'matchIds', type: 'uint256[]', indexed: false },
-                { name: 'predictionsCount', type: 'uint256', indexed: false },
-                { name: 'freeUsed', type: 'uint256', indexed: false },
-                { name: 'feePaid', type: 'uint256', indexed: false }
-              ]
-            },
-            args: { user: address },
-            fromBlock: start,
-            toBlock: end
-          });
-        } catch (error) {
-          console.error(`[History] Error fetching chunk ${start}-${end}:`, error);
-          return [];
-        }
-      });
-
-      const batchResults = await Promise.all(batchPromises);
-      batchResults.forEach(events => allPredictionEvents.push(...events));
-    }
-
-    const predictionEvents = allPredictionEvents;
-    console.log(`[History] Found ${predictionEvents.length} prediction events from ${chunks.length} chunks`);
+    console.log(`[History] Found ${predictionEvents.length} prediction events`);
 
     // Build history with OPTIMIZED batch fetching
     const history: PredictionHistoryEntry[] = [];
