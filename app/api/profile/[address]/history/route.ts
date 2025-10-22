@@ -3,7 +3,7 @@ import { publicClient } from '@/lib/viem-config';
 import { CONTRACTS, SEERSLEAGUE_ABI } from '@/lib/contract-interactions';
 
 export const dynamic = 'force-dynamic';
-export const maxDuration = 300; // Vercel Pro max: 5 minutes for full history processing
+export const maxDuration = 60; // Vercel Pro: 60s for Serverless Functions
 
 interface PredictionHistoryEntry {
   matchId: number;

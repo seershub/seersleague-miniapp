@@ -87,13 +87,23 @@ export default function ProfilePage() {
 
       try {
         setHistoryLoading(true);
+        console.log('[Profile] Fetching history for:', userAddress);
+        
         const response = await fetch(`/api/profile/${userAddress}/history`);
-        if (!response.ok) throw new Error('Failed to fetch history');
+        console.log('[Profile] History response status:', response.status);
+        
+        if (!response.ok) {
+          const errorData = await response.json().catch(() => ({}));
+          console.error('[Profile] History API error:', errorData);
+          throw new Error(`Failed to fetch history: ${response.status}`);
+        }
 
         const data = await response.json();
+        console.log('[Profile] History data:', data);
         setHistory(data.history || []);
       } catch (error) {
-        console.error('Error fetching history:', error);
+        console.error('[Profile] Error fetching history:', error);
+        setHistory([]); // Set empty array on error
       } finally {
         setHistoryLoading(false);
       }
