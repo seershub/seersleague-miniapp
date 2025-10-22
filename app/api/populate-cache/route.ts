@@ -18,31 +18,67 @@ export async function GET() {
 
     const currentBlock = await publicClient.getBlockNumber();
 
-    // ALCHEMY FREE TIER FIX: Only scan last 10K blocks (~2 days of data)
-    // This automatically moves forward - no need to update deployment block!
-    const fromBlock = currentBlock - 10000n; // Last 10K blocks (Alchemy Free limit)
+    // ALCHEMY FREE TIER FIX: Scan last 10K blocks in chunks of 10 blocks
+    const totalBlocks = 10000n;
+    const chunkSize = 10n; // Alchemy Free Tier limit: 10 blocks per request
+    const fromBlock = currentBlock - totalBlocks;
 
     console.log(`[Manual Trigger] Fetching events from block ${fromBlock} to ${currentBlock}`);
+    console.log(`[Manual Trigger] Using chunked fetching: ${totalBlocks / chunkSize} chunks of ${chunkSize} blocks`);
 
-    // Fetch PredictionsSubmitted events
-    const predictionEvents = await publicClient.getLogs({
-      address: CONTRACTS.SEERSLEAGUE,
-      event: {
-        type: 'event',
-        name: 'PredictionsSubmitted',
-        inputs: [
-          { name: 'user', type: 'address', indexed: true },
-          { name: 'matchIds', type: 'uint256[]', indexed: false },
-          { name: 'predictionsCount', type: 'uint256', indexed: false },
-          { name: 'freeUsed', type: 'uint256', indexed: false },
-          { name: 'feePaid', type: 'uint256', indexed: false }
-        ]
-      },
-      fromBlock,
-      toBlock: 'latest'
-    });
+    // Fetch events in chunks to stay within Alchemy Free Tier limit
+    // Process chunks in parallel batches for speed (10 at a time to avoid rate limiting)
+    const allPredictionEvents = [];
+    const totalChunks = Number(totalBlocks / chunkSize);
+    const batchSize = 10; // Process 10 chunks in parallel
+    const chunks = [];
 
-    console.log(`[Manual Trigger] Found ${predictionEvents.length} prediction events`);
+    // Create all chunk ranges
+    for (let start = fromBlock; start < currentBlock; start += chunkSize) {
+      const end = start + chunkSize - 1n > currentBlock ? currentBlock : start + chunkSize - 1n;
+      chunks.push({ start, end });
+    }
+
+    console.log(`[Manual Trigger] Processing ${chunks.length} chunks in batches of ${batchSize}...`);
+
+    // Process chunks in batches
+    for (let i = 0; i < chunks.length; i += batchSize) {
+      const batch = chunks.slice(i, i + batchSize);
+
+      const batchPromises = batch.map(async ({ start, end }) => {
+        try {
+          return await publicClient.getLogs({
+            address: CONTRACTS.SEERSLEAGUE,
+            event: {
+              type: 'event',
+              name: 'PredictionsSubmitted',
+              inputs: [
+                { name: 'user', type: 'address', indexed: true },
+                { name: 'matchIds', type: 'uint256[]', indexed: false },
+                { name: 'predictionsCount', type: 'uint256', indexed: false },
+                { name: 'freeUsed', type: 'uint256', indexed: false },
+                { name: 'feePaid', type: 'uint256', indexed: false }
+              ]
+            },
+            fromBlock: start,
+            toBlock: end
+          });
+        } catch (error) {
+          console.error(`[Manual Trigger] Error fetching chunk ${start}-${end}:`, error);
+          return [];
+        }
+      });
+
+      const batchResults = await Promise.all(batchPromises);
+      batchResults.forEach(events => allPredictionEvents.push(...events));
+
+      // Log progress
+      const processedSoFar = Math.min(i + batchSize, chunks.length);
+      console.log(`[Manual Trigger] Progress: ${processedSoFar}/${totalChunks} chunks (${Math.round(processedSoFar / totalChunks * 100)}%)`);
+    }
+
+    const predictionEvents = allPredictionEvents;
+    console.log(`[Manual Trigger] Found ${predictionEvents.length} prediction events from ${chunks.length} chunks`);
 
     // Extract unique users
     const uniqueUsers = new Set<string>();
