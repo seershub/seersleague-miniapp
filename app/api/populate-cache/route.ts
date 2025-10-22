@@ -1,39 +1,27 @@
 import { NextResponse } from 'next/server';
 import { kv } from '@vercel/kv';
 import { publicClient } from '@/lib/viem-config';
-import { CONTRACTS, SEERSLEAGUE_ABI, calculateAccuracy } from '@/lib/contract-interactions';
-import type { LeaderboardEntry } from '../../leaderboard/route';
+import { CONTRACTS, SEERSLEAGUE_ABI } from '@/lib/contract-interactions';
 
 export const dynamic = 'force-dynamic';
-export const revalidate = 0;
-export const maxDuration = 60; // Vercel Pro plan - cron jobs need time to process all users
+export const maxDuration = 60;
 
-// This endpoint should be called by Vercel Cron
-export async function GET(request: Request) {
+/**
+ * MANUAL TRIGGER - Populate Leaderboard Cache
+ *
+ * This is a public endpoint for manual testing.
+ * No auth required - just for initial setup.
+ */
+export async function GET() {
   try {
-    // Verify cron secret (allow manual trigger for testing)
-    const authHeader = request.headers.get('authorization');
-    const cronSecret = process.env.CRON_SECRET;
+    console.log('[Manual Trigger] Starting leaderboard generation...');
 
-    // Skip auth check if called via POST (manual trigger)
-    const isManualTrigger = request.method === 'POST';
-
-    if (cronSecret && authHeader && authHeader !== `Bearer ${cronSecret}` && !isManualTrigger) {
-      console.log('Auth check failed');
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-
-    console.log('Starting leaderboard update... (triggered:', isManualTrigger ? 'manual' : 'cron', ')');
-
-    console.log('Starting leaderboard update...');
-
-    // Get contract deployment block (to optimize event fetching)
     const deploymentBlock = BigInt(process.env.NEXT_PUBLIC_DEPLOYMENT_BLOCK || '0');
     const currentBlock = await publicClient.getBlockNumber();
 
-    console.log('Fetching contract events...');
-    
-    // Fetch PredictionsSubmitted events to get all unique users
+    console.log(`[Manual Trigger] Fetching events from block ${deploymentBlock} to ${currentBlock}`);
+
+    // Fetch PredictionsSubmitted events
     const predictionEvents = await publicClient.getLogs({
       address: CONTRACTS.SEERSLEAGUE,
       event: {
@@ -51,9 +39,9 @@ export async function GET(request: Request) {
       toBlock: 'latest'
     });
 
-    console.log(`Found ${predictionEvents.length} prediction events`);
+    console.log(`[Manual Trigger] Found ${predictionEvents.length} prediction events`);
 
-    // Extract unique user addresses
+    // Extract unique users
     const uniqueUsers = new Set<string>();
     predictionEvents.forEach(event => {
       if (event.args && event.args.user) {
@@ -61,9 +49,9 @@ export async function GET(request: Request) {
       }
     });
 
-    console.log(`Found ${uniqueUsers.size} unique users`);
+    console.log(`[Manual Trigger] Found ${uniqueUsers.size} unique users`);
 
-    // Fetch stats for ALL users in PARALLEL (much faster!)
+    // Fetch stats for all users in parallel
     const userStatsPromises = Array.from(uniqueUsers).map(async (userAddress) => {
       try {
         const stats = await publicClient.readContract({
@@ -82,14 +70,11 @@ export async function GET(request: Request) {
         const correctPredictions = Number(stats.correctPredictions || 0);
         const totalPredictions = Number(stats.totalPredictions || 0);
 
-        // Only include users who have made predictions
         if (totalPredictions > 0) {
-          const accuracy = totalPredictions > 0
-            ? Math.round((correctPredictions / totalPredictions) * 100)
-            : 0;
+          const accuracy = Math.round((correctPredictions / totalPredictions) * 100);
 
           return {
-            rank: 0, // Will be set after sorting
+            rank: 0,
             address: userAddress,
             accuracy,
             totalPredictions,
@@ -101,25 +86,18 @@ export async function GET(request: Request) {
 
         return null;
       } catch (error) {
-        console.error(`Error fetching stats for ${userAddress}:`, error);
+        console.error(`[Manual Trigger] Error fetching stats for ${userAddress}:`, error);
         return null;
       }
     });
 
     const allUserStats = await Promise.all(userStatsPromises);
-    const leaderboardData = allUserStats.filter((entry): entry is LeaderboardEntry => entry !== null);
+    const leaderboardData = allUserStats.filter((entry): entry is any => entry !== null);
 
-    // Sort leaderboard by:
-    // 1. Accuracy (descending)
-    // 2. Total predictions (descending)
-    // 3. Current streak (descending)
+    // Sort leaderboard
     leaderboardData.sort((a, b) => {
-      if (a.accuracy !== b.accuracy) {
-        return b.accuracy - a.accuracy;
-      }
-      if (a.totalPredictions !== b.totalPredictions) {
-        return b.totalPredictions - a.totalPredictions;
-      }
+      if (a.accuracy !== b.accuracy) return b.accuracy - a.accuracy;
+      if (a.totalPredictions !== b.totalPredictions) return b.totalPredictions - a.totalPredictions;
       return b.currentStreak - a.currentStreak;
     });
 
@@ -128,35 +106,33 @@ export async function GET(request: Request) {
       entry.rank = index + 1;
     });
 
-    // Store in KV with error handling
+    // Store in KV
     try {
       await kv.set('leaderboard:all', leaderboardData);
       await kv.set('leaderboard:lastUpdated', new Date().toISOString());
-      console.log(`Leaderboard stored in KV successfully with ${leaderboardData.length} entries`);
+      console.log(`[Manual Trigger] ✅ Cached ${leaderboardData.length} entries to KV`);
     } catch (kvError) {
-      console.error('KV storage error:', kvError);
-      // Continue without failing - data will be returned in response
+      console.error('[Manual Trigger] KV cache error:', kvError);
     }
-
-    console.log(`Leaderboard updated successfully with ${leaderboardData.length} entries`);
 
     return NextResponse.json({
       success: true,
+      message: '✅ Leaderboard cache populated successfully!',
       totalPlayers: leaderboardData.length,
       topPlayers: leaderboardData.slice(0, 10),
-      lastUpdated: new Date().toISOString()
+      lastUpdated: new Date().toISOString(),
+      instructions: 'Now refresh your app pages - leaderboard, profile, and matches should all work!'
     });
 
   } catch (error) {
-    console.error('Error updating leaderboard:', error);
+    console.error('[Manual Trigger] Error:', error);
     return NextResponse.json(
-      { error: 'Failed to update leaderboard', details: error instanceof Error ? error.message : 'Unknown error' },
+      {
+        success: false,
+        error: 'Failed to generate leaderboard',
+        details: error instanceof Error ? error.message : 'Unknown error'
+      },
       { status: 500 }
     );
   }
-}
-
-// Also allow POST for manual triggers
-export async function POST(request: Request) {
-  return GET(request);
 }
