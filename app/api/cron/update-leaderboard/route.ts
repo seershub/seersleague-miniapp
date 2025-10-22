@@ -36,8 +36,8 @@ export async function GET(request: Request) {
     // ALCHEMY FREE TIER FIX: Fetch in chunks of 10 blocks
     const fromBlock = deploymentBlock > 0n ? deploymentBlock : currentBlock - 10000n;
     const chunkSize = 10n;
-    const allPredictionEvents = [];
-    const chunks = [];
+    const allPredictionEvents: any[] = [];
+    const chunks: Array<{ start: bigint; end: bigint }> = [];
 
     // Create chunk ranges
     for (let start = fromBlock; start < currentBlock; start += chunkSize) {

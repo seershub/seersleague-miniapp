@@ -34,9 +34,9 @@ async function generateLeaderboardFromContract(): Promise<SimpleLeaderboardEntry
   console.log(`[Simple Leaderboard] Using chunked fetching: ${totalBlocks / chunkSize} chunks of ${chunkSize} blocks`);
 
   // Fetch events in chunks to stay within Alchemy Free Tier limit
-  const allPredictionEvents = [];
+  const allPredictionEvents: any[] = [];
   const batchSize = 10; // Process 10 chunks in parallel
-  const chunks = [];
+  const chunks: Array<{ start: bigint; end: bigint }> = [];
 
   // Create all chunk ranges
   for (let start = fromBlock; start < currentBlock; start += chunkSize) {
