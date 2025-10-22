@@ -27,6 +27,7 @@ interface PredictionHistoryEntry {
   timestamp: number;
   homeTeam: string;
   awayTeam: string;
+  league: string;
 }
 
 export default function ProfilePage() {
@@ -324,74 +325,115 @@ export default function ProfilePage() {
                   </div>
                 ) : (
                   <div className="space-y-3 max-h-96 overflow-y-auto">
-                    {history.map((entry, index) => (
-                      <div
-                        key={`${entry.matchId}-${index}`}
-                        className="relative group rounded-xl p-4 bg-gray-800/50 border border-gray-700/50 hover:bg-gray-800/70 hover:border-gray-600/50 transition-all duration-300"
-                      >
-                        <div className="flex items-start justify-between gap-4">
-                          <div className="flex-1">
-                            <div className="flex items-center gap-2 mb-2">
-                              <span className="font-semibold text-white">
-                                {entry.homeTeam} vs {entry.awayTeam}
-                              </span>
-                              {entry.isCorrect !== null && (
-                                entry.isCorrect ? (
-                                  <CheckCircle className="w-5 h-5 text-green-400" />
-                                ) : (
-                                  <XCircle className="w-5 h-5 text-red-400" />
-                                )
+                    {history.map((entry, index) => {
+                      // Determine which team user picked
+                      const userPickedHome = entry.userPrediction === 1;
+                      const userPickedDraw = entry.userPrediction === 2;
+                      const userPickedAway = entry.userPrediction === 3;
+
+                      return (
+                        <div
+                          key={`${entry.matchId}-${index}`}
+                          className="relative group rounded-xl p-4 bg-gray-800/50 border border-gray-700/50 hover:bg-gray-800/70 hover:border-gray-600/50 transition-all duration-300"
+                        >
+                          {/* League Badge */}
+                          <div className="flex items-center justify-between mb-3">
+                            <span className="text-xs text-gray-400 uppercase tracking-wider">{entry.league}</span>
+
+                            {/* Match Status Badge */}
+                            {entry.isCorrect !== null ? (
+                              <div className={`px-3 py-1 rounded-full text-xs font-semibold ${
+                                entry.isCorrect
+                                  ? 'bg-green-500/20 text-green-400 border border-green-500/30'
+                                  : 'bg-red-500/20 text-red-400 border border-red-500/30'
+                              }`}>
+                                {entry.isCorrect ? '✓ Başarılı' : '✗ Başarısız'}
+                              </div>
+                            ) : (
+                              <div className="px-3 py-1 rounded-full text-xs font-semibold bg-yellow-500/20 text-yellow-400 border border-yellow-500/30">
+                                ⏳ Bekleniyor
+                              </div>
+                            )}
+                          </div>
+
+                          {/* Match Display */}
+                          <div className="flex items-center justify-between gap-4">
+                            {/* Home Team */}
+                            <div className={`flex-1 text-center p-3 rounded-lg transition-all ${
+                              userPickedHome
+                                ? 'bg-blue-500/20 border-2 border-blue-500/50 shadow-lg shadow-blue-500/20'
+                                : 'bg-gray-800/30 border border-gray-700/30'
+                            }`}>
+                              <div className={`font-bold ${
+                                userPickedHome ? 'text-blue-400 text-lg' : 'text-gray-300'
+                              }`}>
+                                {entry.homeTeam}
+                              </div>
+                              {userPickedHome && (
+                                <div className="text-xs text-blue-400 mt-1">✓ Seçiminiz</div>
                               )}
                             </div>
-                            
-                            <div className="flex items-center gap-4 text-sm">
-                              <div>
-                                <span className="text-gray-400">Your prediction: </span>
-                                <span className={`font-semibold ${getOutcomeColor(entry.userPrediction)}`}>
-                                  {getOutcomeLabel(entry.userPrediction)}
-                                </span>
-                              </div>
-                              
-                              {entry.actualResult !== null && (
-                                <div>
-                                  <span className="text-gray-400">Result: </span>
-                                  <span className={`font-semibold ${getOutcomeColor(entry.actualResult)}`}>
-                                    {getOutcomeLabel(entry.actualResult)}
-                                  </span>
+
+                            {/* VS / Draw */}
+                            <div className="flex flex-col items-center gap-1">
+                              <span className="text-xs text-gray-500">VS</span>
+                              {userPickedDraw && (
+                                <div className="px-3 py-1 rounded-full bg-yellow-500/20 border-2 border-yellow-500/50 text-yellow-400 text-xs font-semibold shadow-lg shadow-yellow-500/20">
+                                  Beraberlik
                                 </div>
                               )}
                             </div>
-                            
-                            <div className="flex items-center gap-2 mt-2 text-xs text-gray-500">
-                              <Clock className="w-3 h-3" />
-                              {new Date(entry.timestamp * 1000).toLocaleDateString('en-US', {
-                                month: 'short',
-                                day: 'numeric',
-                                year: 'numeric',
-                                hour: '2-digit',
-                                minute: '2-digit'
-                              })}
+
+                            {/* Away Team */}
+                            <div className={`flex-1 text-center p-3 rounded-lg transition-all ${
+                              userPickedAway
+                                ? 'bg-purple-500/20 border-2 border-purple-500/50 shadow-lg shadow-purple-500/20'
+                                : 'bg-gray-800/30 border border-gray-700/30'
+                            }`}>
+                              <div className={`font-bold ${
+                                userPickedAway ? 'text-purple-400 text-lg' : 'text-gray-300'
+                              }`}>
+                                {entry.awayTeam}
+                              </div>
+                              {userPickedAway && (
+                                <div className="text-xs text-purple-400 mt-1">✓ Seçiminiz</div>
+                              )}
                             </div>
                           </div>
 
-                          {entry.isCorrect !== null && (
-                            <div className={`px-3 py-1 rounded-full text-xs font-semibold ${
-                              entry.isCorrect 
-                                ? 'bg-green-500/20 text-green-400 border border-green-500/30' 
-                                : 'bg-red-500/20 text-red-400 border border-red-500/30'
-                            }`}>
-                              {entry.isCorrect ? '✓ Correct' : '✗ Wrong'}
+                          {/* Match Result (if available) */}
+                          {entry.actualResult !== null && (
+                            <div className="mt-3 pt-3 border-t border-gray-700/50">
+                              <div className="flex items-center justify-center gap-2 text-sm">
+                                <span className="text-gray-400">Sonuç:</span>
+                                <span className={`font-semibold ${
+                                  entry.actualResult === 1 ? 'text-blue-400' :
+                                  entry.actualResult === 2 ? 'text-yellow-400' :
+                                  'text-purple-400'
+                                }`}>
+                                  {entry.actualResult === 1 ? entry.homeTeam :
+                                   entry.actualResult === 2 ? 'Beraberlik' :
+                                   entry.awayTeam}
+                                  {' kazandı'}
+                                </span>
+                              </div>
                             </div>
                           )}
-                          
-                          {entry.isCorrect === null && (
-                            <div className="px-3 py-1 rounded-full text-xs font-semibold bg-yellow-500/20 text-yellow-400 border border-yellow-500/30">
-                              ⏳ Pending
-                            </div>
-                          )}
+
+                          {/* Timestamp */}
+                          <div className="flex items-center justify-center gap-2 mt-3 text-xs text-gray-500">
+                            <Clock className="w-3 h-3" />
+                            {new Date(entry.timestamp * 1000).toLocaleDateString('tr-TR', {
+                              month: 'short',
+                              day: 'numeric',
+                              year: 'numeric',
+                              hour: '2-digit',
+                              minute: '2-digit'
+                            })}
+                          </div>
                         </div>
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
                 )}
               </div>

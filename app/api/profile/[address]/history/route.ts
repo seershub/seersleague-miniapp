@@ -14,6 +14,7 @@ interface PredictionHistoryEntry {
   timestamp: number;
   homeTeam: string;
   awayTeam: string;
+  league: string;
 }
 
 interface MatchInfo {
@@ -176,11 +177,21 @@ export async function GET(
             functionName: 'getMatch',
             args: [matchId]
           }),
-          // Fetch team names from football-data API
+          // Fetch team names from football-data API (same format as matches endpoint)
           fetch(`https://api.football-data.org/v4/matches/${matchId}`, {
             headers: { 'X-Auth-Token': FOOTBALL_DATA_API_KEY },
             next: { revalidate: 3600 } // Cache 1 hour
-          }).then(r => r.ok ? r.json() : null).catch(() => null)
+          }).then(async r => {
+            if (!r.ok) {
+              console.log(`[History] Match ${matchId} not in API (${r.status})`);
+              return null;
+            }
+            const json = await r.json();
+            return json.match || json; // Handle both formats
+          }).catch(err => {
+            console.error(`[History] API error for match ${matchId}:`, err.message);
+            return null;
+          })
         ]);
 
         const userPrediction = userPredictionResult as unknown as bigint;
@@ -211,16 +222,19 @@ export async function GET(
         const block = blockMap.get(blockNumber);
         const timestamp = block ? Number(block.timestamp) : Math.floor(Date.now() / 1000);
 
-        // Extract team names from API (if available)
-        const homeTeam = apiData?.homeTeam?.name || apiData?.homeTeam?.shortName || `Team ${matchId}A`;
-        const awayTeam = apiData?.awayTeam?.name || apiData?.awayTeam?.shortName || `Team ${matchId}B`;
-        const matchName = apiData ? `${homeTeam} vs ${awayTeam}` : `Match #${matchId}`;
+        // Extract team names from API (same as matches endpoint)
+        const homeTeam = apiData?.homeTeam?.name || apiData?.homeTeam?.shortName || apiData?.homeTeam || `Home Team`;
+        const awayTeam = apiData?.awayTeam?.name || apiData?.awayTeam?.shortName || apiData?.awayTeam || `Away Team`;
+        const league = apiData?.competition?.name || 'Football';
+
+        console.log(`[History] Match ${matchId}: ${homeTeam} vs ${awayTeam} (API: ${apiData ? 'OK' : 'FALLBACK'})`);
 
         return {
           matchId: Number(matchId),
-          matchName,
+          matchName: `${homeTeam} vs ${awayTeam}`,
           homeTeam,
           awayTeam,
+          league,
           userPrediction: predictionNum,
           actualResult: outcomeNum,
           isCorrect,
@@ -236,6 +250,7 @@ export async function GET(
           matchName: `Match #${matchId}`,
           homeTeam: 'Unknown',
           awayTeam: 'Unknown',
+          league: 'Football',
           userPrediction: 0,
           actualResult: null,
           isCorrect: null,
