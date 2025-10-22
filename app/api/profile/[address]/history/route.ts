@@ -3,7 +3,7 @@ import { publicClient } from '@/lib/viem-config';
 import { CONTRACTS, SEERSLEAGUE_ABI } from '@/lib/contract-interactions';
 
 export const dynamic = 'force-dynamic';
-export const maxDuration = 60;
+export const maxDuration = 10; // Vercel Hobby plan max
 
 interface PredictionHistoryEntry {
   matchId: number;
@@ -66,10 +66,9 @@ export async function GET(
       });
     }
 
-    // Fetch ALL events from deployment block
+    // Fetch recent events only (last 50000 blocks ~7 days on Base)
     const currentBlock = await publicClient.getBlockNumber();
-    const deploymentBlock = BigInt(process.env.NEXT_PUBLIC_DEPLOYMENT_BLOCK || '0');
-    const fromBlock = deploymentBlock > 0n ? deploymentBlock : currentBlock - 100000n;
+    const fromBlock = currentBlock - 50000n;
 
     console.log(`[History] Fetching events from block ${fromBlock} to ${currentBlock}`);
 
@@ -147,26 +146,9 @@ export async function GET(
             isCorrect = predictionNum === outcomeNum;
           }
 
-          // Try to get team names from Football-data.org (matchId is the API match ID)
-          let homeTeam = 'Home Team';
-          let awayTeam = 'Away Team';
-          try {
-            const footballDataResponse = await fetch(
-              `https://api.football-data.org/v4/matches/${matchId}`,
-              {
-                headers: { 'X-Auth-Token': process.env.FOOTBALL_DATA_API_KEY || '' },
-                next: { revalidate: 3600 }
-              }
-            );
-            if (footballDataResponse.ok) {
-              const footballData = await footballDataResponse.json();
-              homeTeam = footballData.match?.homeTeam?.name || footballData.homeTeam?.name || homeTeam;
-              awayTeam = footballData.match?.awayTeam?.name || footballData.awayTeam?.name || awayTeam;
-            }
-          } catch (apiError) {
-            // Fallback to generic names if API fails
-            console.warn(`Could not fetch team names for match ${matchId}`);
-          }
+          // Use match ID as identifier (team names can be fetched by frontend if needed)
+          const homeTeam = `Team ${matchId}A`;
+          const awayTeam = `Team ${matchId}B`;
 
           history.push({
             matchId: Number(matchId),

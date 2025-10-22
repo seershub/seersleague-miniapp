@@ -89,7 +89,7 @@ async function getUpcomingRegisteredMatches(): Promise<{ matchId: string; startT
 /**
  * Enrich match data from Football-data.org (with caching + batching)
  */
-async function enrichMatches(matches: { matchId: string; startTime: number }[], limit: number = 20): Promise<Match[]> {
+async function enrichMatches(matches: { matchId: string; startTime: number }[], limit: number = 10): Promise<Match[]> {
   const enriched: Match[] = [];
   const toEnrich = matches.slice(0, Math.min(limit, matches.length));
 
@@ -135,8 +135,8 @@ async function enrichMatches(matches: { matchId: string; startTime: number }[], 
         status: 'Not Started'
       });
 
-      // Rate limiting (25 req/min for free tier)
-      await new Promise(resolve => setTimeout(resolve, 2500));
+      // Rate limiting (reduced for faster response)
+      await new Promise(resolve => setTimeout(resolve, 500));
 
     } catch (error) {
       console.error(`Error enriching match ${match.matchId}:`, error);
@@ -154,12 +154,12 @@ async function enrichMatches(matches: { matchId: string; startTime: number }[], 
  * Returns registered + upcoming matches only.
  *
  * Query params:
- * - limit: Max matches to return (default: 20, max: 50)
+ * - limit: Max matches to return (default: 10, max: 30)
  */
 export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
-    const limit = Math.min(parseInt(searchParams.get('limit') || '20', 10), 50);
+    const limit = Math.min(parseInt(searchParams.get('limit') || '10', 10), 30);
 
     console.log(`\n📥 Fetching matches (limit: ${limit})\n`);
 

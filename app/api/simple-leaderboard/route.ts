@@ -5,7 +5,7 @@ import { CONTRACTS, SEERSLEAGUE_ABI } from '@/lib/contract-interactions';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
-export const maxDuration = 60;
+export const maxDuration = 10; // Vercel Hobby plan max
 
 interface SimpleLeaderboardEntry {
   rank: number;
