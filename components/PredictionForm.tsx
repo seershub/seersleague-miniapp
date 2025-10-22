@@ -7,7 +7,6 @@ import { PaymentModal } from './PaymentModal';
 import { CONTRACTS, SEERSLEAGUE_ABI, PREDICTION_FEE, UserStats, formatUSDC, USDC_ABI } from '@/lib/contract-interactions';
 import { useMiniKit } from './MiniKitProvider';
 import { encodeFunctionData } from 'viem';
-import { publicClient } from '@/lib/viem-config';
 import toast from 'react-hot-toast';
 
 interface PredictionFormProps {
@@ -75,28 +74,23 @@ export function PredictionForm({ matches }: PredictionFormProps) {
     if (!sdk) return;
     try {
       console.log('PredictionForm: Fetching user stats for:', userAddress);
-      
-      const stats = await publicClient.readContract({
-        address: CONTRACTS.SEERSLEAGUE,
-        abi: SEERSLEAGUE_ABI,
-        functionName: 'getUserStats',
-        args: [userAddress as `0x${string}`]
-      }) as unknown as {
-        correctPredictions: bigint;
-        totalPredictions: bigint;
-        freePredictionsUsed: bigint;
-        currentStreak: bigint;
-        longestStreak: bigint;
-      };
-      
+
+      // Fetch stats from API endpoint instead of direct blockchain call
+      const response = await fetch(`/api/profile/${userAddress}`);
+      if (!response.ok) {
+        throw new Error('Failed to fetch user stats');
+      }
+
+      const profileData = await response.json();
+
       const userStatsData = {
-        correctPredictions: Number(stats.correctPredictions || 0),
-        totalPredictions: Number(stats.totalPredictions || 0),
-        freePredictionsUsed: Number(stats.freePredictionsUsed || 0),
-        currentStreak: Number(stats.currentStreak || 0),
-        longestStreak: Number(stats.longestStreak || 0)
+        correctPredictions: profileData.stats.correctPredictions || 0,
+        totalPredictions: profileData.stats.totalPredictions || 0,
+        freePredictionsUsed: profileData.stats.freePredictionsUsed || 0,
+        currentStreak: profileData.stats.currentStreak || 0,
+        longestStreak: profileData.stats.longestStreak || 0
       };
-      
+
       console.log('PredictionForm: User stats received:', userStatsData);
       setUserStats(userStatsData);
     } catch (error) {
@@ -209,21 +203,13 @@ export function PredictionForm({ matches }: PredictionFormProps) {
         totalFee: totalFee.toString()
       });
       
-      // If fee required, check current allowance first
+      // If fee required, show payment modal for approval
       if (totalFee > 0) {
-        const currentAllowance = await publicClient.readContract({
-          address: CONTRACTS.USDC,
-          abi: USDC_ABI,
-          functionName: 'allowance',
-          args: [address as `0x${string}`, CONTRACTS.SEERSLEAGUE]
-        }) as bigint;
-        if (currentAllowance < BigInt(totalFee)) {
-          toast.dismiss(loadingToast);
-          setShowPaymentModal(true);
-          setIsSubmitting(false);
-          setIsPending(false);
-          return;
-        }
+        toast.dismiss(loadingToast);
+        setShowPaymentModal(true);
+        setIsSubmitting(false);
+        setIsPending(false);
+        return;
       }
       
       // Encode function call data for submitPredictions(uint256[] matchIds, uint8[] outcomes)
