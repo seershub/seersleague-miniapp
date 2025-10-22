@@ -56,10 +56,8 @@ async function generateLeaderboardFromContract(): Promise<SimpleLeaderboardEntry
 
   console.log(`[Simple Leaderboard] Found ${uniqueUsers.size} unique users`);
 
-  // Fetch stats for each user
-  const leaderboardData: SimpleLeaderboardEntry[] = [];
-
-  for (const userAddress of uniqueUsers) {
+  // Fetch stats for ALL users in PARALLEL (much faster!)
+  const userStatsPromises = Array.from(uniqueUsers).map(async (userAddress) => {
     try {
       const stats = await publicClient.readContract({
         address: CONTRACTS.SEERSLEAGUE,
@@ -80,7 +78,7 @@ async function generateLeaderboardFromContract(): Promise<SimpleLeaderboardEntry
       if (totalPredictions > 0) {
         const accuracy = Math.round((correctPredictions / totalPredictions) * 100);
 
-        leaderboardData.push({
+        return {
           rank: 0,
           address: userAddress,
           accuracy,
@@ -88,12 +86,18 @@ async function generateLeaderboardFromContract(): Promise<SimpleLeaderboardEntry
           correctPredictions,
           currentStreak: Number(stats.currentStreak || 0),
           longestStreak: Number(stats.longestStreak || 0)
-        });
+        };
       }
+
+      return null;
     } catch (error) {
       console.error(`[Simple Leaderboard] Error fetching stats for ${userAddress}:`, error);
+      return null;
     }
-  }
+  });
+
+  const allUserStats = await Promise.all(userStatsPromises);
+  const leaderboardData = allUserStats.filter((entry): entry is SimpleLeaderboardEntry => entry !== null);
 
   // Sort leaderboard
   leaderboardData.sort((a, b) => {

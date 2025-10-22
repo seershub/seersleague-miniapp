@@ -87,15 +87,15 @@ async function getUpcomingRegisteredMatches(): Promise<{ matchId: string; startT
 }
 
 /**
- * Enrich match data from Football-data.org (with caching + batching)
+ * Enrich match data from Football-data.org (PARALLEL for speed)
  */
-async function enrichMatches(matches: { matchId: string; startTime: number }[], limit: number = 10): Promise<Match[]> {
-  const enriched: Match[] = [];
+async function enrichMatches(matches: { matchId: string; startTime: number }[], limit: number = 5): Promise<Match[]> {
   const toEnrich = matches.slice(0, Math.min(limit, matches.length));
 
-  console.log(`🌐 Enriching ${toEnrich.length} matches from Football-data.org...`);
+  console.log(`🌐 Enriching ${toEnrich.length} matches from Football-data.org (parallel)...`);
 
-  for (const match of toEnrich) {
+  // PARALLEL FETCH - Much faster!
+  const enrichPromises = toEnrich.map(async (match) => {
     try {
       const response = await fetch(`${FOOTBALL_DATA_BASE}/matches/${match.matchId}`, {
         headers: { 'X-Auth-Token': FOOTBALL_DATA_API_KEY },
@@ -106,7 +106,7 @@ async function enrichMatches(matches: { matchId: string; startTime: number }[], 
         console.log(`⚠️ Match ${match.matchId} not in API, using fallback`);
 
         // Fallback: Basic data
-        enriched.push({
+        return {
           id: match.matchId,
           homeTeam: 'Home Team',
           awayTeam: 'Away Team',
@@ -116,14 +116,13 @@ async function enrichMatches(matches: { matchId: string; startTime: number }[], 
           homeTeamBadge: '/default-badge.svg',
           awayTeamBadge: '/default-badge.svg',
           status: 'Not Started'
-        });
-        continue;
+        };
       }
 
       const data = await response.json();
       const m = data.match || data;
 
-      enriched.push({
+      return {
         id: match.matchId,
         homeTeam: m?.homeTeam?.name || m?.homeTeam || 'Home Team',
         awayTeam: m?.awayTeam?.name || m?.awayTeam || 'Away Team',
@@ -133,15 +132,28 @@ async function enrichMatches(matches: { matchId: string; startTime: number }[], 
         homeTeamBadge: m.homeTeam?.crest || '/default-badge.svg',
         awayTeamBadge: m.awayTeam?.crest || '/default-badge.svg',
         status: 'Not Started'
-      });
-
-      // Rate limiting (reduced for faster response)
-      await new Promise(resolve => setTimeout(resolve, 500));
+      };
 
     } catch (error) {
       console.error(`Error enriching match ${match.matchId}:`, error);
+
+      // Fallback on error
+      return {
+        id: match.matchId,
+        homeTeam: 'Home Team',
+        awayTeam: 'Away Team',
+        league: 'Football',
+        kickoff: new Date(match.startTime * 1000).toISOString(),
+        venue: 'TBA',
+        homeTeamBadge: '/default-badge.svg',
+        awayTeamBadge: '/default-badge.svg',
+        status: 'Not Started'
+      };
     }
-  }
+  });
+
+  // Wait for all enrichments in parallel
+  const enriched = await Promise.all(enrichPromises);
 
   console.log(`✅ Enriched ${enriched.length} matches`);
 
@@ -154,12 +166,12 @@ async function enrichMatches(matches: { matchId: string; startTime: number }[], 
  * Returns registered + upcoming matches only.
  *
  * Query params:
- * - limit: Max matches to return (default: 10, max: 30)
+ * - limit: Max matches to return (default: 5, max: 20)
  */
 export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
-    const limit = Math.min(parseInt(searchParams.get('limit') || '10', 10), 30);
+    const limit = Math.min(parseInt(searchParams.get('limit') || '5', 10), 20);
 
     console.log(`\n📥 Fetching matches (limit: ${limit})\n`);
 

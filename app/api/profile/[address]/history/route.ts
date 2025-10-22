@@ -92,92 +92,114 @@ export async function GET(
 
     console.log(`[History] Found ${predictionEvents.length} prediction events`);
 
-    // Build history with complete data
+    // Build history with OPTIMIZED batch fetching
     const history: PredictionHistoryEntry[] = [];
     const processedMatches = new Set<string>(); // Avoid duplicates
 
+    // Step 1: Collect all unique matches and blocks (dedup first)
+    const matchesToFetch: Array<{ matchId: bigint; blockNumber: bigint }> = [];
+
     for (const event of predictionEvents) {
       if (!event.args || !event.args.matchIds) continue;
-
       const matchIds = event.args.matchIds as bigint[];
-      const block = await publicClient.getBlock({ blockNumber: event.blockNumber });
 
       for (const matchId of matchIds) {
         const matchIdStr = `${matchId}-${event.blockNumber}`;
-        if (processedMatches.has(matchIdStr)) continue;
-        processedMatches.add(matchIdStr);
+        if (!processedMatches.has(matchIdStr)) {
+          processedMatches.add(matchIdStr);
+          matchesToFetch.push({ matchId, blockNumber: event.blockNumber });
+        }
+      }
+    }
 
-        try {
-          // Fetch user's prediction for this match
-          const userPrediction = await publicClient.readContract({
+    console.log(`[History] Processing ${matchesToFetch.length} unique matches`);
+
+    // Step 2: Fetch blocks in parallel (batch)
+    const uniqueBlocks = [...new Set(matchesToFetch.map(m => m.blockNumber))];
+    const blockPromises = uniqueBlocks.map(blockNumber =>
+      publicClient.getBlock({ blockNumber }).catch(() => null)
+    );
+    const blocks = await Promise.all(blockPromises);
+    const blockMap = new Map<bigint, typeof blocks[0]>();
+    uniqueBlocks.forEach((blockNumber, idx) => {
+      if (blocks[idx]) blockMap.set(blockNumber, blocks[idx]);
+    });
+
+    // Step 3: Fetch all match data in parallel
+    const matchDataPromises = matchesToFetch.map(async ({ matchId, blockNumber }) => {
+      try {
+        // Parallel fetch for each match
+        const [userPrediction, matchInfo] = await Promise.all([
+          publicClient.readContract({
             address: CONTRACTS.SEERSLEAGUE,
             abi: SEERSLEAGUE_ABI,
             functionName: 'getUserPrediction',
             args: [address, matchId]
-          }) as unknown as bigint;
-
-          // Fetch match info
-          const matchInfo = await publicClient.readContract({
+          }) as Promise<bigint>,
+          publicClient.readContract({
             address: CONTRACTS.SEERSLEAGUE,
             abi: SEERSLEAGUE_ABI,
             functionName: 'getMatch',
             args: [matchId]
-          }) as unknown as MatchInfo;
+          }) as Promise<MatchInfo>
+        ]);
 
-          const predictionNum = Number(userPrediction);
+        const predictionNum = Number(userPrediction);
 
-          // Calculate outcome from scores (1=Home Win, 2=Draw, 3=Away Win)
-          let outcomeNum: number | null = null;
-          if (matchInfo.isRecorded) {
-            const homeScore = Number(matchInfo.homeScore);
-            const awayScore = Number(matchInfo.awayScore);
-            if (homeScore > awayScore) {
-              outcomeNum = 1; // Home win
-            } else if (homeScore === awayScore) {
-              outcomeNum = 2; // Draw
-            } else {
-              outcomeNum = 3; // Away win
-            }
+        // Calculate outcome from scores (1=Home Win, 2=Draw, 3=Away Win)
+        let outcomeNum: number | null = null;
+        if (matchInfo.isRecorded) {
+          const homeScore = Number(matchInfo.homeScore);
+          const awayScore = Number(matchInfo.awayScore);
+          if (homeScore > awayScore) {
+            outcomeNum = 1;
+          } else if (homeScore === awayScore) {
+            outcomeNum = 2;
+          } else {
+            outcomeNum = 3;
           }
-
-          // Determine correctness
-          let isCorrect: boolean | null = null;
-          if (matchInfo.isRecorded && predictionNum > 0 && outcomeNum !== null) {
-            isCorrect = predictionNum === outcomeNum;
-          }
-
-          // Use match ID as identifier (team names can be fetched by frontend if needed)
-          const homeTeam = `Team ${matchId}A`;
-          const awayTeam = `Team ${matchId}B`;
-
-          history.push({
-            matchId: Number(matchId),
-            matchName: `${homeTeam} vs ${awayTeam}`,
-            homeTeam,
-            awayTeam,
-            userPrediction: predictionNum,
-            actualResult: outcomeNum,
-            isCorrect: isCorrect,
-            timestamp: Number(block.timestamp)
-          });
-
-        } catch (error) {
-          console.error(`[History] Error fetching details for match ${matchId}:`, error);
-
-          // Fallback with minimal data
-          history.push({
-            matchId: Number(matchId),
-            matchName: `Match #${matchId}`,
-            homeTeam: 'Unknown',
-            awayTeam: 'Unknown',
-            userPrediction: 0,
-            actualResult: null,
-            isCorrect: null,
-            timestamp: Number(block.timestamp)
-          });
         }
+
+        // Determine correctness
+        let isCorrect: boolean | null = null;
+        if (matchInfo.isRecorded && predictionNum > 0 && outcomeNum !== null) {
+          isCorrect = predictionNum === outcomeNum;
+        }
+
+        const block = blockMap.get(blockNumber);
+        const timestamp = block ? Number(block.timestamp) : Math.floor(Date.now() / 1000);
+
+        return {
+          matchId: Number(matchId),
+          matchName: `Match #${matchId}`,
+          homeTeam: `Team ${matchId}A`,
+          awayTeam: `Team ${matchId}B`,
+          userPrediction: predictionNum,
+          actualResult: outcomeNum,
+          isCorrect,
+          timestamp
+        };
+
+      } catch (error) {
+        console.error(`[History] Error fetching match ${matchId}:`, error);
+
+        const block = blockMap.get(blockNumber);
+        return {
+          matchId: Number(matchId),
+          matchName: `Match #${matchId}`,
+          homeTeam: 'Unknown',
+          awayTeam: 'Unknown',
+          userPrediction: 0,
+          actualResult: null,
+          isCorrect: null,
+          timestamp: block ? Number(block.timestamp) : Math.floor(Date.now() / 1000)
+        };
       }
-    }
+    });
+
+    // Wait for all match data to be fetched
+    const allMatchData = await Promise.all(matchDataPromises);
+    history.push(...allMatchData);
 
     // Sort by timestamp (newest first)
     history.sort((a, b) => b.timestamp - a.timestamp);
