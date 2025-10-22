@@ -129,20 +129,23 @@ export async function GET(
     const matchDataPromises = matchesToFetch.map(async ({ matchId, blockNumber }) => {
       try {
         // Parallel fetch for each match
-        const [userPrediction, matchInfo] = await Promise.all([
+        const [userPredictionResult, matchInfoResult] = await Promise.all([
           publicClient.readContract({
             address: CONTRACTS.SEERSLEAGUE,
             abi: SEERSLEAGUE_ABI,
             functionName: 'getUserPrediction',
             args: [address, matchId]
-          }) as Promise<bigint>,
+          }),
           publicClient.readContract({
             address: CONTRACTS.SEERSLEAGUE,
             abi: SEERSLEAGUE_ABI,
             functionName: 'getMatch',
             args: [matchId]
-          }) as Promise<MatchInfo>
+          })
         ]);
+
+        const userPrediction = userPredictionResult as unknown as bigint;
+        const matchInfo = matchInfoResult as unknown as MatchInfo;
 
         const predictionNum = Number(userPrediction);
 
