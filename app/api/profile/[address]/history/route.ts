@@ -120,7 +120,7 @@ export async function GET(
           const matchInfo = await publicClient.readContract({
             address: CONTRACTS.SEERSLEAGUE,
             abi: SEERSLEAGUE_ABI,
-            functionName: 'matches',
+            functionName: 'getMatch',
             args: [matchId]
           }) as unknown as MatchInfo;
 
