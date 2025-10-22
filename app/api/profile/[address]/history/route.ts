@@ -114,7 +114,7 @@ export async function GET(
             abi: SEERSLEAGUE_ABI,
             functionName: 'getUserPrediction',
             args: [address, matchId]
-          }) as bigint;
+          }) as unknown as bigint;
 
           // Fetch match info
           const matchInfo = await publicClient.readContract({
@@ -122,7 +122,7 @@ export async function GET(
             abi: SEERSLEAGUE_ABI,
             functionName: 'matches',
             args: [matchId]
-          }) as MatchInfo;
+          }) as unknown as MatchInfo;
 
           const predictionNum = Number(userPrediction);
           const outcomeNum = Number(matchInfo.outcome);
