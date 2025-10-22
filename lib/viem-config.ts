@@ -1,13 +1,14 @@
 import { createPublicClient, http, fallback } from 'viem';
 import { base } from 'viem/chains';
 
-// Multiple RPC endpoints for better reliability and rate limit handling
+// RPC endpoints with Alchemy as primary (NEXT_PUBLIC_ vars are safe for client-side)
+const alchemyKey = process.env.NEXT_PUBLIC_ALCHEMY_API_KEY;
 const baseRpcUrls = [
+  alchemyKey ? `https://base-mainnet.g.alchemy.com/v2/${alchemyKey}` : null,
   process.env.NEXT_PUBLIC_BASE_RPC || 'https://mainnet.base.org',
-  'https://base-mainnet.g.alchemy.com/v2/demo', // Alchemy backup
-  'https://base-mainnet.public.blastapi.io', // Blast API backup
-  'https://base.blockpi.network/v1/rpc/public', // BlockPI backup
-];
+  'https://base-mainnet.public.blastapi.io',
+  'https://base.blockpi.network/v1/rpc/public'
+].filter((url): url is string => Boolean(url));
 
 export const baseRpcUrl = baseRpcUrls[0];
 

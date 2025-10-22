@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 // import { useAccount, useReadContract, useWriteContract, useWaitForTransactionReceipt } from 'wagmi';
 import { USDC_ABI, CONTRACTS, formatUSDC } from '@/lib/contract-interactions';
 import { encodeFunctionData } from 'viem';
+import { publicClient } from '@/lib/viem-config';
 import { useMiniKit } from './MiniKitProvider';
 import toast from 'react-hot-toast';
 
@@ -40,15 +41,23 @@ export function PaymentModal({ onSuccess, onCancel, amount }: PaymentModalProps)
     const load = async () => {
       if (!address) return;
       try {
-        // Fetch USDC data from API endpoint
-        const response = await fetch(`/api/usdc/allowance?address=${address}`);
-        if (!response.ok) {
-          throw new Error('Failed to fetch USDC data');
-        }
-
-        const data = await response.json();
-        setBalance(BigInt(data.balance));
-        setAllowance(BigInt(data.allowance));
+        // Direct blockchain calls - works with Alchemy API key
+        const [bal, alw] = await Promise.all([
+          publicClient.readContract({
+            address: CONTRACTS.USDC,
+            abi: USDC_ABI,
+            functionName: 'balanceOf',
+            args: [address]
+          }) as Promise<bigint>,
+          publicClient.readContract({
+            address: CONTRACTS.USDC,
+            abi: USDC_ABI,
+            functionName: 'allowance',
+            args: [address, CONTRACTS.SEERSLEAGUE]
+          }) as Promise<bigint>,
+        ]);
+        setBalance(bal);
+        setAllowance(alw);
       } catch (e) {
         console.error('Failed to load USDC data', e);
         // Set defaults on error
@@ -99,14 +108,15 @@ export function PaymentModal({ onSuccess, onCancel, amount }: PaymentModalProps)
       }
       toast.success('USDC approval successful!');
 
-      // Refresh allowance from API
-      const response = await fetch(`/api/usdc/allowance?address=${address}`);
-      if (response.ok) {
-        const data = await response.json();
-        const newAllowance = BigInt(data.allowance);
-        setAllowance(newAllowance);
-        if (newAllowance >= amount) setStep('confirm');
-      }
+      // Refresh allowance directly from blockchain
+      const newAllowance = await publicClient.readContract({
+        address: CONTRACTS.USDC,
+        abi: USDC_ABI,
+        functionName: 'allowance',
+        args: [address, CONTRACTS.SEERSLEAGUE]
+      }) as bigint;
+      setAllowance(newAllowance);
+      if (newAllowance >= amount) setStep('confirm');
     } catch (error: any) {
       console.error('Approval error:', error);
       toast.error('Failed to approve USDC. Please try again.');
