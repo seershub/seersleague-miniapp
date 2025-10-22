@@ -67,12 +67,12 @@ export async function GET(
       });
     }
 
-    // FIX: Alchemy only allows 10 block range for getLogs
-    // Use last 500 blocks to avoid range errors
+    // FIX: Alchemy free tier - use indexed filter for efficiency
+    // 2000 blocks = ~1 hour on Base (2s per block)
     const currentBlock = await publicClient.getBlockNumber();
-    const fromBlock = currentBlock - 500n;
+    const fromBlock = currentBlock - 2000n;
 
-    console.log(`[History] Fetching from block ${fromBlock} to ${currentBlock} (last 500 blocks)`);
+    console.log(`[History] Fetching from block ${fromBlock} to ${currentBlock} (last 2000 blocks, ~1 hour)`);
 
     // Fetch prediction events
     const predictionEvents = await publicClient.getLogs({
