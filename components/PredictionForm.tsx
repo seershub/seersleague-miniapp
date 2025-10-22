@@ -165,29 +165,29 @@ export function PredictionForm({ matches }: PredictionFormProps) {
     await submitPredictions();
   };
   
-  const submitPredictions = async () => {
+  const submitPredictions = async (skipModal: boolean = false) => {
     if (!sdk || !address) {
       toast.error('Wallet not connected');
       return;
     }
-    
+
     // Show loading toast immediately
     const loadingToast = toast.loading('Submitting predictions...');
-    
+
     try {
       setIsSubmitting(true);
       setIsPending(true);
-      
+
       // Prepare match IDs and outcomes for predictions only
       const matchIds = Object.keys(predictions).map(id => BigInt(parseInt(id)));
       const outcomes = Object.keys(predictions).map(matchId => predictions[parseInt(matchId)]);
-      
+
       // Calculate total fee needed (align with contract logic using on-chain stats)
       const predictionCount = Object.keys(predictions).length;
       const remainingFreePredictions = userStats ? Math.max(0, 5 - userStats.freePredictionsUsed) : 0;
       const predictionsToPayFor = Math.max(0, predictionCount - remainingFreePredictions);
       const totalFee = BigInt(predictionsToPayFor) * PREDICTION_FEE;
-      
+
       console.log('🔍 DEBUG: Fee calculation details:', {
         predictionCount,
         userStats: userStats ? {
@@ -199,7 +199,7 @@ export function PredictionForm({ matches }: PredictionFormProps) {
         totalFee: totalFee.toString(),
         totalFeeAsNumber: Number(totalFee)
       });
-      
+
       console.log('Submitting predictions to contract:', {
         matchIds,
         outcomes,
@@ -209,9 +209,9 @@ export function PredictionForm({ matches }: PredictionFormProps) {
         predictionsToPayFor,
         totalFee: totalFee.toString()
       });
-      
-      // If fee required, show payment modal for approval
-      if (totalFee > 0) {
+
+      // If fee required and modal not skipped, show payment modal for approval
+      if (totalFee > 0 && !skipModal) {
         toast.dismiss(loadingToast);
         setShowPaymentModal(true);
         setIsSubmitting(false);
@@ -550,7 +550,7 @@ export function PredictionForm({ matches }: PredictionFormProps) {
         <PaymentModal
           onSuccess={async () => {
             setShowPaymentModal(false);
-            await submitPredictions();
+            await submitPredictions(true); // Skip modal check, proceed to wallet transaction
           }}
           onCancel={() => setShowPaymentModal(false)}
           amount={totalFee}
