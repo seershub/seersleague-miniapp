@@ -56,8 +56,8 @@ export default function RootLayout({
                     <div className="absolute inset-[1px] rounded-2xl bg-white/[0.03] backdrop-blur-sm"></div>
                   </div>
 
-                  {/* Subtle gradient overlay - Brighter */}
-                  <div className="absolute inset-0 bg-gradient-to-b from-yellow-500/[0.04] to-transparent pointer-events-none"></div>
+                  {/* Subtle gradient overlay - Darker */}
+                  <div className="absolute inset-0 bg-gradient-to-b from-yellow-500/[0.12] to-transparent pointer-events-none"></div>
 
                   {/* Content */}
                   <div className="relative z-10 flex flex-col items-center">
