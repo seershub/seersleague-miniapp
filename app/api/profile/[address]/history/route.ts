@@ -3,7 +3,7 @@ import { publicClient } from '@/lib/viem-config';
 import { CONTRACTS, SEERSLEAGUE_ABI } from '@/lib/contract-interactions';
 
 export const dynamic = 'force-dynamic';
-export const maxDuration = 10; // Vercel Hobby plan max
+export const maxDuration = 60; // Vercel Pro plan - allows full history processing
 
 interface PredictionHistoryEntry {
   matchId: number;

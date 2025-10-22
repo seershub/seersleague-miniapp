@@ -4,7 +4,7 @@ import { CONTRACTS, SEERSLEAGUE_ABI } from '@/lib/contract-interactions';
 import { kv } from '@vercel/kv';
 
 export const dynamic = 'force-dynamic';
-export const maxDuration = 30; // Give it more time for testing
+export const maxDuration = 60; // Vercel Pro plan - full diagnostic testing
 
 /**
  * TEST ENDPOINT: Check Blockchain Data & Cache Status
