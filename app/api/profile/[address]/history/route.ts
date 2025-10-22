@@ -3,7 +3,7 @@ import { publicClient } from '@/lib/viem-config';
 import { CONTRACTS, SEERSLEAGUE_ABI } from '@/lib/contract-interactions';
 
 export const dynamic = 'force-dynamic';
-export const maxDuration = 10;
+export const maxDuration = 60;
 
 interface PredictionHistoryEntry {
   matchId: number;
@@ -14,6 +14,14 @@ interface PredictionHistoryEntry {
   timestamp: number;
   homeTeam: string;
   awayTeam: string;
+}
+
+interface MatchInfo {
+  homeTeam: string;
+  awayTeam: string;
+  startTime: bigint;
+  outcome: bigint;
+  isFinalized: boolean;
 }
 
 export async function GET(
@@ -31,8 +39,8 @@ export async function GET(
     }
 
     console.log(`[History] Fetching for ${address}`);
-    
-    // Get user stats first (single call)
+
+    // Get user stats first
     const stats = await publicClient.readContract({
       address: CONTRACTS.SEERSLEAGUE,
       abi: SEERSLEAGUE_ABI,
@@ -57,9 +65,12 @@ export async function GET(
       });
     }
 
-    // Fetch only recent events (last 2000 blocks ~1.5 hours)
+    // Fetch ALL events from deployment block
     const currentBlock = await publicClient.getBlockNumber();
-    const fromBlock = currentBlock - 2000n;
+    const deploymentBlock = BigInt(process.env.NEXT_PUBLIC_DEPLOYMENT_BLOCK || '0');
+    const fromBlock = deploymentBlock > 0n ? deploymentBlock : currentBlock - 100000n;
+
+    console.log(`[History] Fetching events from block ${fromBlock} to ${currentBlock}`);
 
     const predictionEvents = await publicClient.getLogs({
       address: CONTRACTS.SEERSLEAGUE,
@@ -79,28 +90,75 @@ export async function GET(
       toBlock: 'latest'
     });
 
-    console.log(`[History] Found ${predictionEvents.length} recent events`);
+    console.log(`[History] Found ${predictionEvents.length} prediction events`);
 
-    // Build simple history from events only (no contract calls)
+    // Build history with complete data
     const history: PredictionHistoryEntry[] = [];
-    
+    const processedMatches = new Set<string>(); // Avoid duplicates
+
     for (const event of predictionEvents) {
       if (!event.args || !event.args.matchIds) continue;
-      
+
       const matchIds = event.args.matchIds as bigint[];
       const block = await publicClient.getBlock({ blockNumber: event.blockNumber });
-      
+
       for (const matchId of matchIds) {
-        history.push({
-          matchId: Number(matchId),
-          matchName: `Match #${matchId}`,
-          homeTeam: 'TBD',
-          awayTeam: 'TBD',
-          userPrediction: 0, // Will be filled by frontend if needed
-          actualResult: null,
-          isCorrect: null,
-          timestamp: Number(block.timestamp)
-        });
+        const matchIdStr = `${matchId}-${event.blockNumber}`;
+        if (processedMatches.has(matchIdStr)) continue;
+        processedMatches.add(matchIdStr);
+
+        try {
+          // Fetch user's prediction for this match
+          const userPrediction = await publicClient.readContract({
+            address: CONTRACTS.SEERSLEAGUE,
+            abi: SEERSLEAGUE_ABI,
+            functionName: 'getUserPrediction',
+            args: [address, matchId]
+          }) as bigint;
+
+          // Fetch match info
+          const matchInfo = await publicClient.readContract({
+            address: CONTRACTS.SEERSLEAGUE,
+            abi: SEERSLEAGUE_ABI,
+            functionName: 'matches',
+            args: [matchId]
+          }) as MatchInfo;
+
+          const predictionNum = Number(userPrediction);
+          const outcomeNum = Number(matchInfo.outcome);
+
+          // Determine correctness
+          let isCorrect: boolean | null = null;
+          if (matchInfo.isFinalized && predictionNum > 0) {
+            isCorrect = predictionNum === outcomeNum;
+          }
+
+          history.push({
+            matchId: Number(matchId),
+            matchName: `${matchInfo.homeTeam} vs ${matchInfo.awayTeam}`,
+            homeTeam: matchInfo.homeTeam,
+            awayTeam: matchInfo.awayTeam,
+            userPrediction: predictionNum,
+            actualResult: matchInfo.isFinalized ? outcomeNum : null,
+            isCorrect: isCorrect,
+            timestamp: Number(block.timestamp)
+          });
+
+        } catch (error) {
+          console.error(`[History] Error fetching details for match ${matchId}:`, error);
+
+          // Fallback with minimal data
+          history.push({
+            matchId: Number(matchId),
+            matchName: `Match #${matchId}`,
+            homeTeam: 'Unknown',
+            awayTeam: 'Unknown',
+            userPrediction: 0,
+            actualResult: null,
+            isCorrect: null,
+            timestamp: Number(block.timestamp)
+          });
+        }
       }
     }
 
@@ -110,16 +168,16 @@ export async function GET(
     console.log(`[History] Returning ${history.length} predictions`);
 
     return NextResponse.json({
-      history: history.slice(0, 10), // Only return last 10
+      history: history.slice(0, 50), // Return last 50 predictions
+      total: history.length,
       cached: false,
-      lastUpdated: new Date().toISOString(),
-      note: 'Showing recent predictions from last 1.5 hours'
+      lastUpdated: new Date().toISOString()
     });
 
   } catch (error) {
     console.error('Error fetching prediction history:', error);
     return NextResponse.json(
-      { error: 'Failed to fetch prediction history' },
+      { error: 'Failed to fetch prediction history', details: error instanceof Error ? error.message : 'Unknown' },
       { status: 500 }
     );
   }

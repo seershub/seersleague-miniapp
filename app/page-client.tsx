@@ -73,9 +73,13 @@ export default function Home({ initialMatches = [] }: HomeProps) {
         if (!response.ok) {
           throw new Error(`HTTP error! status: ${response.status}`);
         }
-        const data: Match[] = await response.json();
-        console.log('Matches received:', data);
-        setMatches(data);
+        const data = await response.json();
+        console.log('Matches API response:', data);
+
+        // Extract matches array from response object
+        const matchesArray: Match[] = data.matches || [];
+        console.log('Matches received:', matchesArray);
+        setMatches(matchesArray);
         setError(null);
       } catch (err) {
         console.error('Error fetching matches:', err);
