@@ -23,8 +23,13 @@ interface SimpleLeaderboardEntry {
 async function generateLeaderboardFromContract(): Promise<SimpleLeaderboardEntry[]> {
   console.log('[Simple Leaderboard] Generating from contract...');
 
-  const deploymentBlock = BigInt(process.env.NEXT_PUBLIC_DEPLOYMENT_BLOCK || '0');
   const currentBlock = await publicClient.getBlockNumber();
+
+  // ALCHEMY FREE TIER FIX: Only scan last 10K blocks (~2 days of data)
+  // This automatically moves forward - no need to update deployment block!
+  const fromBlock = currentBlock - 10000n; // Last 10K blocks (Alchemy Free limit)
+
+  console.log(`[Simple Leaderboard] Scanning blocks ${fromBlock} to ${currentBlock}`);
 
   // Fetch PredictionsSubmitted events
   const predictionEvents = await publicClient.getLogs({
@@ -40,7 +45,7 @@ async function generateLeaderboardFromContract(): Promise<SimpleLeaderboardEntry
         { name: 'feePaid', type: 'uint256', indexed: false }
       ]
     },
-    fromBlock: deploymentBlock > 0n ? deploymentBlock : currentBlock - 10000n,
+    fromBlock,
     toBlock: 'latest'
   });
 

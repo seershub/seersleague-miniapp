@@ -16,10 +16,13 @@ export async function GET() {
   try {
     console.log('[Manual Trigger] Starting leaderboard generation...');
 
-    const deploymentBlock = BigInt(process.env.NEXT_PUBLIC_DEPLOYMENT_BLOCK || '0');
     const currentBlock = await publicClient.getBlockNumber();
 
-    console.log(`[Manual Trigger] Fetching events from block ${deploymentBlock} to ${currentBlock}`);
+    // ALCHEMY FREE TIER FIX: Only scan last 10K blocks (~2 days of data)
+    // This automatically moves forward - no need to update deployment block!
+    const fromBlock = currentBlock - 10000n; // Last 10K blocks (Alchemy Free limit)
+
+    console.log(`[Manual Trigger] Fetching events from block ${fromBlock} to ${currentBlock}`);
 
     // Fetch PredictionsSubmitted events
     const predictionEvents = await publicClient.getLogs({
@@ -35,7 +38,7 @@ export async function GET() {
           { name: 'feePaid', type: 'uint256', indexed: false }
         ]
       },
-      fromBlock: deploymentBlock > 0n ? deploymentBlock : currentBlock - 10000n,
+      fromBlock,
       toBlock: 'latest'
     });
 

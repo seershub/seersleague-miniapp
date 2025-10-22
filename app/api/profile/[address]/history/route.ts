@@ -66,9 +66,9 @@ export async function GET(
       });
     }
 
-    // Fetch recent events only (last 50000 blocks ~7 days on Base)
+    // ALCHEMY FREE TIER FIX: Only scan last 10K blocks (~2 days of data)
     const currentBlock = await publicClient.getBlockNumber();
-    const fromBlock = currentBlock - 50000n;
+    const fromBlock = currentBlock - 10000n; // Last 10K blocks (Alchemy Free limit)
 
     console.log(`[History] Fetching events from block ${fromBlock} to ${currentBlock}`);
 
