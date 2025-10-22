@@ -67,11 +67,12 @@ export async function GET(
       });
     }
 
-    // FAST FETCH: Single user query with indexed parameter = FAST!
+    // FAST FETCH: Use deployment block or last 5K blocks
     const currentBlock = await publicClient.getBlockNumber();
-    const fromBlock = currentBlock - 1000n; // Last 1000 blocks - user specific is indexed, very fast
+    const deploymentBlock = BigInt(process.env.NEXT_PUBLIC_DEPLOYMENT_BLOCK || '0');
+    const fromBlock = deploymentBlock > 0n ? deploymentBlock : currentBlock - 5000n;
 
-    console.log(`[History] Fetching events from block ${fromBlock} to ${currentBlock}`);
+    console.log(`[History] Fetching from block ${fromBlock} to ${currentBlock}`);
 
     // Single fetch - indexed user parameter makes this very fast
     const predictionEvents = await publicClient.getLogs({
