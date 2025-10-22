@@ -67,84 +67,31 @@ export async function GET(
       });
     }
 
-    // SMART FETCH: Try deployment block, fallback to smaller range
+    // FIX: Alchemy only allows 10 block range for getLogs
+    // Use last 500 blocks to avoid range errors
     const currentBlock = await publicClient.getBlockNumber();
-    const deploymentBlock = BigInt(process.env.NEXT_PUBLIC_DEPLOYMENT_BLOCK || '0');
+    const fromBlock = currentBlock - 500n;
 
-    let predictionEvents: any[] = [];
+    console.log(`[History] Fetching from block ${fromBlock} to ${currentBlock} (last 500 blocks)`);
 
-    // Calculate block range
-    const blockRange = deploymentBlock > 0n ? currentBlock - deploymentBlock : 5000n;
-    console.log(`[History] Block range: ${blockRange} blocks`);
-
-    if (blockRange > 10000n) {
-      // Too large for Alchemy Free Tier - use last 5K blocks only
-      console.log(`[History] Range too large, using last 5K blocks`);
-      const fromBlock = currentBlock - 5000n;
-
-      try {
-        predictionEvents = await publicClient.getLogs({
-          address: CONTRACTS.SEERSLEAGUE,
-          event: {
-            type: 'event',
-            name: 'PredictionsSubmitted',
-            inputs: [
-              { name: 'user', type: 'address', indexed: true },
-              { name: 'matchIds', type: 'uint256[]', indexed: false },
-              { name: 'predictionsCount', type: 'uint256', indexed: false },
-              { name: 'freeUsed', type: 'uint256', indexed: false },
-              { name: 'feePaid', type: 'uint256', indexed: false }
-            ]
-          },
-          args: { user: address },
-          fromBlock,
-          toBlock: 'latest'
-        });
-      } catch (error) {
-        console.error('[History] Error with 5K blocks:', error);
-        // Fallback: try 1K blocks
-        const smallFromBlock = currentBlock - 1000n;
-        predictionEvents = await publicClient.getLogs({
-          address: CONTRACTS.SEERSLEAGUE,
-          event: {
-            type: 'event',
-            name: 'PredictionsSubmitted',
-            inputs: [
-              { name: 'user', type: 'address', indexed: true },
-              { name: 'matchIds', type: 'uint256[]', indexed: false },
-              { name: 'predictionsCount', type: 'uint256', indexed: false },
-              { name: 'freeUsed', type: 'uint256', indexed: false },
-              { name: 'feePaid', type: 'uint256', indexed: false }
-            ]
-          },
-          args: { user: address },
-          fromBlock: smallFromBlock,
-          toBlock: 'latest'
-        });
-      }
-    } else {
-      // Use deployment block - should be within limits
-      const fromBlock = deploymentBlock > 0n ? deploymentBlock : currentBlock - 5000n;
-      console.log(`[History] Fetching from block ${fromBlock} to ${currentBlock}`);
-
-      predictionEvents = await publicClient.getLogs({
-        address: CONTRACTS.SEERSLEAGUE,
-        event: {
-          type: 'event',
-          name: 'PredictionsSubmitted',
-          inputs: [
-            { name: 'user', type: 'address', indexed: true },
-            { name: 'matchIds', type: 'uint256[]', indexed: false },
-            { name: 'predictionsCount', type: 'uint256', indexed: false },
-            { name: 'freeUsed', type: 'uint256', indexed: false },
-            { name: 'feePaid', type: 'uint256', indexed: false }
-          ]
-        },
-        args: { user: address },
-        fromBlock,
-        toBlock: 'latest'
-      });
-    }
+    // Fetch prediction events
+    const predictionEvents = await publicClient.getLogs({
+      address: CONTRACTS.SEERSLEAGUE,
+      event: {
+        type: 'event',
+        name: 'PredictionsSubmitted',
+        inputs: [
+          { name: 'user', type: 'address', indexed: true },
+          { name: 'matchIds', type: 'uint256[]', indexed: false },
+          { name: 'predictionsCount', type: 'uint256', indexed: false },
+          { name: 'freeUsed', type: 'uint256', indexed: false },
+          { name: 'feePaid', type: 'uint256', indexed: false }
+        ]
+      },
+      args: { user: address },
+      fromBlock,
+      toBlock: 'latest'
+    });
 
     console.log(`[History] Found ${predictionEvents.length} prediction events`);
 
