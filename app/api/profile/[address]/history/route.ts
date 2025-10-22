@@ -17,11 +17,12 @@ interface PredictionHistoryEntry {
 }
 
 interface MatchInfo {
-  homeTeam: string;
-  awayTeam: string;
+  id: bigint;
   startTime: bigint;
-  outcome: bigint;
-  isFinalized: boolean;
+  homeScore: bigint;
+  awayScore: bigint;
+  isRecorded: boolean;
+  exists: boolean;
 }
 
 export async function GET(
@@ -125,21 +126,55 @@ export async function GET(
           }) as unknown as MatchInfo;
 
           const predictionNum = Number(userPrediction);
-          const outcomeNum = Number(matchInfo.outcome);
+
+          // Calculate outcome from scores (1=Home Win, 2=Draw, 3=Away Win)
+          let outcomeNum: number | null = null;
+          if (matchInfo.isRecorded) {
+            const homeScore = Number(matchInfo.homeScore);
+            const awayScore = Number(matchInfo.awayScore);
+            if (homeScore > awayScore) {
+              outcomeNum = 1; // Home win
+            } else if (homeScore === awayScore) {
+              outcomeNum = 2; // Draw
+            } else {
+              outcomeNum = 3; // Away win
+            }
+          }
 
           // Determine correctness
           let isCorrect: boolean | null = null;
-          if (matchInfo.isFinalized && predictionNum > 0) {
+          if (matchInfo.isRecorded && predictionNum > 0 && outcomeNum !== null) {
             isCorrect = predictionNum === outcomeNum;
+          }
+
+          // Try to get team names from Football-data.org (matchId is the API match ID)
+          let homeTeam = 'Home Team';
+          let awayTeam = 'Away Team';
+          try {
+            const footballDataResponse = await fetch(
+              `https://api.football-data.org/v4/matches/${matchId}`,
+              {
+                headers: { 'X-Auth-Token': process.env.FOOTBALL_DATA_API_KEY || '' },
+                next: { revalidate: 3600 }
+              }
+            );
+            if (footballDataResponse.ok) {
+              const footballData = await footballDataResponse.json();
+              homeTeam = footballData.match?.homeTeam?.name || footballData.homeTeam?.name || homeTeam;
+              awayTeam = footballData.match?.awayTeam?.name || footballData.awayTeam?.name || awayTeam;
+            }
+          } catch (apiError) {
+            // Fallback to generic names if API fails
+            console.warn(`Could not fetch team names for match ${matchId}`);
           }
 
           history.push({
             matchId: Number(matchId),
-            matchName: `${matchInfo.homeTeam} vs ${matchInfo.awayTeam}`,
-            homeTeam: matchInfo.homeTeam,
-            awayTeam: matchInfo.awayTeam,
+            matchName: `${homeTeam} vs ${awayTeam}`,
+            homeTeam,
+            awayTeam,
             userPrediction: predictionNum,
-            actualResult: matchInfo.isFinalized ? outcomeNum : null,
+            actualResult: outcomeNum,
             isCorrect: isCorrect,
             timestamp: Number(block.timestamp)
           });
