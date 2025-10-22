@@ -66,9 +66,10 @@ export async function GET(
       });
     }
 
-    // ALCHEMY FREE TIER FIX: Scan last 10K blocks in chunks of 10 blocks
+    // ALCHEMY FREE TIER FIX: For user history, scan only last 2K blocks (~4 hours)
+    // User-specific events are much fewer, no need to scan 10K blocks
     const currentBlock = await publicClient.getBlockNumber();
-    const totalBlocks = 10000n;
+    const totalBlocks = 2000n; // Reduced from 10K - much faster for single user
     const chunkSize = 10n; // Alchemy Free Tier limit: 10 blocks per request
     const fromBlock = currentBlock - totalBlocks;
 
@@ -157,11 +158,12 @@ export async function GET(
       if (blocks[idx]) blockMap.set(blockNumber, blocks[idx]);
     });
 
-    // Step 3: Fetch all match data in parallel
+    // Step 3: Fetch all match data in parallel (contract + football-data API)
+    const FOOTBALL_DATA_API_KEY = process.env.FOOTBALL_DATA_API_KEY || '';
     const matchDataPromises = matchesToFetch.map(async ({ matchId, blockNumber }) => {
       try {
-        // Parallel fetch for each match
-        const [userPredictionResult, matchInfoResult] = await Promise.all([
+        // Parallel fetch for each match: contract data + API data
+        const [userPredictionResult, matchInfoResult, apiData] = await Promise.all([
           publicClient.readContract({
             address: CONTRACTS.SEERSLEAGUE,
             abi: SEERSLEAGUE_ABI,
@@ -173,7 +175,12 @@ export async function GET(
             abi: SEERSLEAGUE_ABI,
             functionName: 'getMatch',
             args: [matchId]
-          })
+          }),
+          // Fetch team names from football-data API
+          fetch(`https://api.football-data.org/v4/matches/${matchId}`, {
+            headers: { 'X-Auth-Token': FOOTBALL_DATA_API_KEY },
+            next: { revalidate: 3600 } // Cache 1 hour
+          }).then(r => r.ok ? r.json() : null).catch(() => null)
         ]);
 
         const userPrediction = userPredictionResult as unknown as bigint;
@@ -204,11 +211,16 @@ export async function GET(
         const block = blockMap.get(blockNumber);
         const timestamp = block ? Number(block.timestamp) : Math.floor(Date.now() / 1000);
 
+        // Extract team names from API (if available)
+        const homeTeam = apiData?.homeTeam?.name || apiData?.homeTeam?.shortName || `Team ${matchId}A`;
+        const awayTeam = apiData?.awayTeam?.name || apiData?.awayTeam?.shortName || `Team ${matchId}B`;
+        const matchName = apiData ? `${homeTeam} vs ${awayTeam}` : `Match #${matchId}`;
+
         return {
           matchId: Number(matchId),
-          matchName: `Match #${matchId}`,
-          homeTeam: `Team ${matchId}A`,
-          awayTeam: `Team ${matchId}B`,
+          matchName,
+          homeTeam,
+          awayTeam,
           userPrediction: predictionNum,
           actualResult: outcomeNum,
           isCorrect,
