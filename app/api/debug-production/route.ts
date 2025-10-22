@@ -68,16 +68,16 @@ export async function GET() {
 
   // 4. USDC Contract Check
   try {
-    const usdcName = await publicClient.readContract({
+    // Test USDC contract by checking balance of zero address
+    const balance = await publicClient.readContract({
       address: CONTRACTS.USDC,
       abi: USDC_ABI,
-      functionName: 'name',
-      args: []
+      functionName: 'balanceOf',
+      args: ['0x0000000000000000000000000000000000000000' as `0x${string}`]
     });
     results.checks.usdcContract = {
       status: 'success',
       contractAddress: CONTRACTS.USDC,
-      tokenName: usdcName,
       message: 'USDC contract accessible'
     };
   } catch (error) {
