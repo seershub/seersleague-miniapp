@@ -1,12 +1,11 @@
 import { NextResponse } from 'next/server';
-import { createPublicClient, http } from 'viem';
-import { base } from 'viem/chains';
+import { publicClient } from '@/lib/viem-config';
 import { CONTRACTS, SEERSLEAGUE_ABI } from '@/lib/contract-interactions';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
+export const maxDuration = 300; // Vercel Pro max
 
-const RPC_URL = process.env.NEXT_PUBLIC_BASE_RPC || 'https://mainnet.base.org';
 const FOOTBALL_DATA_API_KEY = process.env.FOOTBALL_DATA_API_KEY || '';
 const FOOTBALL_DATA_BASE = 'https://api.football-data.org/v4';
 
@@ -44,11 +43,6 @@ interface Match {
  * Get registered matches from blockchain that haven't started yet
  */
 async function getUpcomingRegisteredMatches(): Promise<{ matchId: string; startTime: number }[]> {
-  const publicClient = createPublicClient({
-    chain: base,
-    transport: http(RPC_URL)
-  });
-
   const currentBlock = await publicClient.getBlockNumber();
   const deploymentBlock = BigInt(process.env.NEXT_PUBLIC_DEPLOYMENT_BLOCK || '0');
 

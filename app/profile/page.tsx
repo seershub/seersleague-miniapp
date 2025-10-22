@@ -364,13 +364,14 @@ export default function ProfilePage() {
                                 ? 'bg-blue-500/20 border-2 border-blue-500/50 shadow-lg shadow-blue-500/20'
                                 : 'bg-gray-800/30 border border-gray-700/30'
                             }`}>
-                              <div className={`font-bold ${
+                              <div className={`font-bold flex items-center justify-center gap-2 ${
                                 userPickedHome ? 'text-blue-400 text-lg' : 'text-gray-300'
                               }`}>
-                                {entry.homeTeam}
+                                {userPickedHome && <CheckCircle className="w-5 h-5 text-blue-400 flex-shrink-0" />}
+                                <span>{entry.homeTeam}</span>
                               </div>
                               {userPickedHome && (
-                                <div className="text-xs text-blue-400 mt-1">✓ Seçiminiz</div>
+                                <div className="text-xs text-blue-400 mt-1">Seçiminiz</div>
                               )}
                             </div>
 
@@ -378,7 +379,8 @@ export default function ProfilePage() {
                             <div className="flex flex-col items-center gap-1">
                               <span className="text-xs text-gray-500">VS</span>
                               {userPickedDraw && (
-                                <div className="px-3 py-1 rounded-full bg-yellow-500/20 border-2 border-yellow-500/50 text-yellow-400 text-xs font-semibold shadow-lg shadow-yellow-500/20">
+                                <div className="px-3 py-1 rounded-full bg-yellow-500/20 border-2 border-yellow-500/50 text-yellow-400 text-xs font-semibold shadow-lg shadow-yellow-500/20 flex items-center gap-1">
+                                  <CheckCircle className="w-4 h-4" />
                                   Beraberlik
                                 </div>
                               )}
@@ -390,13 +392,14 @@ export default function ProfilePage() {
                                 ? 'bg-purple-500/20 border-2 border-purple-500/50 shadow-lg shadow-purple-500/20'
                                 : 'bg-gray-800/30 border border-gray-700/30'
                             }`}>
-                              <div className={`font-bold ${
+                              <div className={`font-bold flex items-center justify-center gap-2 ${
                                 userPickedAway ? 'text-purple-400 text-lg' : 'text-gray-300'
                               }`}>
-                                {entry.awayTeam}
+                                {userPickedAway && <CheckCircle className="w-5 h-5 text-purple-400 flex-shrink-0" />}
+                                <span>{entry.awayTeam}</span>
                               </div>
                               {userPickedAway && (
-                                <div className="text-xs text-purple-400 mt-1">✓ Seçiminiz</div>
+                                <div className="text-xs text-purple-400 mt-1">Seçiminiz</div>
                               )}
                             </div>
                           </div>
