@@ -8,8 +8,7 @@ import { CONTRACTS, SEERSLEAGUE_ABI, PREDICTION_FEE, UserStats, formatUSDC, USDC
 import { useMiniKit } from './MiniKitProvider';
 import { encodeFunctionData, parseUnits } from 'viem';
 import { publicClient } from '@/lib/viem-config';
-import { useAccount, useReadContract, useSendCalls } from 'wagmi';
-import { erc20Abi } from 'viem';
+// Removed wagmi imports - using Farcaster SDK only
 import toast from 'react-hot-toast';
 
 interface PredictionFormProps {
@@ -21,17 +20,34 @@ export function PredictionForm({ matches }: PredictionFormProps) {
   const [address, setAddress] = useState<string | null>(null);
   const [isConnected, setIsConnected] = useState(false);
   
-  // Wagmi hooks for EIP-5792 batch transactions
-  const { address: wagmiAddress } = useAccount();
-  const { sendCalls } = useSendCalls();
+  // State for USDC allowance
+  const [currentAllowance, setCurrentAllowance] = useState<bigint | null>(null);
   
-  // Check USDC allowance for batch transactions
-  const { data: currentAllowance, refetch: refetchAllowance } = useReadContract({
-    address: CONTRACTS.USDC,
-    abi: erc20Abi,
-    functionName: 'allowance',
-    args: wagmiAddress ? [wagmiAddress, CONTRACTS.SEERSLEAGUE] : undefined,
-  });
+  // Fetch USDC allowance
+  useEffect(() => {
+    const fetchAllowance = async () => {
+      if (!address) {
+        setCurrentAllowance(null);
+        return;
+      }
+      
+      try {
+        const allowance = await publicClient.readContract({
+          address: CONTRACTS.USDC,
+          abi: USDC_ABI,
+          functionName: 'allowance',
+          args: [address as `0x${string}`, CONTRACTS.SEERSLEAGUE]
+        }) as bigint;
+        setCurrentAllowance(allowance);
+      } catch (error) {
+        console.error('Error fetching allowance:', error);
+        setCurrentAllowance(BigInt(0));
+      }
+    };
+    
+    fetchAllowance();
+  }, [address]);
+  
   const [selectedMatches, setSelectedMatches] = useState<number[]>([]);
   const [predictions, setPredictions] = useState<{[matchId: number]: 1 | 2 | 3}>({});
   const [showPaymentModal, setShowPaymentModal] = useState(false);
@@ -266,39 +282,60 @@ export function PredictionForm({ matches }: PredictionFormProps) {
     }
   };
 
-  // EIP-5792 Batch Transaction Functions
+  // Batch Transaction Functions using Farcaster SDK
   const submitBatchPredictions = async (matchIds: bigint[], outcomes: (1 | 2 | 3)[], totalFee: bigint) => {
-    if (!wagmiAddress || !currentAllowance) return;
+    if (!address || !sdk) return;
 
     try {
-      const transactions = [];
-
       // 1. Check if approval is needed
-      if (currentAllowance < totalFee) {
-        console.log('Adding USDC approval to batch transaction');
-        transactions.push({
-          to: CONTRACTS.USDC,
-          abi: erc20Abi,
+      if (currentAllowance && currentAllowance < totalFee) {
+        console.log('Approving USDC first...');
+        const approveData = encodeFunctionData({
+          abi: USDC_ABI,
           functionName: 'approve',
-          args: [CONTRACTS.SEERSLEAGUE, totalFee],
+          args: [CONTRACTS.SEERSLEAGUE, totalFee]
         });
+        
+        await sdk.wallet.ethProvider.request({
+          method: 'eth_sendTransaction',
+          params: [{
+            to: CONTRACTS.USDC,
+            data: approveData,
+            from: address,
+            value: '0x0'
+          }]
+        });
+        
+        // Wait a moment for approval to be processed
+        await new Promise(resolve => setTimeout(resolve, 3000));
       }
 
-      // 2. Add prediction submission
-      transactions.push({
-        to: CONTRACTS.SEERSLEAGUE,
+      // 2. Submit predictions
+      console.log('Submitting predictions...');
+      const predictData = encodeFunctionData({
         abi: SEERSLEAGUE_ABI,
         functionName: 'submitPredictions',
-        args: [matchIds, outcomes],
+        args: [matchIds, outcomes]
       });
-
-      console.log(`Sending ${transactions.length} calls in one batch...`);
-      await sendCalls({
-        calls: transactions,
+      
+      await sdk.wallet.ethProvider.request({
+        method: 'eth_sendTransaction',
+        params: [{
+          to: CONTRACTS.SEERSLEAGUE,
+          data: predictData,
+          from: address,
+          value: '0x0'
+        }]
       });
 
       // Refresh allowance after successful transaction
-      refetchAllowance();
+      const newAllowance = await publicClient.readContract({
+        address: CONTRACTS.USDC,
+        abi: USDC_ABI,
+        functionName: 'allowance',
+        args: [address as `0x${string}`, CONTRACTS.SEERSLEAGUE]
+      }) as bigint;
+      setCurrentAllowance(newAllowance);
 
     } catch (error) {
       console.error('Batch transaction failed:', error);
@@ -307,15 +344,24 @@ export function PredictionForm({ matches }: PredictionFormProps) {
   };
 
   const submitFreePredictions = async (matchIds: bigint[], outcomes: (1 | 2 | 3)[]) => {
+    if (!address || !sdk) return;
+    
     try {
       console.log('Submitting free predictions (no approval needed)');
-      await sendCalls({
-        calls: [{
+      const predictData = encodeFunctionData({
+        abi: SEERSLEAGUE_ABI,
+        functionName: 'submitPredictions',
+        args: [matchIds, outcomes]
+      });
+      
+      await sdk.wallet.ethProvider.request({
+        method: 'eth_sendTransaction',
+        params: [{
           to: CONTRACTS.SEERSLEAGUE,
-          abi: SEERSLEAGUE_ABI,
-          functionName: 'submitPredictions',
-          args: [matchIds, outcomes],
-        }],
+          data: predictData,
+          from: address,
+          value: '0x0'
+        }]
       });
     } catch (error) {
       console.error('Free prediction submission failed:', error);
