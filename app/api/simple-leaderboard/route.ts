@@ -24,68 +24,32 @@ async function generateLeaderboardFromContract(): Promise<SimpleLeaderboardEntry
   console.log('[Simple Leaderboard] Generating from contract...');
 
   const currentBlock = await publicClient.getBlockNumber();
+  const deploymentBlock = BigInt(process.env.NEXT_PUBLIC_DEPLOYMENT_BLOCK || '0');
 
-  // ALCHEMY FREE TIER FIX: Scan last 10K blocks in chunks of 10 blocks
-  const totalBlocks = 10000n;
-  const chunkSize = 10n; // Alchemy Free Tier limit: 10 blocks per request
-  const fromBlock = currentBlock - totalBlocks;
+  // ALCHEMY PAYG: No block limit! Fetch all events since deployment
+  const fromBlock = deploymentBlock > 0n ? deploymentBlock : currentBlock - 10000n;
 
   console.log(`[Simple Leaderboard] Scanning blocks ${fromBlock} to ${currentBlock}`);
-  console.log(`[Simple Leaderboard] Using chunked fetching: ${totalBlocks / chunkSize} chunks of ${chunkSize} blocks`);
 
-  // Fetch events in chunks to stay within Alchemy Free Tier limit
-  const allPredictionEvents: any[] = [];
-  const batchSize = 10; // Process 10 chunks in parallel
-  const chunks: Array<{ start: bigint; end: bigint }> = [];
+  // Single fetch - Alchemy PAYG has no block range limit
+  const predictionEvents = await publicClient.getLogs({
+    address: CONTRACTS.SEERSLEAGUE,
+    event: {
+      type: 'event',
+      name: 'PredictionsSubmitted',
+      inputs: [
+        { name: 'user', type: 'address', indexed: true },
+        { name: 'matchIds', type: 'uint256[]', indexed: false },
+        { name: 'predictionsCount', type: 'uint256', indexed: false },
+        { name: 'freeUsed', type: 'uint256', indexed: false },
+        { name: 'feePaid', type: 'uint256', indexed: false }
+      ]
+    },
+    fromBlock,
+    toBlock: 'latest'
+  });
 
-  // Create all chunk ranges
-  for (let start = fromBlock; start < currentBlock; start += chunkSize) {
-    const end = start + chunkSize - 1n > currentBlock ? currentBlock : start + chunkSize - 1n;
-    chunks.push({ start, end });
-  }
-
-  console.log(`[Simple Leaderboard] Processing ${chunks.length} chunks in batches of ${batchSize}...`);
-
-  // Process chunks in batches
-  for (let i = 0; i < chunks.length; i += batchSize) {
-    const batch = chunks.slice(i, i + batchSize);
-
-    const batchPromises = batch.map(async ({ start, end }) => {
-      try {
-        return await publicClient.getLogs({
-          address: CONTRACTS.SEERSLEAGUE,
-          event: {
-            type: 'event',
-            name: 'PredictionsSubmitted',
-            inputs: [
-              { name: 'user', type: 'address', indexed: true },
-              { name: 'matchIds', type: 'uint256[]', indexed: false },
-              { name: 'predictionsCount', type: 'uint256', indexed: false },
-              { name: 'freeUsed', type: 'uint256', indexed: false },
-              { name: 'feePaid', type: 'uint256', indexed: false }
-            ]
-          },
-          fromBlock: start,
-          toBlock: end
-        });
-      } catch (error) {
-        console.error(`[Simple Leaderboard] Error fetching chunk ${start}-${end}:`, error);
-        return [];
-      }
-    });
-
-    const batchResults = await Promise.all(batchPromises);
-    batchResults.forEach(events => allPredictionEvents.push(...events));
-
-    // Log progress every 20 batches
-    if ((i / batchSize) % 20 === 0) {
-      const processedSoFar = Math.min(i + batchSize, chunks.length);
-      console.log(`[Simple Leaderboard] Progress: ${processedSoFar}/${chunks.length} chunks`);
-    }
-  }
-
-  const predictionEvents = allPredictionEvents;
-  console.log(`[Simple Leaderboard] Found ${predictionEvents.length} prediction events from ${chunks.length} chunks`);
+  console.log(`[Simple Leaderboard] Found ${predictionEvents.length} prediction events`);
 
   // Extract unique users
   const uniqueUsers = new Set<string>();

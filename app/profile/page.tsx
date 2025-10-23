@@ -331,6 +331,19 @@ export default function ProfilePage() {
                       const userPickedDraw = entry.userPrediction === 2;
                       const userPickedAway = entry.userPrediction === 3;
 
+                      // DEBUG LOG - Check prediction values
+                      if (index === 0) {
+                        console.log('[HISTORY DEBUG] First entry:', {
+                          matchId: entry.matchId,
+                          userPrediction: entry.userPrediction,
+                          userPickedHome,
+                          userPickedDraw,
+                          userPickedAway,
+                          homeTeam: entry.homeTeam,
+                          awayTeam: entry.awayTeam
+                        });
+                      }
+
                       return (
                         <div
                           key={`${entry.matchId}-${index}`}
@@ -367,11 +380,16 @@ export default function ProfilePage() {
                               <div className={`font-bold flex items-center justify-center gap-2 ${
                                 userPickedHome ? 'text-blue-400 text-lg' : 'text-gray-300'
                               }`}>
-                                {userPickedHome && <CheckCircle className="w-5 h-5 text-blue-400 flex-shrink-0" />}
+                                {userPickedHome && (
+                                  <>
+                                    <CheckCircle className="w-5 h-5 text-blue-400 flex-shrink-0" />
+                                    <span className="text-blue-400">✓</span>
+                                  </>
+                                )}
                                 <span>{entry.homeTeam}</span>
                               </div>
                               {userPickedHome && (
-                                <div className="text-xs text-blue-400 mt-1">Seçiminiz</div>
+                                <div className="text-xs text-blue-400 mt-1 font-bold">✓ SEÇİMİNİZ</div>
                               )}
                             </div>
 
@@ -381,7 +399,13 @@ export default function ProfilePage() {
                               {userPickedDraw && (
                                 <div className="px-3 py-1 rounded-full bg-yellow-500/20 border-2 border-yellow-500/50 text-yellow-400 text-xs font-semibold shadow-lg shadow-yellow-500/20 flex items-center gap-1">
                                   <CheckCircle className="w-4 h-4" />
-                                  Beraberlik
+                                  <span>✓</span>
+                                  <span>Beraberlik</span>
+                                </div>
+                              )}
+                              {!userPickedHome && !userPickedDraw && !userPickedAway && (
+                                <div className="px-3 py-1 rounded-full bg-red-500/20 text-red-400 text-xs">
+                                  ⚠️ userPrediction: {entry.userPrediction}
                                 </div>
                               )}
                             </div>
@@ -395,11 +419,16 @@ export default function ProfilePage() {
                               <div className={`font-bold flex items-center justify-center gap-2 ${
                                 userPickedAway ? 'text-purple-400 text-lg' : 'text-gray-300'
                               }`}>
-                                {userPickedAway && <CheckCircle className="w-5 h-5 text-purple-400 flex-shrink-0" />}
+                                {userPickedAway && (
+                                  <>
+                                    <CheckCircle className="w-5 h-5 text-purple-400 flex-shrink-0" />
+                                    <span className="text-purple-400">✓</span>
+                                  </>
+                                )}
                                 <span>{entry.awayTeam}</span>
                               </div>
                               {userPickedAway && (
-                                <div className="text-xs text-purple-400 mt-1">Seçiminiz</div>
+                                <div className="text-xs text-purple-400 mt-1 font-bold">✓ SEÇİMİNİZ</div>
                               )}
                             </div>
                           </div>

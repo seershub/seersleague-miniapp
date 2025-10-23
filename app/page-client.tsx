@@ -69,7 +69,7 @@ export default function Home({ initialMatches = [] }: HomeProps) {
           setRefreshing(true);
         }
         console.log('Fetching matches...');
-        const response = await fetch(`/api/matches?t=${Date.now()}`, { cache: 'no-store' });
+        const response = await fetch(`/api/matches?limit=50&t=${Date.now()}`, { cache: 'no-store' });
         if (!response.ok) {
           throw new Error(`HTTP error! status: ${response.status}`);
         }

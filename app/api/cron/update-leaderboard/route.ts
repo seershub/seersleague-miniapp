@@ -33,54 +33,30 @@ export async function GET(request: Request) {
 
     console.log('Fetching contract events...');
 
-    // ALCHEMY FREE TIER FIX: Fetch in chunks of 10 blocks
+    // ALCHEMY PAYG: No block limit! Fetch all events since deployment
     const fromBlock = deploymentBlock > 0n ? deploymentBlock : currentBlock - 10000n;
-    const chunkSize = 10n;
-    const allPredictionEvents: any[] = [];
-    const chunks: Array<{ start: bigint; end: bigint }> = [];
 
-    // Create chunk ranges
-    for (let start = fromBlock; start < currentBlock; start += chunkSize) {
-      const end = start + chunkSize - 1n > currentBlock ? currentBlock : start + chunkSize - 1n;
-      chunks.push({ start, end });
-    }
+    console.log(`[Cron] Fetching from block ${fromBlock} to ${currentBlock}`);
 
-    console.log(`[Cron] Processing ${chunks.length} chunks in batches...`);
+    // Single fetch - Alchemy PAYG has no block range limit
+    const predictionEvents = await publicClient.getLogs({
+      address: CONTRACTS.SEERSLEAGUE,
+      event: {
+        type: 'event',
+        name: 'PredictionsSubmitted',
+        inputs: [
+          { name: 'user', type: 'address', indexed: true },
+          { name: 'matchIds', type: 'uint256[]', indexed: false },
+          { name: 'predictionsCount', type: 'uint256', indexed: false },
+          { name: 'freeUsed', type: 'uint256', indexed: false },
+          { name: 'feePaid', type: 'uint256', indexed: false }
+        ]
+      },
+      fromBlock,
+      toBlock: 'latest'
+    });
 
-    // Fetch in parallel batches
-    const batchSize = 10;
-    for (let i = 0; i < chunks.length; i += batchSize) {
-      const batch = chunks.slice(i, i + batchSize);
-      const batchPromises = batch.map(async ({ start, end }) => {
-        try {
-          return await publicClient.getLogs({
-            address: CONTRACTS.SEERSLEAGUE,
-            event: {
-              type: 'event',
-              name: 'PredictionsSubmitted',
-              inputs: [
-                { name: 'user', type: 'address', indexed: true },
-                { name: 'matchIds', type: 'uint256[]', indexed: false },
-                { name: 'predictionsCount', type: 'uint256', indexed: false },
-                { name: 'freeUsed', type: 'uint256', indexed: false },
-                { name: 'feePaid', type: 'uint256', indexed: false }
-              ]
-            },
-            fromBlock: start,
-            toBlock: end
-          });
-        } catch (error) {
-          console.error(`[Cron] Error fetching chunk ${start}-${end}:`, error);
-          return [];
-        }
-      });
-
-      const batchResults = await Promise.all(batchPromises);
-      batchResults.forEach(events => allPredictionEvents.push(...events));
-    }
-
-    const predictionEvents = allPredictionEvents;
-    console.log(`Found ${predictionEvents.length} prediction events from ${chunks.length} chunks`);
+    console.log(`Found ${predictionEvents.length} prediction events`);
 
     // Extract unique user addresses
     const uniqueUsers = new Set<string>();

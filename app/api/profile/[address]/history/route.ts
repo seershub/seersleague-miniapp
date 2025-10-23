@@ -163,10 +163,18 @@ export async function GET(
           })
         ]);
 
-        const userPrediction = userPredictionResult as unknown as bigint;
+        // CRITICAL FIX: getUserPrediction returns a STRUCT, not a number!
+        // struct Prediction { uint256 matchId; uint8 outcome; uint256 timestamp; }
+        const userPrediction = userPredictionResult as unknown as {
+          matchId: bigint;
+          outcome: bigint;
+          timestamp: bigint;
+        };
         const matchInfo = matchInfoResult as unknown as MatchInfo;
 
-        const predictionNum = Number(userPrediction);
+        const predictionNum = Number(userPrediction.outcome); // Get outcome from struct!
+
+        console.log(`[History] Match ${matchId} - userPrediction.outcome: ${predictionNum}`);
 
         // Calculate outcome from scores (1=Home Win, 2=Draw, 3=Away Win)
         let outcomeNum: number | null = null;
@@ -213,18 +221,51 @@ export async function GET(
       } catch (error) {
         console.error(`[History] Error fetching match ${matchId}:`, error);
 
-        const block = blockMap.get(blockNumber);
-        return {
-          matchId: Number(matchId),
-          matchName: `Match #${matchId}`,
-          homeTeam: 'Unknown',
-          awayTeam: 'Unknown',
-          league: 'Football',
-          userPrediction: 0,
-          actualResult: null,
-          isCorrect: null,
-          timestamp: block ? Number(block.timestamp) : Math.floor(Date.now() / 1000)
-        };
+        // CRITICAL FIX: Even on error, fetch userPrediction from contract!
+        // Otherwise checkmarks won't show (userPrediction = 0)
+        try {
+          const userPredictionResult = await publicClient.readContract({
+            address: CONTRACTS.SEERSLEAGUE,
+            abi: SEERSLEAGUE_ABI,
+            functionName: 'getUserPrediction',
+            args: [address, matchId]
+          });
+          // CRITICAL FIX: getUserPrediction returns a STRUCT!
+          const userPrediction = userPredictionResult as unknown as {
+            matchId: bigint;
+            outcome: bigint;
+            timestamp: bigint;
+          };
+          const predictionNum = Number(userPrediction.outcome);
+
+          const block = blockMap.get(blockNumber);
+          return {
+            matchId: Number(matchId),
+            matchName: `Match #${matchId}`,
+            homeTeam: 'Unknown',
+            awayTeam: 'Unknown',
+            league: 'Football',
+            userPrediction: predictionNum, // Use real prediction!
+            actualResult: null,
+            isCorrect: null,
+            timestamp: block ? Number(block.timestamp) : Math.floor(Date.now() / 1000)
+          };
+        } catch (innerError) {
+          console.error(`[History] Failed to fetch userPrediction for match ${matchId}:`, innerError);
+
+          const block = blockMap.get(blockNumber);
+          return {
+            matchId: Number(matchId),
+            matchName: `Match #${matchId}`,
+            homeTeam: 'Unknown',
+            awayTeam: 'Unknown',
+            league: 'Football',
+            userPrediction: 0, // Last resort fallback
+            actualResult: null,
+            isCorrect: null,
+            timestamp: block ? Number(block.timestamp) : Math.floor(Date.now() / 1000)
+          };
+        }
       }
     });
 
