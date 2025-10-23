@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { WalletConnect } from '@/components/WalletConnect';
 import { PredictionForm } from '@/components/PredictionForm';
+import { SearchBox } from '@/components/SearchBox';
 import { useMiniKit } from '@/components/MiniKitProvider';
 import { sdk } from '@farcaster/miniapp-sdk';
 import { Match } from '@/lib/matches';
@@ -14,6 +15,7 @@ interface HomeProps {
 
 export default function Home({ initialMatches = [] }: HomeProps) {
   const [matches, setMatches] = useState<Match[]>(initialMatches);
+  const [filteredMatches, setFilteredMatches] = useState<Match[]>(initialMatches);
   const [loading, setLoading] = useState(initialMatches.length === 0);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -80,6 +82,7 @@ export default function Home({ initialMatches = [] }: HomeProps) {
         const matchesArray: Match[] = data.matches || [];
         console.log('Matches received:', matchesArray);
         setMatches(matchesArray);
+        setFilteredMatches(matchesArray);
         setError(null);
       } catch (err) {
         console.error('Error fetching matches:', err);
@@ -128,7 +131,15 @@ export default function Home({ initialMatches = [] }: HomeProps) {
             </div>
           </section>
 
-        {/* MATCHES SECTION */}
+          {/* SEARCH SECTION */}
+          <section className="mb-8">
+            <SearchBox 
+              matches={matches} 
+              onSearchResults={setFilteredMatches}
+            />
+          </section>
+
+          {/* MATCHES SECTION */}
         <section className="mb-8">
           <div className="text-center mb-8">
               <div className="inline-flex items-center gap-2 glass-effect px-4 py-2 rounded-full mb-6 border border-yellow-400/20">
@@ -154,17 +165,17 @@ export default function Home({ initialMatches = [] }: HomeProps) {
             </div>
           ) : (
             <div className="grid gap-4 sm:gap-6 max-w-4xl mx-auto">
-              {(showAll ? matches : matches.slice(0, 5)).map((match) => (
+              {(showAll ? filteredMatches : filteredMatches.slice(0, 5)).map((match) => (
                 <PredictionForm key={match.id} matches={[match]} />
               ))}
               
-              {matches.length > 5 && (
+              {filteredMatches.length > 5 && (
                 <div className="text-center mt-8">
                   <button
                     onClick={() => setShowAll(!showAll)}
                     className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-xl font-semibold transition-colors"
                   >
-                    {showAll ? 'Show Less' : `Show All ${matches.length} Matches`}
+                    {showAll ? 'Show Less' : `Show All ${filteredMatches.length} Matches`}
                   </button>
                 </div>
               )}
@@ -180,13 +191,13 @@ export default function Home({ initialMatches = [] }: HomeProps) {
             </div>
           )}
           
-          {!loading && !error && matches.length === 0 && (
+          {!loading && !error && filteredMatches.length === 0 && (
             <div className="text-center py-16">
               <div className="w-20 h-20 bg-gray-800 rounded-full flex items-center justify-center mx-auto mb-4">
                 <span className="text-4xl">⚽</span>
               </div>
-              <p className="text-gray-400 text-lg">No matches available today</p>
-              <p className="text-gray-500 text-sm mt-2">Check back later for new matches</p>
+              <p className="text-gray-400 text-lg">No matches found</p>
+              <p className="text-gray-500 text-sm mt-2">Try adjusting your search or check back later</p>
             </div>
           )}
         </section>
