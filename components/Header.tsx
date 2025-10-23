@@ -5,8 +5,6 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { useMiniKit } from '@/components/MiniKitProvider';
 import { sdk } from '@farcaster/miniapp-sdk';
-import { useAccount, useBalance } from 'wagmi';
-import { formatUnits } from 'viem';
 
 // Base Mainnet USDC Contract Address
 const USDC_CONTRACT_ADDRESS = '0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913';
@@ -14,18 +12,51 @@ const USDC_CONTRACT_ADDRESS = '0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913';
 export default function Header() {
   const { isReady, address, balance } = useMiniKit();
   const [mounted, setMounted] = useState(false);
-  
-  // Wagmi hooks for real USDC balance
-  const { address: wagmiAddress } = useAccount();
-  const { data: usdcBalance, isLoading } = useBalance({
-    address: wagmiAddress,
-    token: USDC_CONTRACT_ADDRESS,
-    watch: true, // Auto-update when balance changes
-  });
+  const [usdcBalance, setUsdcBalance] = useState<string>('0.00');
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     setMounted(true);
   }, []);
+
+  // Fetch USDC balance using Farcaster SDK
+  useEffect(() => {
+    const fetchUSDCBalance = async () => {
+      if (!isReady || !address) {
+        setIsLoading(false);
+        return;
+      }
+
+      try {
+        setIsLoading(true);
+        const wallet = await sdk.wallet;
+        if (wallet?.ethProvider) {
+          // Get USDC balance using eth_call
+          const balance = await wallet.ethProvider.request({
+            method: 'eth_call',
+            params: [
+              {
+                to: USDC_CONTRACT_ADDRESS,
+                data: `0x70a08231000000000000000000000000${address.slice(2)}` // balanceOf(address)
+              },
+              'latest'
+            ]
+          });
+          
+          // Convert from wei to USDC (6 decimals)
+          const balanceInUSDC = parseInt(balance, 16) / Math.pow(10, 6);
+          setUsdcBalance(balanceInUSDC.toFixed(2));
+        }
+      } catch (error) {
+        console.log('Error fetching USDC balance:', error);
+        setUsdcBalance('0.00');
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchUSDCBalance();
+  }, [isReady, address]);
 
   if (!mounted) {
     return null;
@@ -84,10 +115,7 @@ export default function Header() {
 
             {!isLoading && (
               <span className="text-lg font-medium text-white">
-                {usdcBalance
-                  ? `$${parseFloat(formatUnits(usdcBalance.value, 6)).toFixed(2)}`
-                  : '$0.00'
-                }
+                ${usdcBalance}
               </span>
             )}
 
