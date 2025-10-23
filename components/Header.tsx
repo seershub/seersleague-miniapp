@@ -68,8 +68,11 @@ export default function Header() {
                     // Farcaster SDK ile wallet açma
                     const wallet = await sdk.wallet;
                     if (wallet?.ethProvider) {
-                      // Base wallet'ı aç
-                      await wallet.ethProvider.request({ method: 'wallet_requestPermissions' });
+                      // Base wallet'ı aç - eth_accounts izni iste
+                      await wallet.ethProvider.request({ 
+                        method: 'wallet_requestPermissions',
+                        params: [{ eth_accounts: {} }]
+                      });
                     }
                   } catch (error) {
                     console.log('Wallet access error:', error);
