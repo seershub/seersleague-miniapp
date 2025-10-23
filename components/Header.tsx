@@ -30,7 +30,7 @@ export default function Header() {
   };
 
   return (
-    <header className="sticky top-0 z-50 w-full bg-black/80 backdrop-blur-md border-b border-white/10">
+    <header className="sticky top-0 z-50 w-full bg-gray-950/70 backdrop-blur-md border-b border-white/10">
       <div className="max-w-4xl mx-auto px-4 py-4">
         <div className="flex justify-between items-center">
           
@@ -39,10 +39,10 @@ export default function Header() {
             <Image
               src="/logomuz.png"
               alt="SeersLeague"
-              width={120}
-              height={30}
+              width={200}
+              height={50}
               priority
-              className="h-10 w-auto transition-all duration-300 hover:scale-105"
+              className="h-9 w-auto transition-all duration-300 hover:scale-105"
               style={{
                 filter: 'drop-shadow(0 0 8px rgba(252, 211, 77, 0.3))'
               }}
@@ -54,17 +54,38 @@ export default function Header() {
             {/* Balance */}
             {isReady && balance && (
               <div className="flex items-center gap-2">
-                <span className="text-green-400 font-semibold text-sm">
+                <span className="text-white font-semibold text-sm">
                   {formatBalance(balance)}
                 </span>
               </div>
             )}
             
-            {/* Wallet Address */}
-            {isReady && address && (
-              <div className="flex items-center gap-2 rounded-full bg-gray-800 px-3 py-1.5 text-sm font-medium text-white">
-                <span>{formatAddress(address)}</span>
-              </div>
+            {/* Add Funds Button */}
+            {isReady && (
+              <button 
+                onClick={() => {
+                  // Base yönlendirmesi için Farcaster SDK kullan
+                  if (typeof window !== 'undefined' && (window as any).base) {
+                    (window as any).base.openWallet();
+                  } else {
+                    // Fallback: Base web sitesine yönlendir
+                    window.open('https://base.org', '_blank');
+                  }
+                }}
+                className="
+                  rounded-full 
+                  bg-blue-600 
+                  px-3 py-1.5 
+                  text-xs 
+                  font-medium 
+                  text-white 
+                  transition-colors 
+                  hover:bg-blue-500
+                  active:bg-blue-700
+                "
+              >
+                Add Funds
+              </button>
             )}
             
             {/* Navigation Links */}
