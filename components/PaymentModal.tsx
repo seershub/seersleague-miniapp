@@ -83,61 +83,49 @@ export function PaymentModal({ onSuccess, onCancel, amount }: PaymentModalProps)
     try {
       setIsApproving(true);
       if (!sdk || !address) throw new Error('Wallet not connected');
+      
+      // Use Farcaster Mini App SDK's wallet methods
       const data = encodeFunctionData({
         abi: USDC_ABI,
         functionName: 'approve',
         args: [CONTRACTS.SEERSLEAGUE, amount]
       });
-      const txHash = await sdk.wallet.ethProvider.request({
-        method: 'eth_sendTransaction',
-        params: [{ 
-          to: CONTRACTS.USDC, 
-          data, 
-          from: address,
-          chainId: '0x2105', // Base Mainnet chain ID (8453 in hex)
-          gas: '0x5208', // 21000 gas limit for approve
-          gasPrice: '0x3b9aca00' // 1 gwei gas price
-        }]
+      
+      // Use SDK's wallet.sendTransaction method instead of eth_sendTransaction
+      const txHash = await sdk.wallet.sendTransaction({
+        to: CONTRACTS.USDC,
+        data,
+        value: '0x0'
       });
       
       console.log('Approval transaction sent:', txHash);
       toast.success('USDC approval transaction sent!');
       
-      // Poll for allowance update (max 30 seconds)
-      let attempts = 0;
-      const maxAttempts = 15; // 15 attempts * 2 seconds = 30 seconds max
+      // Wait for transaction to be mined (simplified approach)
+      await new Promise(r => setTimeout(r, 3000));
       
-      while (attempts < maxAttempts) {
-        await new Promise(r => setTimeout(r, 2000)); // Wait 2 seconds
+      // Check allowance once
+      try {
+        const newAllowance = await publicClient.readContract({
+          address: CONTRACTS.USDC,
+          abi: USDC_ABI,
+          functionName: 'allowance',
+          args: [address, CONTRACTS.SEERSLEAGUE]
+        }) as bigint;
         
-        try {
-          const newAllowance = await publicClient.readContract({
-            address: CONTRACTS.USDC,
-            abi: USDC_ABI,
-            functionName: 'allowance',
-            args: [address, CONTRACTS.SEERSLEAGUE]
-          }) as bigint;
-          
-          setAllowance(newAllowance);
-          
-          if (newAllowance >= amount) {
-            console.log('Allowance confirmed:', newAllowance.toString());
-            setStep('confirm');
-            return; // Success - exit the function
-          }
-          
-          console.log(`Allowance check ${attempts + 1}/${maxAttempts}: ${newAllowance.toString()}`);
-          attempts++;
-          
-        } catch (error) {
-          console.log(`Allowance check failed (attempt ${attempts + 1}):`, error);
-          attempts++;
+        setAllowance(newAllowance);
+        
+        if (newAllowance >= amount) {
+          console.log('Allowance confirmed:', newAllowance.toString());
+          setStep('confirm');
+        } else {
+          toast.info('Approval is processing. Please wait a moment and try again.');
         }
+      } catch (error) {
+        console.log('Could not check allowance:', error);
+        toast.info('Approval sent. Please wait a moment and try again.');
       }
       
-      // If we get here, approval didn't complete in time
-      toast.error('Approval is taking longer than expected. Please check your wallet and try again.');
-      console.log('Approval timeout - allowance not sufficient after 30 seconds');
     } catch (error: any) {
       console.error('Approval error:', error);
       toast.error('Failed to approve USDC. Please try again.');
