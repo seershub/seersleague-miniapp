@@ -5,9 +5,11 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { useMiniKit } from '@/components/MiniKitProvider';
 import { sdk } from '@farcaster/miniapp-sdk';
+import { useOnramp } from '@coinbase/onchainkit';
 
 export default function Header() {
   const { isReady, address, balance } = useMiniKit();
+  const { onramp } = useOnramp();
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
@@ -30,7 +32,7 @@ export default function Header() {
   };
 
   return (
-    <header className="sticky top-0 z-50 w-full bg-gray-950/70 backdrop-blur-md border-b border-white/10">
+    <header className="sticky top-0 z-50 w-full bg-gray-950/70 backdrop-blur-lg border-b border-white/10">
       <div className="max-w-4xl mx-auto px-4 py-4">
         <div className="flex justify-between items-center">
           
@@ -42,7 +44,7 @@ export default function Header() {
               width={200}
               height={50}
               priority
-              className="h-9 w-auto transition-all duration-300 hover:scale-105"
+              className="h-10 w-auto transition-all duration-300 hover:scale-105"
               style={{
                 filter: 'drop-shadow(0 0 8px rgba(252, 211, 77, 0.3))'
               }}
@@ -63,25 +65,18 @@ export default function Header() {
             {/* Add Funds Button */}
             {isReady && (
               <button 
-                onClick={() => {
-                  // Base yönlendirmesi için Farcaster SDK kullan
-                  if (typeof window !== 'undefined' && (window as any).base) {
-                    (window as any).base.openWallet();
-                  } else {
-                    // Fallback: Base web sitesine yönlendir
-                    window.open('https://base.org', '_blank');
-                  }
-                }}
+                onClick={() => onramp?.()}
                 className="
                   rounded-full 
                   bg-blue-600 
-                  px-3 py-1.5 
-                  text-xs 
-                  font-medium 
+                  px-4 py-2 
+                  text-sm 
+                  font-semibold 
                   text-white 
-                  transition-colors 
-                  hover:bg-blue-500
-                  active:bg-blue-700
+                  shadow-sm 
+                  transition-opacity 
+                  hover:opacity-80 
+                  active:opacity-90
                 "
               >
                 Add Funds

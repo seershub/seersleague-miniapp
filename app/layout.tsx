@@ -6,6 +6,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { Home, Trophy, User } from 'lucide-react';
 import Header from '@/components/Header';
+import { OnchainKitProvider } from '@coinbase/onchainkit';
 
 export const metadata: Metadata = {
   title: 'SeersLeague - Daily Football Predictions',
@@ -55,11 +56,12 @@ export default function RootLayout({
         <link rel="apple-touch-icon" href="/icon-512.png" />
       </head>
       <body className="bg-black text-white antialiased">
-        <MiniKitProvider>
-          <div className="min-h-screen flex flex-col">
-            
-            {/* Professional Header */}
-            <Header />
+        <OnchainKitProvider>
+          <MiniKitProvider>
+            <div className="min-h-screen flex flex-col">
+              
+              {/* Professional Header */}
+              <Header />
 
             {/* Main content */}
             <main className="flex-1 pb-24">
@@ -94,10 +96,11 @@ export default function RootLayout({
               </div>
             </nav>
 
-          </div>
+            </div>
 
-          <Toaster position="top-center" />
-        </MiniKitProvider>
+            <Toaster position="top-center" />
+          </MiniKitProvider>
+        </OnchainKitProvider>
       </body>
     </html>
   );
