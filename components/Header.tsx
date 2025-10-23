@@ -3,15 +3,11 @@
 import { useState, useEffect } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
-import { useAccount, useBalance } from 'wagmi';
-import { formatEther } from 'viem';
+import { useMiniKit } from '@/components/MiniKitProvider';
+import { sdk } from '@farcaster/miniapp-sdk';
 
 export default function Header() {
-  const { address, isConnected } = useAccount();
-  const { data: balance } = useBalance({
-    address: address,
-  });
-  
+  const { isReady, address, balance } = useMiniKit();
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
@@ -23,13 +19,13 @@ export default function Header() {
   }
 
   const formatAddress = (addr: string) => {
+    if (!addr) return '';
     return `${addr.slice(0, 6)}...${addr.slice(-4)}`;
   };
 
-  const formatBalance = (balance: bigint | undefined) => {
-    if (!balance) return '$0.00';
-    const formatted = formatEther(balance);
-    const num = parseFloat(formatted);
+  const formatBalance = (bal: string | undefined) => {
+    if (!bal) return '$0.00';
+    const num = parseFloat(bal);
     return `$${num.toFixed(2)}`;
   };
 
@@ -56,16 +52,16 @@ export default function Header() {
           {/* User Info Section */}
           <div className="flex items-center gap-3">
             {/* Balance */}
-            {isConnected && balance && (
+            {isReady && balance && (
               <div className="flex items-center gap-2">
                 <span className="text-green-400 font-semibold text-sm">
-                  {formatBalance(balance.value)}
+                  {formatBalance(balance)}
                 </span>
               </div>
             )}
             
             {/* Wallet Address */}
-            {isConnected && address && (
+            {isReady && address && (
               <div className="flex items-center gap-2 rounded-full bg-gray-800 px-3 py-1.5 text-sm font-medium text-white">
                 <span>{formatAddress(address)}</span>
               </div>

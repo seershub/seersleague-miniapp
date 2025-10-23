@@ -15,6 +15,8 @@ interface MiniKitContextType {
   sdk: typeof sdk | null;
   error: string | null;
   user: FarcasterUser | null;
+  address: string | null;
+  balance: string | null;
 }
 
 const MiniKitContext = createContext<MiniKitContextType | undefined>(undefined);
@@ -23,6 +25,8 @@ export function MiniKitProvider({ children }: { children: ReactNode }) {
   const [isReady, setIsReady] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [user, setUser] = useState<FarcasterUser | null>(null);
+  const [address, setAddress] = useState<string | null>(null);
+  const [balance, setBalance] = useState<string | null>(null);
 
   useEffect(() => {
     const initializeMiniKit = async () => {
@@ -55,6 +59,21 @@ export function MiniKitProvider({ children }: { children: ReactNode }) {
           setUser(farcasterUser);
           console.log('MiniKitProvider: Farcaster user loaded:', farcasterUser);
         }
+
+        // Get wallet information
+        try {
+          const wallet = await sdk.wallet;
+          if (wallet?.address) {
+            setAddress(wallet.address);
+            console.log('MiniKitProvider: Wallet address:', wallet.address);
+          }
+          
+          // Get balance (this might need to be implemented based on your needs)
+          // For now, we'll set a placeholder
+          setBalance('0.00');
+        } catch (walletError) {
+          console.log('MiniKitProvider: Wallet not available:', walletError);
+        }
         
         setIsReady(true);
         setError(null);
@@ -75,7 +94,7 @@ export function MiniKitProvider({ children }: { children: ReactNode }) {
   }, []);
 
   return (
-    <MiniKitContext.Provider value={{ isReady, sdk, error, user }}>
+    <MiniKitContext.Provider value={{ isReady, sdk, error, user, address, balance }}>
       {children}
     </MiniKitContext.Provider>
   );
