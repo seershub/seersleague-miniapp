@@ -123,11 +123,11 @@ export function PaymentModal({ onSuccess, onCancel, amount }: PaymentModalProps)
           console.log('Allowance confirmed:', newAllowance.toString());
           setStep('confirm');
         } else {
-          toast.info('Approval is processing. Please wait a moment and try again.');
+          toast('Approval is processing. Please wait a moment and try again.');
         }
       } catch (error) {
         console.log('Could not check allowance:', error);
-        toast.info('Approval sent. Please wait a moment and try again.');
+        toast('Approval sent. Please wait a moment and try again.');
       }
       
     } catch (error: any) {
