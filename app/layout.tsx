@@ -5,6 +5,7 @@ import { Toaster } from 'react-hot-toast';
 import Link from 'next/link';
 import Image from 'next/image';
 import { Home, Trophy, User } from 'lucide-react';
+import Header from '@/components/Header';
 
 export const metadata: Metadata = {
   title: 'SeersLeague - Daily Football Predictions',
@@ -57,43 +58,8 @@ export default function RootLayout({
         <MiniKitProvider>
           <div className="min-h-screen flex flex-col">
             
-            {/* Header */}
-            <header className="relative bg-black/80 backdrop-blur-sm border-b border-gray-800 overflow-hidden">
-              {/* Animated background lines */}
-              <div className="absolute inset-0 opacity-20">
-                <div className="absolute top-0 left-0 w-full h-px bg-gradient-to-r from-transparent via-gray-400 to-transparent animate-pulse"></div>
-                <div className="absolute top-1/2 left-0 w-full h-px bg-gradient-to-r from-transparent via-gray-300 to-transparent animate-pulse" style={{animationDelay: '1s'}}></div>
-                <div className="absolute bottom-0 left-0 w-full h-px bg-gradient-to-r from-transparent via-gray-400 to-transparent animate-pulse" style={{animationDelay: '2s'}}></div>
-              </div>
-              
-              <div className="max-w-4xl mx-auto px-4 py-8 relative z-10">
-                <div className="flex items-center justify-center">
-                  <Link href="/" className="flex items-center">
-                    <Image
-                      src="/logomuz.png"
-                      alt="SeersLeague"
-                      width={500}
-                      height={125}
-                      priority
-                      className="h-30 w-auto transition-all duration-300 hover:scale-105"
-                    />
-                  </Link>
-                </div>
-                
-                {/* Navigation below logo */}
-                <nav className="flex items-center justify-center space-x-8 mt-4">
-                  <Link href="/" className="text-white/80 hover:text-yellow-400 transition-colors duration-200">
-                    Home
-                  </Link>
-                  <Link href="/leaderboard" className="text-white/80 hover:text-yellow-400 transition-colors duration-200">
-                    Leaderboard
-                  </Link>
-                  <Link href="/profile" className="text-white/80 hover:text-yellow-400 transition-colors duration-200">
-                    Profile
-                  </Link>
-                </nav>
-              </div>
-            </header>
+            {/* Professional Header */}
+            <Header />
 
             {/* Main content */}
             <main className="flex-1 pb-24">
