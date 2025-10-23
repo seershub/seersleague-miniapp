@@ -1,11 +1,11 @@
 {
-  "name": "SeersLeague",
+  "name": "SeersLeague - Daily Football Predictions",
   "short_name": "SeersLeague",
-  "description": "Daily Football Predictions on Base",
+  "description": "Predict football matches daily. First 5 predictions FREE, then 0.5 USDC per match. Compete for prizes based on accuracy.",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#000000",
-  "theme_color": "#0052FF",
+  "theme_color": "#000000",
   "icons": [
     {
       "src": "/icon-512.png",
@@ -13,5 +13,8 @@
       "type": "image/png",
       "purpose": "any maskable"
     }
-  ]
+  ],
+  "categories": ["games", "sports", "entertainment"],
+  "lang": "en",
+  "orientation": "portrait"
 }
