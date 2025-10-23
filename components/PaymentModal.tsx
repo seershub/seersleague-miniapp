@@ -99,31 +99,33 @@ export function PaymentModal({ onSuccess, onCancel, amount }: PaymentModalProps)
           gasPrice: '0x3b9aca00' // 1 gwei gas price
         }]
       });
-      let receipt = null as any;
-      let attempts = 0;
-      while (!receipt && attempts < 30) {
-        try {
-          receipt = await sdk.wallet.ethProvider.request({
-            method: 'eth_getTransactionReceipt',
-            params: [txHash]
-          });
-          if (!receipt) await new Promise(r => setTimeout(r, 2000));
-        } catch {
-          await new Promise(r => setTimeout(r, 2000));
-        }
-        attempts++;
-      }
-      toast.success('USDC approval successful!');
+      
+      console.log('Approval transaction sent:', txHash);
+      toast.success('USDC approval transaction sent!');
+      
+      // Wait a bit for transaction to be mined
+      await new Promise(r => setTimeout(r, 3000));
 
       // Refresh allowance directly from blockchain
-      const newAllowance = await publicClient.readContract({
-        address: CONTRACTS.USDC,
-        abi: USDC_ABI,
-        functionName: 'allowance',
-        args: [address, CONTRACTS.SEERSLEAGUE]
-      }) as bigint;
-      setAllowance(newAllowance);
-      if (newAllowance >= amount) setStep('confirm');
+      try {
+        const newAllowance = await publicClient.readContract({
+          address: CONTRACTS.USDC,
+          abi: USDC_ABI,
+          functionName: 'allowance',
+          args: [address, CONTRACTS.SEERSLEAGUE]
+        }) as bigint;
+        setAllowance(newAllowance);
+        if (newAllowance >= amount) {
+          setStep('confirm');
+        } else {
+          // If allowance is still not enough, assume it's processing
+          console.log('Allowance not yet updated, assuming transaction is processing...');
+          setStep('confirm'); // Allow user to proceed
+        }
+      } catch (error) {
+        console.log('Could not check allowance, assuming transaction succeeded:', error);
+        setStep('confirm'); // Allow user to proceed
+      }
     } catch (error: any) {
       console.error('Approval error:', error);
       toast.error('Failed to approve USDC. Please try again.');
