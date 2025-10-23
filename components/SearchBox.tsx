@@ -89,23 +89,6 @@ export function SearchBox({ matches, onSearchResults }: SearchBoxProps) {
         </div>
       )}
 
-      {/* Search Suggestions */}
-      {isFocused && !searchTerm && (
-        <div className="absolute top-full left-0 right-0 mt-2 bg-gray-900/95 border border-gray-700/50 rounded-xl p-4 backdrop-blur-sm">
-          <div className="text-sm text-gray-400 mb-2">Popular searches:</div>
-          <div className="flex flex-wrap gap-2">
-            {['Premier League', 'Champions League', 'Real Madrid', 'Barcelona', 'Manchester United', 'Liverpool'].map((suggestion) => (
-              <button
-                key={suggestion}
-                onClick={() => setSearchTerm(suggestion)}
-                className="px-3 py-1 bg-gray-800/50 hover:bg-gray-700/50 text-gray-300 hover:text-white rounded-full text-xs transition-colors duration-200"
-              >
-                {suggestion}
-              </button>
-            ))}
-          </div>
-        </div>
-      )}
     </div>
   );
 }
