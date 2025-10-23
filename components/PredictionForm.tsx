@@ -247,7 +247,6 @@ export function PredictionForm({ matches }: PredictionFormProps) {
       toast.success('Predictions submitted successfully!');
       
       // Update user stats
-      const predictionCount = Object.keys(predictions).length;
       setUserStats(prev => prev ? {
         ...prev,
         totalPredictions: prev.totalPredictions + predictionCount,
