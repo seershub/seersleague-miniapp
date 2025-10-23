@@ -163,10 +163,18 @@ export async function GET(
           })
         ]);
 
-        const userPrediction = userPredictionResult as unknown as bigint;
+        // CRITICAL FIX: getUserPrediction returns a STRUCT, not a number!
+        // struct Prediction { uint256 matchId; uint8 outcome; uint256 timestamp; }
+        const userPrediction = userPredictionResult as unknown as {
+          matchId: bigint;
+          outcome: bigint;
+          timestamp: bigint;
+        };
         const matchInfo = matchInfoResult as unknown as MatchInfo;
 
-        const predictionNum = Number(userPrediction);
+        const predictionNum = Number(userPrediction.outcome); // Get outcome from struct!
+
+        console.log(`[History] Match ${matchId} - userPrediction.outcome: ${predictionNum}`);
 
         // Calculate outcome from scores (1=Home Win, 2=Draw, 3=Away Win)
         let outcomeNum: number | null = null;
@@ -222,8 +230,13 @@ export async function GET(
             functionName: 'getUserPrediction',
             args: [address, matchId]
           });
-          const userPrediction = userPredictionResult as unknown as bigint;
-          const predictionNum = Number(userPrediction);
+          // CRITICAL FIX: getUserPrediction returns a STRUCT!
+          const userPrediction = userPredictionResult as unknown as {
+            matchId: bigint;
+            outcome: bigint;
+            timestamp: bigint;
+          };
+          const predictionNum = Number(userPrediction.outcome);
 
           const block = blockMap.get(blockNumber);
           return {
