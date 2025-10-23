@@ -6,6 +6,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { Home, Trophy, User } from 'lucide-react';
 import Header from '@/components/Header';
+import { OnboardingModal } from '@/components/OnboardingModal';
 
 export const metadata: Metadata = {
   title: 'SeersLeague - Daily Football Predictions',
@@ -65,6 +66,9 @@ export default function RootLayout({
             <main className="flex-1 pb-24">
               {children}
             </main>
+
+            {/* Onboarding Modal */}
+            <OnboardingModal />
 
             <nav className="fixed bottom-0 left-0 right-0 z-50 bg-black/95 backdrop-blur-xl border-t border-white/10">
               <div className="max-w-4xl mx-auto">
