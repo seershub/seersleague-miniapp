@@ -91,11 +91,15 @@ export function PaymentModal({ onSuccess, onCancel, amount }: PaymentModalProps)
         args: [CONTRACTS.SEERSLEAGUE, amount]
       });
       
-      // Use SDK's wallet.sendTransaction method instead of eth_sendTransaction
-      const txHash = await sdk.wallet.sendTransaction({
-        to: CONTRACTS.USDC,
-        data,
-        value: '0x0'
+      // Use SDK's wallet.ethProvider.request method for eth_sendTransaction
+      const txHash = await sdk.wallet.ethProvider.request({
+        method: 'eth_sendTransaction',
+        params: [{
+          to: CONTRACTS.USDC,
+          data,
+          from: address,
+          value: '0x0'
+        }]
       });
       
       console.log('Approval transaction sent:', txHash);
