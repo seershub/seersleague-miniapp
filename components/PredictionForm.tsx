@@ -196,7 +196,7 @@ export function PredictionForm({ matches }: PredictionFormProps) {
   };
   
   const submitPredictions = async (skipModal: boolean = false) => {
-    if (!sdk || !address || !wagmiAddress) {
+    if (!sdk || !address) {
       toast.error('Wallet not connected');
       return;
     }
