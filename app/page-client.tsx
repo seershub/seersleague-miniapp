@@ -62,12 +62,12 @@ export default function Home({ initialMatches = [] }: HomeProps) {
     }
 
     // Always fetch matches and keep them fresh
-    const fetchMatches = async () => {
+    const fetchMatches = async (isBackgroundRefresh = false) => {
       try {
         const isInitial = matches.length === 0 && initialMatches.length === 0;
         if (isInitial) {
           setLoading(true);
-        } else {
+        } else if (!isBackgroundRefresh) {
           setRefreshing(true);
         }
         console.log('Fetching matches...');
@@ -81,8 +81,22 @@ export default function Home({ initialMatches = [] }: HomeProps) {
         // Extract matches array from response object
         const matchesArray: Match[] = data.matches || [];
         console.log('Matches received:', matchesArray);
-        setMatches(matchesArray);
-        setFilteredMatches(matchesArray);
+        
+        // Only update if there are actual changes to avoid unnecessary re-renders
+        setMatches(prevMatches => {
+          if (JSON.stringify(prevMatches) !== JSON.stringify(matchesArray)) {
+            return matchesArray;
+          }
+          return prevMatches;
+        });
+        
+        setFilteredMatches(prevFiltered => {
+          if (JSON.stringify(prevFiltered) !== JSON.stringify(matchesArray)) {
+            return matchesArray;
+          }
+          return prevFiltered;
+        });
+        
         setError(null);
       } catch (err) {
         console.error('Error fetching matches:', err);
@@ -96,8 +110,8 @@ export default function Home({ initialMatches = [] }: HomeProps) {
     // Initial fetch (even if SSR provided matches)
     fetchMatches();
 
-    // Poll every 30s to keep list updated and circulating
-    const interval = setInterval(fetchMatches, 30000);
+    // Poll every 5 minutes to keep list updated (less frequent for better UX)
+    const interval = setInterval(() => fetchMatches(true), 300000);
     return () => clearInterval(interval);
   }, []);
   
