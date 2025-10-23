@@ -5,11 +5,9 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { useMiniKit } from '@/components/MiniKitProvider';
 import { sdk } from '@farcaster/miniapp-sdk';
-import { useOnramp } from '@coinbase/onchainkit';
 
 export default function Header() {
   const { isReady, address, balance } = useMiniKit();
-  const { onramp } = useOnramp();
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
@@ -65,7 +63,20 @@ export default function Header() {
             {/* Add Funds Button */}
             {isReady && (
               <button 
-                onClick={() => onramp?.()}
+                onClick={async () => {
+                  try {
+                    // Farcaster SDK ile wallet açma
+                    const wallet = await sdk.wallet;
+                    if (wallet?.ethProvider) {
+                      // Base wallet'ı aç
+                      await wallet.ethProvider.request({ method: 'wallet_requestPermissions' });
+                    }
+                  } catch (error) {
+                    console.log('Wallet access error:', error);
+                    // Fallback: Base web sitesine yönlendir
+                    window.open('https://base.org', '_blank');
+                  }
+                }}
                 className="
                   rounded-full 
                   bg-blue-600 
