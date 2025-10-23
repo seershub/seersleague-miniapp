@@ -63,9 +63,19 @@ export function MiniKitProvider({ children }: { children: ReactNode }) {
         // Get wallet information
         try {
           const wallet = await sdk.wallet;
-          if (wallet?.address) {
-            setAddress(wallet.address);
-            console.log('MiniKitProvider: Wallet address:', wallet.address);
+          console.log('MiniKitProvider: Wallet object:', wallet);
+          
+          // Try to get address from wallet methods
+          if (wallet?.ethProvider) {
+            try {
+              const accounts = await wallet.ethProvider.request({ method: 'eth_accounts' });
+              if (accounts && accounts.length > 0) {
+                setAddress(accounts[0]);
+                console.log('MiniKitProvider: Wallet address:', accounts[0]);
+              }
+            } catch (ethError) {
+              console.log('MiniKitProvider: Could not get accounts:', ethError);
+            }
           }
           
           // Get balance (this might need to be implemented based on your needs)
