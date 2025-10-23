@@ -45,7 +45,7 @@ export function SearchBox({ matches, onSearchResults }: SearchBoxProps) {
       }`}>
         <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
           <Search className={`w-5 h-5 transition-colors duration-200 ${
-            isFocused ? 'text-blue-400' : 'text-gray-500'
+            isFocused ? 'text-yellow-400' : 'text-gray-500'
           }`} />
         </div>
         
@@ -58,8 +58,8 @@ export function SearchBox({ matches, onSearchResults }: SearchBoxProps) {
           onBlur={() => setIsFocused(false)}
           className={`w-full pl-12 pr-12 py-4 bg-gray-900/50 border-2 rounded-2xl text-white placeholder-gray-400 focus:outline-none transition-all duration-300 ${
             isFocused 
-              ? 'border-blue-500/50 bg-gray-900/70 shadow-lg shadow-blue-500/20' 
-              : 'border-gray-700/50 hover:border-gray-600/50'
+              ? 'border-yellow-500/50 bg-gray-900/70 shadow-lg shadow-yellow-500/20' 
+              : 'border-yellow-400/50 hover:border-yellow-400/70'
           }`}
         />
         

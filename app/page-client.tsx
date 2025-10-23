@@ -131,14 +131,6 @@ export default function Home({ initialMatches = [] }: HomeProps) {
             </div>
           </section>
 
-          {/* SEARCH SECTION */}
-          <section className="mb-8">
-            <SearchBox 
-              matches={matches} 
-              onSearchResults={setFilteredMatches}
-            />
-          </section>
-
           {/* MATCHES SECTION */}
         <section className="mb-8">
           <div className="text-center mb-8">
@@ -154,6 +146,14 @@ export default function Home({ initialMatches = [] }: HomeProps) {
             <p className="text-gray-400 text-lg max-w-2xl mx-auto">
               Join live prediction competitions. Make your picks, compete with others, win USDC rewards instantly.
             </p>
+
+            {/* SEARCH SECTION */}
+            <div className="max-w-2xl mx-auto mb-8">
+              <SearchBox 
+                matches={matches} 
+                onSearchResults={setFilteredMatches}
+              />
+            </div>
           </div>
 
           {/* MATCHES GRID */}
