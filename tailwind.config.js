@@ -73,11 +73,23 @@ const config: Config = {
         'float': 'float 3s ease-in-out infinite',
         'shimmer': 'shimmer 3s linear infinite',
         'shimmer-fast': 'shimmer 2s linear infinite',
+        'shimmer-slow': 'shimmer 4s linear infinite',
         'border-flow': 'borderFlow 8s linear infinite',
         'float-rotate-1': 'floatRotate1 6s ease-in-out infinite',
         'float-rotate-2': 'floatRotate2 7s ease-in-out infinite',
         'trophy-bounce-1': 'trophyBounce1 3s ease-in-out infinite',
         'trophy-bounce-2': 'trophyBounce2 3s ease-in-out infinite 0.5s',
+        // New professional animations
+        'float-1': 'float1 4s ease-in-out infinite',
+        'float-2': 'float2 5s ease-in-out infinite 0.5s',
+        'float-3': 'float3 6s ease-in-out infinite 1s',
+        'float-4': 'float4 4.5s ease-in-out infinite 1.5s',
+        'float-line-1': 'floatLine1 3s ease-in-out infinite',
+        'float-line-2': 'floatLine2 3.5s ease-in-out infinite 0.8s',
+        'bounce-slow': 'bounceSlow 4s ease-in-out infinite',
+        'gradient-shift': 'gradientShift 6s ease-in-out infinite',
+        'text-shimmer': 'textShimmer 3s ease-in-out infinite',
+        'fade-in-up': 'fadeInUp 1s ease-out 0.5s both',
       },
       keyframes: {
         fadeIn: {
@@ -139,6 +151,54 @@ const config: Config = {
             transform: 'translateY(-10px) scale(1.1) rotate(-5deg)',
             opacity: '1'
           },
+        },
+        // New professional keyframes
+        float1: {
+          '0%, 100%': { transform: 'translateY(0px) translateX(0px)' },
+          '25%': { transform: 'translateY(-8px) translateX(4px)' },
+          '50%': { transform: 'translateY(-4px) translateX(-2px)' },
+          '75%': { transform: 'translateY(-12px) translateX(2px)' },
+        },
+        float2: {
+          '0%, 100%': { transform: 'translateY(0px) translateX(0px)' },
+          '33%': { transform: 'translateY(-6px) translateX(-3px)' },
+          '66%': { transform: 'translateY(-10px) translateX(3px)' },
+        },
+        float3: {
+          '0%, 100%': { transform: 'translateY(0px) translateX(0px)' },
+          '20%': { transform: 'translateY(-5px) translateX(2px)' },
+          '40%': { transform: 'translateY(-8px) translateX(-1px)' },
+          '60%': { transform: 'translateY(-3px) translateX(3px)' },
+          '80%': { transform: 'translateY(-7px) translateX(-2px)' },
+        },
+        float4: {
+          '0%, 100%': { transform: 'translateY(0px) translateX(0px)' },
+          '30%': { transform: 'translateY(-9px) translateX(-4px)' },
+          '60%': { transform: 'translateY(-2px) translateX(2px)' },
+        },
+        floatLine1: {
+          '0%, 100%': { transform: 'translateX(0px) scale(1)' },
+          '50%': { transform: 'translateX(20px) scale(1.2)' },
+        },
+        floatLine2: {
+          '0%, 100%': { transform: 'translateX(0px) scale(1)' },
+          '50%': { transform: 'translateX(-15px) scale(1.1)' },
+        },
+        bounceSlow: {
+          '0%, 100%': { transform: 'translateY(0) scale(1)' },
+          '50%': { transform: 'translateY(-8px) scale(1.05)' },
+        },
+        gradientShift: {
+          '0%, 100%': { backgroundPosition: '0% 50%' },
+          '50%': { backgroundPosition: '100% 50%' },
+        },
+        textShimmer: {
+          '0%, 100%': { backgroundPosition: '0% 50%' },
+          '50%': { backgroundPosition: '100% 50%' },
+        },
+        fadeInUp: {
+          '0%': { opacity: '0', transform: 'translateY(20px)' },
+          '100%': { opacity: '1', transform: 'translateY(0)' },
         },
       },
       fontFamily: {
