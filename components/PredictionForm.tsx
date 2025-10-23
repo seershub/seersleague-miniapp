@@ -301,7 +301,7 @@ export function PredictionForm({ matches }: PredictionFormProps) {
           params: [{
             to: CONTRACTS.USDC,
             data: approveData,
-            from: address,
+            from: address as `0x${string}`,
             value: '0x0'
           }]
         });
@@ -323,7 +323,7 @@ export function PredictionForm({ matches }: PredictionFormProps) {
         params: [{
           to: CONTRACTS.SEERSLEAGUE,
           data: predictData,
-          from: address,
+          from: address as `0x${string}`,
           value: '0x0'
         }]
       });
@@ -359,7 +359,7 @@ export function PredictionForm({ matches }: PredictionFormProps) {
         params: [{
           to: CONTRACTS.SEERSLEAGUE,
           data: predictData,
-          from: address,
+          from: address as `0x${string}`,
           value: '0x0'
         }]
       });
