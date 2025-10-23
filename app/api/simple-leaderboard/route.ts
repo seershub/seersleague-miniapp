@@ -5,7 +5,7 @@ import { CONTRACTS, SEERSLEAGUE_ABI } from '@/lib/contract-interactions';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
-export const maxDuration = 300; // Vercel Pro max: 5 minutes for blockchain data processing
+export const maxDuration = 60; // Vercel Pro: 60s (no chunking needed with PAYG)
 
 interface SimpleLeaderboardEntry {
   rank: number;
@@ -23,69 +23,32 @@ interface SimpleLeaderboardEntry {
 async function generateLeaderboardFromContract(): Promise<SimpleLeaderboardEntry[]> {
   console.log('[Simple Leaderboard] Generating from contract...');
 
+  // Alchemy PAYG: No chunking needed!
+  // 10,000 blocks = ~5.5 hours on Base (2s per block)
   const currentBlock = await publicClient.getBlockNumber();
+  const fromBlock = currentBlock - 10000n;
 
-  // ALCHEMY FREE TIER FIX: Scan last 10K blocks in chunks of 10 blocks
-  const totalBlocks = 10000n;
-  const chunkSize = 10n; // Alchemy Free Tier limit: 10 blocks per request
-  const fromBlock = currentBlock - totalBlocks;
+  console.log(`[Simple Leaderboard] Fetching from block ${fromBlock} to ${currentBlock} (10k blocks)`);
 
-  console.log(`[Simple Leaderboard] Scanning blocks ${fromBlock} to ${currentBlock}`);
-  console.log(`[Simple Leaderboard] Using chunked fetching: ${totalBlocks / chunkSize} chunks of ${chunkSize} blocks`);
+  // Fetch all events in one request (PAYG allows this)
+  const predictionEvents = await publicClient.getLogs({
+    address: CONTRACTS.SEERSLEAGUE,
+    event: {
+      type: 'event',
+      name: 'PredictionsSubmitted',
+      inputs: [
+        { name: 'user', type: 'address', indexed: true },
+        { name: 'matchIds', type: 'uint256[]', indexed: false },
+        { name: 'predictionsCount', type: 'uint256', indexed: false },
+        { name: 'freeUsed', type: 'uint256', indexed: false },
+        { name: 'feePaid', type: 'uint256', indexed: false }
+      ]
+    },
+    fromBlock,
+    toBlock: 'latest'
+  });
 
-  // Fetch events in chunks to stay within Alchemy Free Tier limit
-  const allPredictionEvents: any[] = [];
-  const batchSize = 10; // Process 10 chunks in parallel
-  const chunks: Array<{ start: bigint; end: bigint }> = [];
-
-  // Create all chunk ranges
-  for (let start = fromBlock; start < currentBlock; start += chunkSize) {
-    const end = start + chunkSize - 1n > currentBlock ? currentBlock : start + chunkSize - 1n;
-    chunks.push({ start, end });
-  }
-
-  console.log(`[Simple Leaderboard] Processing ${chunks.length} chunks in batches of ${batchSize}...`);
-
-  // Process chunks in batches
-  for (let i = 0; i < chunks.length; i += batchSize) {
-    const batch = chunks.slice(i, i + batchSize);
-
-    const batchPromises = batch.map(async ({ start, end }) => {
-      try {
-        return await publicClient.getLogs({
-          address: CONTRACTS.SEERSLEAGUE,
-          event: {
-            type: 'event',
-            name: 'PredictionsSubmitted',
-            inputs: [
-              { name: 'user', type: 'address', indexed: true },
-              { name: 'matchIds', type: 'uint256[]', indexed: false },
-              { name: 'predictionsCount', type: 'uint256', indexed: false },
-              { name: 'freeUsed', type: 'uint256', indexed: false },
-              { name: 'feePaid', type: 'uint256', indexed: false }
-            ]
-          },
-          fromBlock: start,
-          toBlock: end
-        });
-      } catch (error) {
-        console.error(`[Simple Leaderboard] Error fetching chunk ${start}-${end}:`, error);
-        return [];
-      }
-    });
-
-    const batchResults = await Promise.all(batchPromises);
-    batchResults.forEach(events => allPredictionEvents.push(...events));
-
-    // Log progress every 20 batches
-    if ((i / batchSize) % 20 === 0) {
-      const processedSoFar = Math.min(i + batchSize, chunks.length);
-      console.log(`[Simple Leaderboard] Progress: ${processedSoFar}/${chunks.length} chunks`);
-    }
-  }
-
-  const predictionEvents = allPredictionEvents;
-  console.log(`[Simple Leaderboard] Found ${predictionEvents.length} prediction events from ${chunks.length} chunks`);
+  console.log(`[Simple Leaderboard] Found ${predictionEvents.length} prediction events`);
 
   // Extract unique users
   const uniqueUsers = new Set<string>();

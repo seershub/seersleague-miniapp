@@ -21,9 +21,13 @@ async function generateLeaderboardFromContract(): Promise<LeaderboardEntry[]> {
   console.log('Generating leaderboard directly from contract...');
   
   try {
-    // Get contract deployment block
-    const deploymentBlock = BigInt(process.env.NEXT_PUBLIC_DEPLOYMENT_BLOCK || '0');
+    // Alchemy PAYG: Optimize for cost
+    // 10,000 blocks = ~5.5 hours on Base (2s per block)
+    // No indexed parameter here, so keep range reasonable
     const currentBlock = await publicClient.getBlockNumber();
+    const fromBlock = currentBlock - 10000n;
+
+    console.log(`[Leaderboard] Fetching from block ${fromBlock} to ${currentBlock} (10k blocks)`);
 
     // Fetch PredictionsSubmitted events
     const predictionEvents = await publicClient.getLogs({
@@ -39,7 +43,7 @@ async function generateLeaderboardFromContract(): Promise<LeaderboardEntry[]> {
           { name: 'feePaid', type: 'uint256', indexed: false }
         ]
       },
-      fromBlock: deploymentBlock > 0n ? deploymentBlock : currentBlock - 10000n,
+      fromBlock,
       toBlock: 'latest'
     });
 
