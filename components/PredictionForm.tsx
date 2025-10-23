@@ -6,8 +6,10 @@ import { MatchCard } from './MatchCard';
 import { PaymentModal } from './PaymentModal';
 import { CONTRACTS, SEERSLEAGUE_ABI, PREDICTION_FEE, UserStats, formatUSDC, USDC_ABI } from '@/lib/contract-interactions';
 import { useMiniKit } from './MiniKitProvider';
-import { encodeFunctionData } from 'viem';
+import { encodeFunctionData, parseUnits } from 'viem';
 import { publicClient } from '@/lib/viem-config';
+import { useAccount, useReadContract, useSendCalls } from 'wagmi';
+import { erc20Abi } from 'viem';
 import toast from 'react-hot-toast';
 
 interface PredictionFormProps {
@@ -18,6 +20,19 @@ export function PredictionForm({ matches }: PredictionFormProps) {
   const { isReady, sdk } = useMiniKit();
   const [address, setAddress] = useState<string | null>(null);
   const [isConnected, setIsConnected] = useState(false);
+  
+  // Wagmi hooks for EIP-5792 batch transactions
+  const { address: wagmiAddress } = useAccount();
+  const { sendCalls } = useSendCalls();
+  
+  // Check USDC allowance for batch transactions
+  const { data: currentAllowance, refetch: refetchAllowance } = useReadContract({
+    address: CONTRACTS.USDC,
+    abi: erc20Abi,
+    functionName: 'allowance',
+    args: [wagmiAddress!, CONTRACTS.SEERSLEAGUE],
+    enabled: !!wagmiAddress,
+  });
   const [selectedMatches, setSelectedMatches] = useState<number[]>([]);
   const [predictions, setPredictions] = useState<{[matchId: number]: 1 | 2 | 3}>({});
   const [showPaymentModal, setShowPaymentModal] = useState(false);
@@ -166,7 +181,7 @@ export function PredictionForm({ matches }: PredictionFormProps) {
   };
   
   const submitPredictions = async (skipModal: boolean = false) => {
-    if (!sdk || !address) {
+    if (!sdk || !address || !wagmiAddress) {
       toast.error('Wallet not connected');
       return;
     }
@@ -218,159 +233,95 @@ export function PredictionForm({ matches }: PredictionFormProps) {
         setIsPending(false);
         return;
       }
-      
-      // Encode function call data for submitPredictions(uint256[] matchIds, uint8[] outcomes)
-      const encodedData = encodeFunctionData({
-        abi: SEERSLEAGUE_ABI,
-        functionName: 'submitPredictions',
-        args: [matchIds, outcomes]
-      });
-      
-      // Debug contract address and environment
-      console.log('Contract address:', CONTRACTS.SEERSLEAGUE);
-      console.log('Environment check:', {
-        contractAddress: process.env.NEXT_PUBLIC_CONTRACT_ADDRESS,
-        contractsSeersLeague: CONTRACTS.SEERSLEAGUE,
-        isUndefined: CONTRACTS.SEERSLEAGUE === undefined,
-        isString: typeof CONTRACTS.SEERSLEAGUE === 'string'
-      });
-      
-      if (!CONTRACTS.SEERSLEAGUE || CONTRACTS.SEERSLEAGUE.length < 42) {
-        toast.dismiss(loadingToast);
-        toast.error('Contract address not configured. Please check environment variables.');
-        console.error('Contract address missing:', CONTRACTS.SEERSLEAGUE);
-        return;
-      }
-      
-      // Send transaction
-      const txHash = await sdk.wallet.ethProvider.request({
-        method: 'eth_sendTransaction',
-        params: [{
-          to: CONTRACTS.SEERSLEAGUE,
-          data: encodedData,
-          from: address as `0x${string}`,
-          value: '0x0' // No ETH value, only USDC if needed
-        }]
-      });
-      
-      console.log('Transaction submitted:', txHash);
-      
-      // Update loading toast to show transaction submitted
-      toast.dismiss(loadingToast);
-      toast.success(`Transaction submitted to blockchain... Hash: ${txHash.slice(0, 10)}...`, { duration: 4000 });
-      
-      // Wait for transaction receipt
-      let receipt = null;
-      let attempts = 0;
-      const maxAttempts = 30; // 30 attempts * 2 seconds = 60 seconds max wait
-      
-      while (!receipt && attempts < maxAttempts) {
-        try {
-          receipt = await sdk.wallet.ethProvider.request({
-            method: 'eth_getTransactionReceipt',
-            params: [txHash]
-          });
-          
-          if (!receipt) {
-            await new Promise(resolve => setTimeout(resolve, 2000)); // Wait 2 seconds
-            attempts++;
-          }
-        } catch (error) {
-          console.error('Error checking transaction receipt:', error);
-          await new Promise(resolve => setTimeout(resolve, 2000));
-          attempts++;
-        }
-      }
-      
-      if (receipt) {
-        // Check transaction status
-        if (receipt.status && receipt.status !== '0x0') {
-          // Success!
-          toast.success(
-            <div>
-              <div className="font-bold text-green-600">✅ Success!</div>
-              <div className="text-sm text-gray-600 mt-1">Your predictions have been recorded.</div>
-              <a 
-                href={`https://basescan.org/tx/${txHash}`} 
-                target="_blank" 
-                rel="noopener noreferrer"
-                className="text-blue-600 hover:text-blue-800 underline text-sm mt-1 inline-block"
-              >
-                View Transaction →
-              </a>
-            </div>,
-            { duration: Infinity }
-          );
-          
-          // Update user stats
-          const predictionCount = Object.keys(predictions).length;
-          setUserStats(prev => prev ? {
-            ...prev,
-            totalPredictions: prev.totalPredictions + predictionCount,
-            freePredictionsUsed: Math.min(prev.freePredictionsUsed + predictionCount, 5)
-          } : null);
-          
-          // Clear selections
-          setSelectedMatches([]);
-          setPredictions({});
-        } else {
-          // Transaction failed
-          toast.error(
-            <div>
-              <div className="font-bold text-red-600">❌ Transaction Failed</div>
-              <div className="text-sm text-gray-600 mt-1">Transaction reverted on chain</div>
-              <a 
-                href={`https://basescan.org/tx/${txHash}`} 
-                target="_blank" 
-                rel="noopener noreferrer"
-                className="text-blue-600 hover:text-blue-800 underline text-sm mt-1 inline-block"
-              >
-                View Transaction →
-              </a>
-            </div>,
-            { duration: 6000 }
-          );
-        }
+
+      // EIP-5792 Batch Transaction: Approve + Predict in one signature
+      if (totalFee > 0) {
+        await submitBatchPredictions(matchIds, outcomes, totalFee);
       } else {
-        // Timeout waiting for receipt
-        toast.error('Transaction timeout. Please check Basescan for confirmation.', { duration: 6000 });
+        // Free predictions - no approval needed
+        await submitFreePredictions(matchIds, outcomes);
       }
+      
+      // Success handling
+      toast.dismiss(loadingToast);
+      toast.success('Predictions submitted successfully!');
+      
+      // Update user stats
+      const predictionCount = Object.keys(predictions).length;
+      setUserStats(prev => prev ? {
+        ...prev,
+        totalPredictions: prev.totalPredictions + predictionCount,
+        freePredictionsUsed: Math.min(prev.freePredictionsUsed + predictionCount, 5)
+      } : null);
+      
+      // Clear selections
+      setSelectedMatches([]);
+      setPredictions({});
       
     } catch (error: any) {
       console.error('Submission error:', error);
-      
-      // Dismiss loading toast
       toast.dismiss(loadingToast);
-      
-        // Show specific error messages
-        let errorMessage = 'Failed to submit predictions. Please try again.';
-        
-        if (error.message) {
-          if (error.message.includes('User rejected') || error.message.includes('User denied')) {
-            errorMessage = 'Transaction was rejected by user.';
-          } else if (error.message.includes('Prediction deadline passed')) {
-            errorMessage = 'Prediction deadline for this match has passed.';
-          } else if (error.message.includes('Match is not registered')) {
-            errorMessage = 'This match is not yet registered.';
-          } else if (error.message.includes('Match results already recorded')) {
-            errorMessage = 'Match results have already been recorded.';
-          } else if (error.message.includes('Insufficient USDC balance')) {
-            errorMessage = 'Insufficient USDC balance.';
-          } else {
-            errorMessage = `Error: ${error.message}`;
-          }
-        }
-        
-        toast.error(
-          <div>
-            <div className="font-bold text-red-600">❌ Error!</div>
-            <div className="text-sm text-gray-600 mt-1">{errorMessage}</div>
-          </div>,
-          { duration: 6000 }
-        );
+      toast.error('Failed to submit predictions. Please try again.');
     } finally {
       setIsSubmitting(false);
       setIsPending(false);
+    }
+  };
+
+  // EIP-5792 Batch Transaction Functions
+  const submitBatchPredictions = async (matchIds: bigint[], outcomes: (1 | 2 | 3)[], totalFee: bigint) => {
+    if (!wagmiAddress || !currentAllowance) return;
+
+    try {
+      const transactions = [];
+
+      // 1. Check if approval is needed
+      if (currentAllowance < totalFee) {
+        console.log('Adding USDC approval to batch transaction');
+        transactions.push({
+          to: CONTRACTS.USDC,
+          abi: erc20Abi,
+          functionName: 'approve',
+          args: [CONTRACTS.SEERSLEAGUE, totalFee],
+        });
+      }
+
+      // 2. Add prediction submission
+      transactions.push({
+        to: CONTRACTS.SEERSLEAGUE,
+        abi: SEERSLEAGUE_ABI,
+        functionName: 'submitPredictions',
+        args: [matchIds, outcomes],
+      });
+
+      console.log(`Sending ${transactions.length} calls in one batch...`);
+      await sendCalls({
+        calls: transactions,
+      });
+
+      // Refresh allowance after successful transaction
+      refetchAllowance();
+
+    } catch (error) {
+      console.error('Batch transaction failed:', error);
+      throw error;
+    }
+  };
+
+  const submitFreePredictions = async (matchIds: bigint[], outcomes: (1 | 2 | 3)[]) => {
+    try {
+      console.log('Submitting free predictions (no approval needed)');
+      await sendCalls({
+        calls: [{
+          to: CONTRACTS.SEERSLEAGUE,
+          abi: SEERSLEAGUE_ABI,
+          functionName: 'submitPredictions',
+          args: [matchIds, outcomes],
+        }],
+      });
+    } catch (error) {
+      console.error('Free prediction submission failed:', error);
+      throw error;
     }
   };
   
