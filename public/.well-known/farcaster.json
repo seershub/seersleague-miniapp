@@ -12,6 +12,7 @@
     "name": "SeersLeague",
     "homeUrl": "https://league.seershub.com",
     "iconUrl": "https://league.seershub.com/icon-512.png",
+    "imageUrl": "https://league.seershub.com/og-image.png",
     "splashImageUrl": "https://league.seershub.com/splash.png",
     "splashBackgroundColor": "#000000",
     "webhookUrl": "https://league.seershub.com/api/webhook",
@@ -22,7 +23,7 @@
       "https://league.seershub.com/screenshots/leaderboard.png"
     ],
     "primaryCategory": "games",
-    "tags": ["sports", "predictions", "football", "competition", "base", "daily", "usdc"],
+    "tags": ["games", "predictions", "football", "competition", "base"],
     "heroImageUrl": "https://league.seershub.com/hero.png",
     "tagline": "Predict, Compete, Win",
     "ogTitle": "SeersLeague - Daily Football Predictions on Base",
