@@ -57,35 +57,21 @@ export default function RootLayout({
         <MiniKitProvider>
           <div className="min-h-screen flex flex-col">
             
-            {/* Header - Modern Minimalist Design */}
-            <header className="relative bg-black/95 backdrop-blur-sm border-b border-white/10">
+            {/* Header */}
+            <header className="bg-black border-b border-gray-800">
               <div className="max-w-4xl mx-auto px-4 py-6">
                 <div className="flex items-center justify-between">
+                  <Link href="/" className="flex items-center space-x-3">
+                    <Image
+                      src="/logomuz.png"
+                      alt="SeersLeague"
+                      width={200}
+                      height={50}
+                      priority
+                      className="h-12 w-auto"
+                    />
+                  </Link>
                   
-                  {/* Logo Section */}
-                  <div className="flex items-center space-x-4">
-                    <div className="relative group">
-                      <Image
-                        src="/logomuz.png"
-                        alt="SeersLeague"
-                        width={200}
-                        height={50}
-                        priority
-                        className="h-12 w-auto transition-all duration-300 group-hover:scale-105"
-                        style={{
-                          filter: 'brightness(1.1) drop-shadow(0 2px 8px rgba(251, 191, 36, 0.3))'
-                        }}
-                      />
-                    </div>
-                    
-                    {/* Brand Text */}
-                    <div className="hidden sm:block">
-                      <h1 className="text-xl font-bold text-white">SeersLeague</h1>
-                      <p className="text-sm text-white/70">Football Predictions</p>
-                    </div>
-                  </div>
-
-                  {/* Navigation */}
                   <nav className="hidden md:flex items-center space-x-8">
                     <Link href="/" className="text-white/80 hover:text-yellow-400 transition-colors duration-200">
                       Home
@@ -97,15 +83,6 @@ export default function RootLayout({
                       Profile
                     </Link>
                   </nav>
-
-                  {/* Mobile Menu Button */}
-                  <div className="md:hidden">
-                    <button className="text-white/80 hover:text-yellow-400 transition-colors">
-                      <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-                      </svg>
-                    </button>
-                  </div>
                 </div>
               </div>
             </header>
