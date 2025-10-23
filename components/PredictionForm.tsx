@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { Match } from '@/lib/matches';
 import { MatchCard } from './MatchCard';
-import { PaymentModal } from './PaymentModal';
+// PaymentModal removed - using batch transactions
 import { CONTRACTS, SEERSLEAGUE_ABI, PREDICTION_FEE, UserStats, formatUSDC, USDC_ABI } from '@/lib/contract-interactions';
 import { useMiniKit } from './MiniKitProvider';
 import { encodeFunctionData, parseUnits } from 'viem';
@@ -50,7 +50,7 @@ export function PredictionForm({ matches }: PredictionFormProps) {
   
   const [selectedMatches, setSelectedMatches] = useState<number[]>([]);
   const [predictions, setPredictions] = useState<{[matchId: number]: 1 | 2 | 3}>({});
-  const [showPaymentModal, setShowPaymentModal] = useState(false);
+  // PaymentModal state removed - using batch transactions
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [userStats, setUserStats] = useState<UserStats | null>(null);
   const [isPending, setIsPending] = useState(false);
@@ -240,14 +240,7 @@ export function PredictionForm({ matches }: PredictionFormProps) {
         totalFee: totalFee.toString()
       });
 
-      // If fee required and modal not skipped, show payment modal for approval
-      if (totalFee > 0 && !skipModal) {
-        toast.dismiss(loadingToast);
-        setShowPaymentModal(true);
-        setIsSubmitting(false);
-        setIsPending(false);
-        return;
-      }
+      // Skip old payment modal - using batch transactions now
 
       // EIP-5792 Batch Transaction: Approve + Predict in one signature
       if (totalFee > 0) {
@@ -541,16 +534,7 @@ export function PredictionForm({ matches }: PredictionFormProps) {
       </div>
       
       {/* Payment Modal */}
-      {showPaymentModal && (
-        <PaymentModal
-          onSuccess={async () => {
-            setShowPaymentModal(false);
-            await submitPredictions(true); // Skip modal check, proceed to wallet transaction
-          }}
-          onCancel={() => setShowPaymentModal(false)}
-          amount={totalFee}
-        />
-      )}
+      {/* PaymentModal removed - using batch transactions */}
     </div>
   );
 }
