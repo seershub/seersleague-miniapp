@@ -16,15 +16,6 @@ const nextConfig = {
     ],
     unoptimized: true, // Disable Next.js image optimization for external images
   },
-  async redirects() {
-    return [
-      {
-        source: '/.well-known/farcaster.json',
-        destination: '/api/farcaster',
-        permanent: false,
-      },
-    ];
-  },
   async headers() {
     return [
       {
