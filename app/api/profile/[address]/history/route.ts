@@ -67,12 +67,13 @@ export async function GET(
       });
     }
 
-    // FIX: Alchemy free tier - use indexed filter for efficiency
-    // 2000 blocks = ~1 hour on Base (2s per block)
+    // Alchemy PAYG: No block range limit, but optimize for cost
+    // 10,000 blocks = ~5.5 hours on Base (2s per block)
+    // Indexed parameter (user address) makes it efficient
     const currentBlock = await publicClient.getBlockNumber();
-    const fromBlock = currentBlock - 2000n;
+    const fromBlock = currentBlock - 10000n;
 
-    console.log(`[History] Fetching from block ${fromBlock} to ${currentBlock} (last 2000 blocks, ~1 hour)`);
+    console.log(`[History] Fetching from block ${fromBlock} to ${currentBlock} (10k blocks, ~5.5 hours)`);
 
     // Fetch prediction events
     const predictionEvents = await publicClient.getLogs({

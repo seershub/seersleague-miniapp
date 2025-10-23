@@ -45,11 +45,12 @@ interface Match {
 async function getUpcomingRegisteredMatches(): Promise<{ matchId: string; startTime: number }[]> {
   const currentBlock = await publicClient.getBlockNumber();
 
-  // FIX: Alchemy free tier - 2000 blocks = ~1 hour on Base
-  // Matches are registered in advance, so 1 hour is enough
-  const fromBlock = currentBlock - 2000n;
+  // Alchemy PAYG: No block range limit, but optimize for cost
+  // 5,000 blocks = ~2.7 hours on Base (2s per block)
+  // Matches are registered in advance, so this is enough
+  const fromBlock = currentBlock - 5000n;
 
-  console.log(`[Matches] Fetching from block ${fromBlock} to ${currentBlock} (last 2000 blocks, ~1 hour)`);
+  console.log(`[Matches] Fetching from block ${fromBlock} to ${currentBlock} (5k blocks, ~2.7 hours)`);
 
   // Single fetch - much faster for matches
   const events = await publicClient.getLogs({
