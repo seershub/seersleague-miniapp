@@ -5,10 +5,23 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { useMiniKit } from '@/components/MiniKitProvider';
 import { sdk } from '@farcaster/miniapp-sdk';
+import { useAccount, useBalance } from 'wagmi';
+import { formatUnits } from 'viem';
+
+// Base Mainnet USDC Contract Address
+const USDC_CONTRACT_ADDRESS = '0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913';
 
 export default function Header() {
   const { isReady, address, balance } = useMiniKit();
   const [mounted, setMounted] = useState(false);
+  
+  // Wagmi hooks for real USDC balance
+  const { address: wagmiAddress } = useAccount();
+  const { data: usdcBalance, isLoading } = useBalance({
+    address: wagmiAddress,
+    token: USDC_CONTRACT_ADDRESS,
+    watch: true, // Auto-update when balance changes
+  });
 
   useEffect(() => {
     setMounted(true);
@@ -30,88 +43,59 @@ export default function Header() {
   };
 
   return (
-    <header className="sticky top-0 z-50 w-full bg-gray-950/70 backdrop-blur-lg border-b border-white/10">
-      <div className="max-w-4xl mx-auto px-4 py-4">
-        <div className="flex justify-between items-center">
+    <header className="sticky top-0 z-50 w-full bg-gray-950/70 backdrop-blur-lg border-b border-white/10 p-4">
+      <div className="max-w-4xl mx-auto">
+        <div className="flex items-center justify-between">
           
-          {/* Logo Section */}
-          <Link href="/" className="flex items-center">
-            <Image
-              src="/logomuz.png"
-              alt="SeersLeague"
-              width={200}
-              height={50}
-              priority
-              className="h-10 w-auto transition-all duration-300 hover:scale-105"
-              style={{
-                filter: 'drop-shadow(0 0 8px rgba(252, 211, 77, 0.3))'
-              }}
-            />
-          </Link>
-          
-          {/* User Info Section */}
+          {/* Sol Taraf - Logo + Live Etiketi */}
           <div className="flex items-center gap-3">
-            {/* Balance */}
-            {isReady && balance && (
-              <div className="flex items-center gap-2">
-                <span className="text-white font-semibold text-sm">
-                  {formatBalance(balance)}
-                </span>
-              </div>
-            )}
-            
-            {/* Add Funds Button */}
-            {isReady && (
-              <button 
-                onClick={async () => {
-                  try {
-                    // Farcaster SDK ile wallet açma
-                    const wallet = await sdk.wallet;
-                    if (wallet?.ethProvider) {
-                      // Base wallet'ı aç - eth_accounts izni iste
-                      await wallet.ethProvider.request({ 
-                        method: 'wallet_requestPermissions',
-                        params: [{ eth_accounts: {} }]
-                      });
-                    }
-                  } catch (error) {
-                    console.log('Wallet access error:', error);
-                    // Fallback: Base web sitesine yönlendir
-                    window.open('https://base.org', '_blank');
-                  }
+            {/* Logo */}
+            <Link href="/" className="flex items-center">
+              <Image
+                src="/logomuz.png"
+                alt="SeersLeague"
+                width={200}
+                height={50}
+                priority
+                className="h-10 w-auto transition-all duration-300 hover:scale-105"
+                style={{
+                  filter: 'drop-shadow(0 0 8px rgba(252, 211, 77, 0.3))'
                 }}
-                className="
-                  rounded-full 
-                  bg-blue-600 
-                  px-4 py-2 
-                  text-sm 
-                  font-semibold 
-                  text-white 
-                  shadow-sm 
-                  transition-opacity 
-                  hover:opacity-80 
-                  active:opacity-90
-                "
-              >
-                Add Funds
-              </button>
-            )}
+              />
+            </Link>
             
-            {/* Navigation Links */}
-            <nav className="hidden md:flex items-center gap-4 ml-4">
-              <Link 
-                href="/leaderboard" 
-                className="text-white/80 hover:text-yellow-400 transition-colors duration-200 text-sm font-medium"
-              >
-                Leaderboard
-              </Link>
-              <Link 
-                href="/profile" 
-                className="text-white/80 hover:text-yellow-400 transition-colors duration-200 text-sm font-medium"
-              >
-                Profile
-              </Link>
-            </nav>
+            {/* Live Etiketi */}
+            <div className="flex items-center gap-1.5 rounded-full bg-green-500/15 px-2 py-0.5 text-xs font-medium text-green-400">
+              <span className="relative flex h-2 w-2">
+                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-green-400 opacity-75"></span>
+                <span className="relative inline-flex h-2 w-2 rounded-full bg-green-500"></span>
+              </span>
+              LIVE
+            </div>
+          </div>
+          
+          {/* Sağ Taraf - USDC Bakiyesi */}
+          <div className="flex items-center gap-2">
+            {isLoading && (
+              <span className="text-lg font-medium text-gray-500 animate-pulse">
+                $....
+              </span>
+            )}
+
+            {!isLoading && (
+              <span className="text-lg font-medium text-white">
+                {usdcBalance
+                  ? `$${parseFloat(formatUnits(usdcBalance.value, 6)).toFixed(2)}`
+                  : '$0.00'
+                }
+              </span>
+            )}
+
+            <img 
+              src="https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/ethereum/assets/0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48/logo.png" 
+              alt="USDC" 
+              className="h-5 w-5 rounded-full"
+            />
           </div>
         </div>
       </div>
