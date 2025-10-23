@@ -17,7 +17,7 @@
     "splashBackgroundColor": "#000000",
     "webhookUrl": "https://league.seershub.com/api/webhook",
     "subtitle": "Daily Football Predictions",
-    "description": "Predict football matches daily. First 5 predictions FREE, then 0.5 USDC per match. Compete for prizes based on accuracy.",
+    "description": "Predict football matches daily. First 5 predictions free, then 0.5 USDC per match. Compete for prizes based on accuracy.",
     "screenshotUrls": [
       "https://league.seershub.com/screenshots/home.png",
       "https://league.seershub.com/screenshots/leaderboard.png"
@@ -26,8 +26,8 @@
     "tags": ["games", "predictions", "football", "competition", "base"],
     "heroImageUrl": "https://league.seershub.com/hero.png",
     "tagline": "Predict, Compete, Win",
-    "ogTitle": "SeersLeague - Daily Football Predictions on Base",
-    "ogDescription": "First 5 predictions free! Predict football matches daily, compete for prizes. Build your on-chain reputation.",
+    "ogTitle": "SeersLeague - Football Predictions",
+    "ogDescription": "First 5 predictions free! Predict football matches daily, compete for prizes.",
     "ogImageUrl": "https://league.seershub.com/og-image.png",
     "noindex": false
   }
