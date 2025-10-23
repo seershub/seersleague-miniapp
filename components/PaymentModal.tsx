@@ -103,29 +103,41 @@ export function PaymentModal({ onSuccess, onCancel, amount }: PaymentModalProps)
       console.log('Approval transaction sent:', txHash);
       toast.success('USDC approval transaction sent!');
       
-      // Wait a bit for transaction to be mined
-      await new Promise(r => setTimeout(r, 3000));
-
-      // Refresh allowance directly from blockchain
-      try {
-        const newAllowance = await publicClient.readContract({
-          address: CONTRACTS.USDC,
-          abi: USDC_ABI,
-          functionName: 'allowance',
-          args: [address, CONTRACTS.SEERSLEAGUE]
-        }) as bigint;
-        setAllowance(newAllowance);
-        if (newAllowance >= amount) {
-          setStep('confirm');
-        } else {
-          // If allowance is still not enough, assume it's processing
-          console.log('Allowance not yet updated, assuming transaction is processing...');
-          setStep('confirm'); // Allow user to proceed
+      // Poll for allowance update (max 30 seconds)
+      let attempts = 0;
+      const maxAttempts = 15; // 15 attempts * 2 seconds = 30 seconds max
+      
+      while (attempts < maxAttempts) {
+        await new Promise(r => setTimeout(r, 2000)); // Wait 2 seconds
+        
+        try {
+          const newAllowance = await publicClient.readContract({
+            address: CONTRACTS.USDC,
+            abi: USDC_ABI,
+            functionName: 'allowance',
+            args: [address, CONTRACTS.SEERSLEAGUE]
+          }) as bigint;
+          
+          setAllowance(newAllowance);
+          
+          if (newAllowance >= amount) {
+            console.log('Allowance confirmed:', newAllowance.toString());
+            setStep('confirm');
+            return; // Success - exit the function
+          }
+          
+          console.log(`Allowance check ${attempts + 1}/${maxAttempts}: ${newAllowance.toString()}`);
+          attempts++;
+          
+        } catch (error) {
+          console.log(`Allowance check failed (attempt ${attempts + 1}):`, error);
+          attempts++;
         }
-      } catch (error) {
-        console.log('Could not check allowance, assuming transaction succeeded:', error);
-        setStep('confirm'); // Allow user to proceed
       }
+      
+      // If we get here, approval didn't complete in time
+      toast.error('Approval is taking longer than expected. Please check your wallet and try again.');
+      console.log('Approval timeout - allowance not sufficient after 30 seconds');
     } catch (error: any) {
       console.error('Approval error:', error);
       toast.error('Failed to approve USDC. Please try again.');
