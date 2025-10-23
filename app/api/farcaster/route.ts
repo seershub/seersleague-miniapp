@@ -1,0 +1,45 @@
+import { NextResponse } from 'next/server';
+
+export async function GET() {
+  const farcasterConfig = {
+    "accountAssociation": {
+      "header": "eyJmaWQiOjEzNzk1NDUsInR5cGUiOiJjdXN0b2R5Iiwia2V5IjoiMHg0ZGIwRmNjNTc5YkUwMDcxNmI4M2FjNDA4NTA0ODc3YTNiMjJmNmUzIn0",
+      "payload": "eyJkb21haW4iOiJsZWFndWUuc2VlcnNodWIuY29tIn0",
+      "signature": "pAp2aFOxDH9FSC+2WJmg/3i9ggjzmmnNJia1SLSuw5dgoKbHgZF7l8wf4x6SfPCPo5INcaW3l6Ninp+Bio1Nihs="
+    },
+    "baseBuilder": {
+      "allowedAddresses": ["0x2cab9667c6e3ab9549c128c9f50f5103c627a575"]
+    },
+    "miniapp": {
+      "version": "1",
+      "name": "SeersLeague",
+      "homeUrl": "https://league.seershub.com",
+      "iconUrl": "https://league.seershub.com/icon-512.png",
+      "splashImageUrl": "https://league.seershub.com/splash.png",
+      "splashBackgroundColor": "#000000",
+      "webhookUrl": "https://league.seershub.com/api/webhook",
+      "subtitle": "Daily Football Predictions",
+      "description": "Predict football matches daily. First 5 predictions FREE, then 0.5 USDC per match. Compete for prizes based on accuracy.",
+      "screenshotUrls": [
+        "https://league.seershub.com/screenshots/home.png",
+        "https://league.seershub.com/screenshots/leaderboard.png"
+      ],
+      "primaryCategory": "games",
+      "tags": ["sports", "predictions", "football", "competition", "base", "daily", "usdc"],
+      "heroImageUrl": "https://league.seershub.com/hero.png",
+      "tagline": "Predict, Compete, Win",
+      "ogTitle": "SeersLeague - Daily Football Predictions on Base",
+      "ogDescription": "First 5 predictions free! Predict football matches daily, compete for prizes. Build your on-chain reputation.",
+      "ogImageUrl": "https://league.seershub.com/og-image.png",
+      "noindex": false
+    }
+  };
+
+  return NextResponse.json(farcasterConfig, {
+    headers: {
+      'Content-Type': 'application/json',
+      'Access-Control-Allow-Origin': '*',
+      'Cache-Control': 'public, max-age=3600',
+    },
+  });
+}
