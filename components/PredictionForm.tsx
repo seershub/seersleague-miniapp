@@ -30,8 +30,7 @@ export function PredictionForm({ matches }: PredictionFormProps) {
     address: CONTRACTS.USDC,
     abi: erc20Abi,
     functionName: 'allowance',
-    args: [wagmiAddress!, CONTRACTS.SEERSLEAGUE],
-    enabled: !!wagmiAddress,
+    args: wagmiAddress ? [wagmiAddress, CONTRACTS.SEERSLEAGUE] : undefined,
   });
   const [selectedMatches, setSelectedMatches] = useState<number[]>([]);
   const [predictions, setPredictions] = useState<{[matchId: number]: 1 | 2 | 3}>({});
