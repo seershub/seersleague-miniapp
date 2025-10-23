@@ -25,7 +25,17 @@ export const metadata: Metadata = {
     'fc:frame:button:1': 'Start Predicting',
     'fc:frame:button:1:action': 'link',
     'fc:frame:button:1:target': 'https://league.seershub.com',
-    'fc:miniapp': 'https://league.seershub.com',
+    'fc:miniapp': JSON.stringify({
+      version: 'next',
+      imageUrl: 'https://league.seershub.com/og-image.png',
+      button: {
+        title: 'Open SeersLeague',
+        action: {
+          type: 'launch_frame',
+          url: 'https://league.seershub.com'
+        }
+      }
+    }),
   },
 };
 
