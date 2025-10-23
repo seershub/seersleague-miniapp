@@ -213,18 +213,46 @@ export async function GET(
       } catch (error) {
         console.error(`[History] Error fetching match ${matchId}:`, error);
 
-        const block = blockMap.get(blockNumber);
-        return {
-          matchId: Number(matchId),
-          matchName: `Match #${matchId}`,
-          homeTeam: 'Unknown',
-          awayTeam: 'Unknown',
-          league: 'Football',
-          userPrediction: 0,
-          actualResult: null,
-          isCorrect: null,
-          timestamp: block ? Number(block.timestamp) : Math.floor(Date.now() / 1000)
-        };
+        // CRITICAL FIX: Even on error, fetch userPrediction from contract!
+        // Otherwise checkmarks won't show (userPrediction = 0)
+        try {
+          const userPredictionResult = await publicClient.readContract({
+            address: CONTRACTS.SEERSLEAGUE,
+            abi: SEERSLEAGUE_ABI,
+            functionName: 'getUserPrediction',
+            args: [address, matchId]
+          });
+          const userPrediction = userPredictionResult as unknown as bigint;
+          const predictionNum = Number(userPrediction);
+
+          const block = blockMap.get(blockNumber);
+          return {
+            matchId: Number(matchId),
+            matchName: `Match #${matchId}`,
+            homeTeam: 'Unknown',
+            awayTeam: 'Unknown',
+            league: 'Football',
+            userPrediction: predictionNum, // Use real prediction!
+            actualResult: null,
+            isCorrect: null,
+            timestamp: block ? Number(block.timestamp) : Math.floor(Date.now() / 1000)
+          };
+        } catch (innerError) {
+          console.error(`[History] Failed to fetch userPrediction for match ${matchId}:`, innerError);
+
+          const block = blockMap.get(blockNumber);
+          return {
+            matchId: Number(matchId),
+            matchName: `Match #${matchId}`,
+            homeTeam: 'Unknown',
+            awayTeam: 'Unknown',
+            league: 'Football',
+            userPrediction: 0, // Last resort fallback
+            actualResult: null,
+            isCorrect: null,
+            timestamp: block ? Number(block.timestamp) : Math.floor(Date.now() / 1000)
+          };
+        }
       }
     });
 
