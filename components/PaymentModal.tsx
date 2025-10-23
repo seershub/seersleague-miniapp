@@ -90,7 +90,14 @@ export function PaymentModal({ onSuccess, onCancel, amount }: PaymentModalProps)
       });
       const txHash = await sdk.wallet.ethProvider.request({
         method: 'eth_sendTransaction',
-        params: [{ to: CONTRACTS.USDC, data, from: address }]
+        params: [{ 
+          to: CONTRACTS.USDC, 
+          data, 
+          from: address,
+          chainId: '0x2105', // Base Mainnet chain ID (8453 in hex)
+          gas: '0x5208', // 21000 gas limit for approve
+          gasPrice: '0x3b9aca00' // 1 gwei gas price
+        }]
       });
       let receipt = null as any;
       let attempts = 0;
