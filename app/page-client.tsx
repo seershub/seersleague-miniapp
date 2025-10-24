@@ -6,7 +6,7 @@ import { PredictionForm } from '@/components/PredictionForm';
 import { useMiniKit } from '@/components/MiniKitProvider';
 import { sdk } from '@farcaster/miniapp-sdk';
 import { Match } from '@/lib/matches';
-import { Wallet } from 'lucide-react';
+import { Wallet, Search } from 'lucide-react';
 
 interface HomeProps {
   initialMatches?: Match[];
@@ -19,6 +19,7 @@ export default function Home({ initialMatches = [] }: HomeProps) {
   const [error, setError] = useState<string | null>(null);
   const [chainId, setChainId] = useState<string | null>(null);
   const [showAll, setShowAll] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
   const { isReady } = useMiniKit();
   
   // Check chain ID and fetch matches
@@ -97,7 +98,15 @@ export default function Home({ initialMatches = [] }: HomeProps) {
     const interval = setInterval(fetchMatches, 30000);
     return () => clearInterval(interval);
   }, []);
-  
+
+  // Filter matches based on search query
+  const filteredMatches = matches.filter(match =>
+    searchQuery === '' ||
+    match.homeTeam.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    match.awayTeam.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    match.league.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
   return (
     <div className="min-h-screen bg-black">
         <div className="max-w-4xl mx-auto px-4 py-8">
@@ -145,6 +154,33 @@ export default function Home({ initialMatches = [] }: HomeProps) {
             </p>
           </div>
 
+          {/* SEARCH BAR */}
+          <div className="max-w-2xl mx-auto mb-6">
+            <div className="relative">
+              <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-500" />
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Search teams or leagues..."
+                className="w-full pl-12 pr-4 py-3 bg-gray-900/50 border border-gray-700/50 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:border-yellow-500/50 focus:ring-2 focus:ring-yellow-500/20 transition-all"
+              />
+              {searchQuery && (
+                <button
+                  onClick={() => setSearchQuery('')}
+                  className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-300 transition-colors"
+                >
+                  ✕
+                </button>
+              )}
+            </div>
+            {searchQuery && (
+              <p className="text-sm text-gray-500 mt-2 text-center">
+                Found {filteredMatches.length} match{filteredMatches.length !== 1 ? 'es' : ''}
+              </p>
+            )}
+          </div>
+
           {/* MATCHES GRID */}
           {loading ? (
             <div className="grid gap-4 sm:gap-6 max-w-4xl mx-auto">
@@ -154,17 +190,17 @@ export default function Home({ initialMatches = [] }: HomeProps) {
             </div>
           ) : (
             <div className="grid gap-4 sm:gap-6 max-w-4xl mx-auto">
-              {(showAll ? matches : matches.slice(0, 5)).map((match) => (
+              {(showAll ? filteredMatches : filteredMatches.slice(0, 5)).map((match) => (
                 <PredictionForm key={match.id} matches={[match]} />
               ))}
-              
-              {matches.length > 5 && (
+
+              {filteredMatches.length > 5 && (
                 <div className="text-center mt-8">
                   <button
                     onClick={() => setShowAll(!showAll)}
                     className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-xl font-semibold transition-colors"
                   >
-                    {showAll ? 'Show Less' : `Show All ${matches.length} Matches`}
+                    {showAll ? 'Show Less' : `Show All ${filteredMatches.length} Matches`}
                   </button>
                 </div>
               )}
@@ -180,6 +216,20 @@ export default function Home({ initialMatches = [] }: HomeProps) {
             </div>
           )}
           
+          {!loading && !error && filteredMatches.length === 0 && matches.length > 0 && (
+            <div className="text-center py-16">
+              <Search className="w-20 h-20 text-gray-700 mx-auto mb-4" />
+              <p className="text-gray-400 text-lg">No matches found</p>
+              <p className="text-gray-500 text-sm mt-2">Try searching for different teams or leagues</p>
+              <button
+                onClick={() => setSearchQuery('')}
+                className="mt-4 text-yellow-400 hover:text-yellow-300 text-sm font-medium"
+              >
+                Clear search
+              </button>
+            </div>
+          )}
+
           {!loading && !error && matches.length === 0 && (
             <div className="text-center py-16">
               <div className="w-20 h-20 bg-gray-800 rounded-full flex items-center justify-center mx-auto mb-4">

@@ -324,141 +324,98 @@ export default function ProfilePage() {
                     <p className="text-gray-500 text-sm">Start making predictions to build your history!</p>
                   </div>
                 ) : (
-                  <div className="space-y-3 max-h-96 overflow-y-auto">
+                  <div className="space-y-2">
                     {history.map((entry, index) => {
                       // Determine which team user picked
                       const userPickedHome = entry.userPrediction === 1;
                       const userPickedDraw = entry.userPrediction === 2;
                       const userPickedAway = entry.userPrediction === 3;
 
-                      // DEBUG LOG - Check prediction values
-                      if (index === 0) {
-                        console.log('[HISTORY DEBUG] First entry:', {
-                          matchId: entry.matchId,
-                          userPrediction: entry.userPrediction,
-                          userPickedHome,
-                          userPickedDraw,
-                          userPickedAway,
-                          homeTeam: entry.homeTeam,
-                          awayTeam: entry.awayTeam
-                        });
-                      }
-
                       return (
                         <div
                           key={`${entry.matchId}-${index}`}
-                          className="relative group rounded-xl p-4 bg-gray-800/50 border border-gray-700/50 hover:bg-gray-800/70 hover:border-gray-600/50 transition-all duration-300"
+                          className="relative rounded-lg p-3 bg-gray-800/30 border border-gray-700/30 hover:bg-gray-800/50 hover:border-gray-600/50 transition-all"
                         >
-                          {/* League Badge */}
-                          <div className="flex items-center justify-between mb-3">
-                            <span className="text-xs text-gray-400 uppercase tracking-wider">{entry.league}</span>
+                          {/* Compact Header Row */}
+                          <div className="flex items-center justify-between gap-2 mb-2">
+                            <span className="text-xs text-gray-500 uppercase tracking-wide">{entry.league}</span>
 
-                            {/* Match Status Badge */}
+                            {/* Status Badge */}
                             {entry.isCorrect !== null ? (
-                              <div className={`px-3 py-1 rounded-full text-xs font-semibold ${
+                              <span className={`px-2 py-0.5 rounded text-xs font-medium ${
                                 entry.isCorrect
-                                  ? 'bg-green-500/20 text-green-400 border border-green-500/30'
-                                  : 'bg-red-500/20 text-red-400 border border-red-500/30'
+                                  ? 'bg-green-500/20 text-green-400'
+                                  : 'bg-red-500/20 text-red-400'
                               }`}>
-                                {entry.isCorrect ? '✓ Başarılı' : '✗ Başarısız'}
-                              </div>
+                                {entry.isCorrect ? '✓ Correct' : '✗ Wrong'}
+                              </span>
                             ) : (
-                              <div className="px-3 py-1 rounded-full text-xs font-semibold bg-yellow-500/20 text-yellow-400 border border-yellow-500/30">
-                                ⏳ Bekleniyor
-                              </div>
+                              <span className="px-2 py-0.5 rounded text-xs font-medium bg-yellow-500/20 text-yellow-400">
+                                Pending
+                              </span>
                             )}
                           </div>
 
-                          {/* Match Display */}
-                          <div className="flex items-center justify-between gap-4">
+                          {/* Horizontal Match Display */}
+                          <div className="flex items-center gap-2">
                             {/* Home Team */}
-                            <div className={`flex-1 text-center p-3 rounded-lg transition-all ${
+                            <div className={`flex-1 flex items-center gap-2 p-2 rounded ${
                               userPickedHome
-                                ? 'bg-blue-500/20 border-2 border-blue-500/50 shadow-lg shadow-blue-500/20'
-                                : 'bg-gray-800/30 border border-gray-700/30'
+                                ? 'bg-blue-500/10 border border-blue-500/30'
+                                : 'bg-transparent'
                             }`}>
-                              <div className={`font-bold flex items-center justify-center gap-2 ${
-                                userPickedHome ? 'text-blue-400 text-lg' : 'text-gray-300'
+                              {userPickedHome && <CheckCircle className="w-4 h-4 text-blue-400 flex-shrink-0" />}
+                              <span className={`text-sm font-medium truncate ${
+                                userPickedHome ? 'text-blue-400' : 'text-gray-400'
                               }`}>
-                                {userPickedHome && (
-                                  <>
-                                    <CheckCircle className="w-5 h-5 text-blue-400 flex-shrink-0" />
-                                    <span className="text-blue-400">✓</span>
-                                  </>
-                                )}
-                                <span>{entry.homeTeam}</span>
-                              </div>
-                              {userPickedHome && (
-                                <div className="text-xs text-blue-400 mt-1 font-bold">✓ SEÇİMİNİZ</div>
-                              )}
+                                {entry.homeTeam}
+                              </span>
                             </div>
 
-                            {/* VS / Draw */}
-                            <div className="flex flex-col items-center gap-1">
-                              <span className="text-xs text-gray-500">VS</span>
-                              {userPickedDraw && (
-                                <div className="px-3 py-1 rounded-full bg-yellow-500/20 border-2 border-yellow-500/50 text-yellow-400 text-xs font-semibold shadow-lg shadow-yellow-500/20 flex items-center gap-1">
-                                  <CheckCircle className="w-4 h-4" />
-                                  <span>✓</span>
-                                  <span>Beraberlik</span>
+                            {/* VS / Draw Indicator */}
+                            <div className="flex-shrink-0">
+                              {userPickedDraw ? (
+                                <div className="px-3 py-1 rounded bg-yellow-500/10 border border-yellow-500/30 flex items-center gap-1">
+                                  <CheckCircle className="w-3 h-3 text-yellow-400" />
+                                  <span className="text-xs font-medium text-yellow-400">Draw</span>
                                 </div>
-                              )}
-                              {!userPickedHome && !userPickedDraw && !userPickedAway && (
-                                <div className="px-3 py-1 rounded-full bg-red-500/20 text-red-400 text-xs">
-                                  ⚠️ userPrediction: {entry.userPrediction}
-                                </div>
+                              ) : (
+                                <span className="text-xs text-gray-600">vs</span>
                               )}
                             </div>
 
                             {/* Away Team */}
-                            <div className={`flex-1 text-center p-3 rounded-lg transition-all ${
+                            <div className={`flex-1 flex items-center justify-end gap-2 p-2 rounded ${
                               userPickedAway
-                                ? 'bg-purple-500/20 border-2 border-purple-500/50 shadow-lg shadow-purple-500/20'
-                                : 'bg-gray-800/30 border border-gray-700/30'
+                                ? 'bg-purple-500/10 border border-purple-500/30'
+                                : 'bg-transparent'
                             }`}>
-                              <div className={`font-bold flex items-center justify-center gap-2 ${
-                                userPickedAway ? 'text-purple-400 text-lg' : 'text-gray-300'
+                              <span className={`text-sm font-medium truncate ${
+                                userPickedAway ? 'text-purple-400' : 'text-gray-400'
                               }`}>
-                                {userPickedAway && (
-                                  <>
-                                    <CheckCircle className="w-5 h-5 text-purple-400 flex-shrink-0" />
-                                    <span className="text-purple-400">✓</span>
-                                  </>
-                                )}
-                                <span>{entry.awayTeam}</span>
-                              </div>
-                              {userPickedAway && (
-                                <div className="text-xs text-purple-400 mt-1 font-bold">✓ SEÇİMİNİZ</div>
-                              )}
+                                {entry.awayTeam}
+                              </span>
+                              {userPickedAway && <CheckCircle className="w-4 h-4 text-purple-400 flex-shrink-0" />}
                             </div>
                           </div>
 
-                          {/* Match Result (if available) */}
+                          {/* Result Footer (if available) */}
                           {entry.actualResult !== null && (
-                            <div className="mt-3 pt-3 border-t border-gray-700/50">
-                              <div className="flex items-center justify-center gap-2 text-sm">
-                                <span className="text-gray-400">Sonuç:</span>
-                                <span className={`font-semibold ${
-                                  entry.actualResult === 1 ? 'text-blue-400' :
-                                  entry.actualResult === 2 ? 'text-yellow-400' :
-                                  'text-purple-400'
-                                }`}>
-                                  {entry.actualResult === 1 ? entry.homeTeam :
-                                   entry.actualResult === 2 ? 'Beraberlik' :
-                                   entry.awayTeam}
-                                  {' kazandı'}
-                                </span>
-                              </div>
+                            <div className="mt-2 pt-2 border-t border-gray-700/30 text-xs text-gray-500">
+                              Result: <span className="font-medium text-gray-400">
+                                {entry.actualResult === 1 ? entry.homeTeam :
+                                 entry.actualResult === 2 ? 'Draw' :
+                                 entry.awayTeam} won
+                              </span>
                             </div>
                           )}
 
                           {/* Timestamp */}
-                          <div className="flex items-center justify-center gap-2 mt-3 text-xs text-gray-500">
+                          <div className="flex items-center gap-1 mt-2 text-xs text-gray-600">
                             <Clock className="w-3 h-3" />
-                            {new Date(entry.timestamp * 1000).toLocaleDateString('tr-TR', {
+                            {new Date(entry.timestamp * 1000).toLocaleDateString('en-US', {
                               month: 'short',
                               day: 'numeric',
-                              year: 'numeric',
                               hour: '2-digit',
                               minute: '2-digit'
                             })}
