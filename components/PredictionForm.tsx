@@ -275,51 +275,51 @@ export function PredictionForm({ matches }: PredictionFormProps) {
     }
   };
 
-  // Batch Transaction Functions using Farcaster SDK
+  // EIP-5792 Batch Transaction Functions using Farcaster SDK
   const submitBatchPredictions = async (matchIds: bigint[], outcomes: (1 | 2 | 3)[], totalFee: bigint) => {
     if (!address || !sdk) return;
 
     try {
-      // 1. Check if approval is needed
-      if (currentAllowance && currentAllowance < totalFee) {
-        console.log('Approving USDC first...');
-        const approveData = encodeFunctionData({
-          abi: USDC_ABI,
-          functionName: 'approve',
-          args: [CONTRACTS.SEERSLEAGUE, totalFee]
-        });
-        
-        await sdk.wallet.ethProvider.request({
-          method: 'eth_sendTransaction',
-          params: [{
-            to: CONTRACTS.USDC,
-            data: approveData,
-            from: address as `0x${string}`,
-            value: '0x0'
-          }]
-        });
-        
-        // Wait a moment for approval to be processed
-        await new Promise(resolve => setTimeout(resolve, 3000));
-      }
+      console.log('🚀 Starting EIP-5792 batch transaction...');
 
-      // 2. Submit predictions
-      console.log('Submitting predictions...');
+      // Prepare transaction data
+      const approveData = encodeFunctionData({
+        abi: USDC_ABI,
+        functionName: 'approve',
+        args: [CONTRACTS.SEERSLEAGUE, totalFee]
+      });
+
       const predictData = encodeFunctionData({
         abi: SEERSLEAGUE_ABI,
         functionName: 'submitPredictions',
         args: [matchIds, outcomes]
       });
-      
-      await sdk.wallet.ethProvider.request({
-        method: 'eth_sendTransaction',
+
+      // EIP-5792: Send both transactions in a single batch with one signature
+      console.log('📦 Sending batch: approve + predict in one transaction');
+
+      const batchId = await sdk.wallet.ethProvider.request({
+        method: 'wallet_sendCalls',
         params: [{
-          to: CONTRACTS.SEERSLEAGUE,
-          data: predictData,
+          version: '1.0',
+          chainId: '0x2105', // Base mainnet
           from: address as `0x${string}`,
-          value: '0x0'
+          calls: [
+            {
+              to: CONTRACTS.USDC,
+              data: approveData,
+              value: '0x0'
+            },
+            {
+              to: CONTRACTS.SEERSLEAGUE,
+              data: predictData,
+              value: '0x0'
+            }
+          ]
         }]
       });
+
+      console.log('✅ Batch transaction submitted:', batchId);
 
       // Refresh allowance after successful transaction
       const newAllowance = await publicClient.readContract({
@@ -331,7 +331,7 @@ export function PredictionForm({ matches }: PredictionFormProps) {
       setCurrentAllowance(newAllowance);
 
     } catch (error) {
-      console.error('Batch transaction failed:', error);
+      console.error('❌ EIP-5792 batch transaction failed:', error);
       throw error;
     }
   };
