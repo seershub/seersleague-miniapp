@@ -89,14 +89,9 @@ export default function Home({ initialMatches = [] }: HomeProps) {
           }
           return prevMatches;
         });
-        
-        setFilteredMatches(prevFiltered => {
-          if (JSON.stringify(prevFiltered) !== JSON.stringify(matchesArray)) {
-            return matchesArray;
-          }
-          return prevFiltered;
-        });
-        
+
+        setFilteredMatches(matchesArray);
+
         setError(null);
       } catch (err) {
         console.error('Error fetching matches:', err);
@@ -114,7 +109,7 @@ export default function Home({ initialMatches = [] }: HomeProps) {
     const interval = setInterval(() => fetchMatches(true), 300000);
     return () => clearInterval(interval);
   }, []);
-  
+
   return (
     <div className="min-h-screen bg-black">
         <div className="max-w-4xl mx-auto px-4 py-8">
@@ -163,8 +158,8 @@ export default function Home({ initialMatches = [] }: HomeProps) {
 
             {/* SEARCH SECTION */}
             <div className="max-w-2xl mx-auto mb-8">
-              <SearchBox 
-                matches={matches} 
+              <SearchBox
+                matches={matches}
                 onSearchResults={setFilteredMatches}
               />
             </div>
@@ -182,7 +177,7 @@ export default function Home({ initialMatches = [] }: HomeProps) {
               {(showAll ? filteredMatches : filteredMatches.slice(0, 5)).map((match) => (
                 <PredictionForm key={match.id} matches={[match]} />
               ))}
-              
+
               {filteredMatches.length > 5 && (
                 <div className="text-center mt-8">
                   <button
@@ -204,7 +199,7 @@ export default function Home({ initialMatches = [] }: HomeProps) {
               </p>
             </div>
           )}
-          
+
           {!loading && !error && filteredMatches.length === 0 && (
             <div className="text-center py-16">
               <div className="w-20 h-20 bg-gray-800 rounded-full flex items-center justify-center mx-auto mb-4">

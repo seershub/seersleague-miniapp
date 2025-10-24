@@ -335,102 +335,97 @@ export default function ProfilePage() {
                         return (
                           <div
                             key={`${entry.matchId}-${index}`}
-                            className="relative group rounded-lg p-3 bg-gray-800/30 border border-gray-700/30 hover:bg-gray-800/50 hover:border-gray-600/50 transition-all duration-200"
+                            className="relative rounded-lg p-3 bg-gray-800/30 border border-gray-700/30 hover:bg-gray-800/50 hover:border-gray-600/50 transition-all"
                           >
-                            {/* Header Row */}
-                            <div className="flex items-center justify-between mb-2">
-                              <span className="text-xs text-gray-400 uppercase tracking-wider font-medium">{entry.league}</span>
+                            {/* Compact Header Row */}
+                            <div className="flex items-center justify-between gap-2 mb-2">
+                              <span className="text-xs text-gray-500 uppercase tracking-wide">{entry.league}</span>
+
+                              {/* Status Badge */}
                               {entry.isCorrect !== null ? (
-                                <div className={`px-2 py-1 rounded-full text-xs font-semibold ${
+                                <span className={`px-2 py-0.5 rounded text-xs font-medium ${
                                   entry.isCorrect
-                                    ? 'bg-green-500/20 text-green-400 border border-green-500/30'
-                                    : 'bg-red-500/20 text-red-400 border border-red-500/30'
-                                }`}>
-                                  {entry.isCorrect ? '✓ Won' : '✗ Lost'}
+                                    ? 'bg-green-500/20 text-green-400'
+                                    : 'bg-red-500/20 text-red-400'
+                              }`}>
+                                {entry.isCorrect ? '✓ Correct' : '✗ Wrong'}
+                              </span>
+                            ) : (
+                              <span className="px-2 py-0.5 rounded text-xs font-medium bg-yellow-500/20 text-yellow-400">
+                                Pending
+                              </span>
+                            )}
+                          </div>
+
+                          {/* Horizontal Match Display */}
+                          <div className="flex items-center gap-2">
+                            {/* Home Team */}
+                            <div className={`flex-1 flex items-center gap-2 p-2 rounded ${
+                              userPickedHome
+                                ? 'bg-blue-500/10 border border-blue-500/30'
+                                : 'bg-transparent'
+                            }`}>
+                              {userPickedHome && <CheckCircle className="w-4 h-4 text-blue-400 flex-shrink-0" />}
+                              <span className={`text-sm font-medium truncate ${
+                                userPickedHome ? 'text-blue-400' : 'text-gray-400'
+                              }`}>
+                                {entry.homeTeam}
+                              </span>
+                            </div>
+
+                            {/* VS / Draw Indicator */}
+                            <div className="flex-shrink-0">
+                              {userPickedDraw ? (
+                                <div className="px-3 py-1 rounded bg-yellow-500/10 border border-yellow-500/30 flex items-center gap-1">
+                                  <CheckCircle className="w-3 h-3 text-yellow-400" />
+                                  <span className="text-xs font-medium text-yellow-400">Draw</span>
                                 </div>
                               ) : (
-                                <div className="px-2 py-1 rounded-full text-xs font-semibold bg-yellow-500/20 text-yellow-400 border border-yellow-500/30">
-                                  ⏳ Pending
-                                </div>
+                                <span className="text-xs text-gray-600">vs</span>
                               )}
                             </div>
 
-                            {/* Match Teams - Horizontal Layout */}
-                            <div className="flex items-center justify-between gap-2 mb-2">
-                              {/* Home Team */}
-                              <div className={`flex-1 text-center py-2 px-3 rounded-md transition-all ${
-                                userPickedHome
-                                  ? 'bg-blue-500/20 border border-blue-500/50'
-                                  : 'bg-gray-800/20 border border-gray-700/30'
+                            {/* Away Team */}
+                            <div className={`flex-1 flex items-center justify-end gap-2 p-2 rounded ${
+                              userPickedAway
+                                ? 'bg-purple-500/10 border border-purple-500/30'
+                                : 'bg-transparent'
+                            }`}>
+                              <span className={`text-sm font-medium truncate ${
+                                userPickedAway ? 'text-purple-400' : 'text-gray-400'
                               }`}>
-                                <div className={`text-sm font-medium truncate ${
-                                  userPickedHome ? 'text-blue-400' : 'text-gray-300'
-                                }`}>
-                                  {userPickedHome && <span className="text-blue-400 mr-1">✓</span>}
-                                  {entry.homeTeam}
-                                </div>
-                              </div>
-
-                              {/* VS */}
-                              <div className="flex flex-col items-center gap-1 px-2">
-                                <span className="text-xs text-gray-500 font-medium">VS</span>
-                                {userPickedDraw && (
-                                  <div className="px-2 py-1 rounded-full bg-yellow-500/20 border border-yellow-500/50 text-yellow-400 text-xs font-semibold flex items-center gap-1">
-                                    <span>✓</span>
-                                    <span>Draw</span>
-                                  </div>
-                                )}
-                              </div>
-
-                              {/* Away Team */}
-                              <div className={`flex-1 text-center py-2 px-3 rounded-md transition-all ${
-                                userPickedAway
-                                  ? 'bg-purple-500/20 border border-purple-500/50'
-                                  : 'bg-gray-800/20 border border-gray-700/30'
-                              }`}>
-                                <div className={`text-sm font-medium truncate ${
-                                  userPickedAway ? 'text-purple-400' : 'text-gray-300'
-                                }`}>
-                                  {userPickedAway && <span className="text-purple-400 mr-1">✓</span>}
-                                  {entry.awayTeam}
-                                </div>
-                              </div>
-                            </div>
-
-                            {/* Result & Time Row */}
-                            <div className="flex items-center justify-between text-xs text-gray-500">
-                              <div className="flex items-center gap-1">
-                                <Clock className="w-3 h-3" />
-                                <span>
-                                  {new Date(entry.timestamp * 1000).toLocaleDateString('en-US', {
-                                    month: 'short',
-                                    day: 'numeric',
-                                    hour: '2-digit',
-                                    minute: '2-digit'
-                                  })}
-                                </span>
-                              </div>
-                              
-                              {entry.actualResult !== null && (
-                                <div className="text-right">
-                                  <span className="text-gray-400">Result: </span>
-                                  <span className={`font-semibold ${
-                                    entry.actualResult === 1 ? 'text-blue-400' :
-                                    entry.actualResult === 2 ? 'text-yellow-400' :
-                                    'text-purple-400'
-                                  }`}>
-                                    {entry.actualResult === 1 ? entry.homeTeam :
-                                     entry.actualResult === 2 ? 'Draw' :
-                                     entry.awayTeam}
-                                  </span>
-                                </div>
-                              )}
+                                {entry.awayTeam}
+                              </span>
+                              {userPickedAway && <CheckCircle className="w-4 h-4 text-purple-400 flex-shrink-0" />}
                             </div>
                           </div>
-                        );
-                      })}
-                    </div>
+
+                          {/* Result Footer (if available) */}
+                          {entry.actualResult !== null && (
+                            <div className="mt-2 pt-2 border-t border-gray-700/30 text-xs text-gray-500">
+                              Result: <span className="font-medium text-gray-400">
+                                {entry.actualResult === 1 ? entry.homeTeam :
+                                 entry.actualResult === 2 ? 'Draw' :
+                                 entry.awayTeam} won
+                              </span>
+                            </div>
+                          )}
+
+                          {/* Timestamp */}
+                          <div className="flex items-center gap-1 mt-2 text-xs text-gray-600">
+                            <Clock className="w-3 h-3" />
+                            {new Date(entry.timestamp * 1000).toLocaleDateString('en-US', {
+                              month: 'short',
+                              day: 'numeric',
+                              hour: '2-digit',
+                              minute: '2-digit'
+                            })}
+                          </div>
+                        </div>
+                      );
+                    })}
                   </div>
+                </div>
                 )}
               </div>
             </div>

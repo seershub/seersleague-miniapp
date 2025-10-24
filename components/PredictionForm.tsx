@@ -19,19 +19,22 @@ export function PredictionForm({ matches }: PredictionFormProps) {
   const { isReady, sdk } = useMiniKit();
   const [address, setAddress] = useState<string | null>(null);
   const [isConnected, setIsConnected] = useState(false);
-  
-  // State for USDC allowance
+
+  // State for USDC allowance and balance
   const [currentAllowance, setCurrentAllowance] = useState<bigint | null>(null);
-  
-  // Fetch USDC allowance
+  const [usdcBalance, setUsdcBalance] = useState<bigint | null>(null);
+
+  // Fetch USDC allowance and balance
   useEffect(() => {
-    const fetchAllowance = async () => {
+    const fetchUSDCData = async () => {
       if (!address) {
         setCurrentAllowance(null);
+        setUsdcBalance(null);
         return;
       }
-      
+
       try {
+        // Fetch allowance
         const allowance = await publicClient.readContract({
           address: CONTRACTS.USDC,
           abi: USDC_ABI,
@@ -39,13 +42,30 @@ export function PredictionForm({ matches }: PredictionFormProps) {
           args: [address as `0x${string}`, CONTRACTS.SEERSLEAGUE]
         }) as bigint;
         setCurrentAllowance(allowance);
+
+        // Fetch USDC balance
+        const balance = await publicClient.readContract({
+          address: CONTRACTS.USDC,
+          abi: USDC_ABI,
+          functionName: 'balanceOf',
+          args: [address as `0x${string}`]
+        }) as bigint;
+        setUsdcBalance(balance);
+
+        console.log('💰 USDC Data:', {
+          balance: balance.toString(),
+          allowance: allowance.toString(),
+          balanceFormatted: formatUSDC(balance),
+          allowanceFormatted: formatUSDC(allowance)
+        });
       } catch (error) {
-        console.error('Error fetching allowance:', error);
+        console.error('Error fetching USDC data:', error);
         setCurrentAllowance(BigInt(0));
+        setUsdcBalance(BigInt(0));
       }
     };
-    
-    fetchAllowance();
+
+    fetchUSDCData();
   }, [address]);
   
   const [selectedMatches, setSelectedMatches] = useState<number[]>([]);
@@ -174,23 +194,47 @@ export function PredictionForm({ matches }: PredictionFormProps) {
   
   const handleSubmit = async () => {
     console.log('Submit attempt:', { isConnected, address, isFormValid });
-    
+
     if (!isConnected || !address) {
       toast.error('Please connect your wallet first');
       return;
     }
-    
+
     if (!userStats) {
       toast.error('Loading user data...');
       return;
     }
-    
+
     // Validate at least one prediction is made
     if (Object.keys(predictions).length === 0) {
       toast.error('Please select at least one match to predict');
       return;
     }
-    
+
+    // Calculate fee
+    const predictionCount = Object.keys(predictions).length;
+    const remainingFree = userStats ? Math.max(0, 5 - userStats.freePredictionsUsed) : 0;
+    const predictionsToPayFor = Math.max(0, predictionCount - remainingFree);
+    const totalFee = BigInt(predictionsToPayFor) * PREDICTION_FEE;
+
+    // Check USDC balance if payment is needed
+    if (totalFee > 0) {
+      if (usdcBalance === null) {
+        toast.error('Loading USDC balance...');
+        return;
+      }
+
+      if (usdcBalance < totalFee) {
+        toast.error(`Insufficient USDC balance! You need ${formatUSDC(totalFee)} USDC but have ${formatUSDC(usdcBalance)} USDC`);
+        return;
+      }
+
+      console.log('✅ Balance check passed:', {
+        required: formatUSDC(totalFee),
+        available: formatUSDC(usdcBalance)
+      });
+    }
+
     // Submit predictions directly - fee calculation is handled inside submitPredictions
     await submitPredictions();
   };
@@ -275,63 +319,95 @@ export function PredictionForm({ matches }: PredictionFormProps) {
     }
   };
 
-  // Batch Transaction Functions using Farcaster SDK
+  // EIP-5792 Batch Transaction Functions using Farcaster SDK
   const submitBatchPredictions = async (matchIds: bigint[], outcomes: (1 | 2 | 3)[], totalFee: bigint) => {
     if (!address || !sdk) return;
 
     try {
-      // 1. Check if approval is needed
-      if (currentAllowance && currentAllowance < totalFee) {
-        console.log('Approving USDC first...');
-        const approveData = encodeFunctionData({
-          abi: USDC_ABI,
-          functionName: 'approve',
-          args: [CONTRACTS.SEERSLEAGUE, totalFee]
-        });
-        
-        await sdk.wallet.ethProvider.request({
-          method: 'eth_sendTransaction',
-          params: [{
-            to: CONTRACTS.USDC,
-            data: approveData,
-            from: address as `0x${string}`,
-            value: '0x0'
-          }]
-        });
-        
-        // Wait a moment for approval to be processed
-        await new Promise(resolve => setTimeout(resolve, 3000));
-      }
+      console.log('🚀 Starting EIP-5792 batch transaction...');
 
-      // 2. Submit predictions
-      console.log('Submitting predictions...');
+      // Prepare prediction transaction
       const predictData = encodeFunctionData({
         abi: SEERSLEAGUE_ABI,
         functionName: 'submitPredictions',
         args: [matchIds, outcomes]
       });
-      
-      await sdk.wallet.ethProvider.request({
-        method: 'eth_sendTransaction',
-        params: [{
-          to: CONTRACTS.SEERSLEAGUE,
-          data: predictData,
-          from: address as `0x${string}`,
-          value: '0x0'
-        }]
-      });
 
-      // Refresh allowance after successful transaction
-      const newAllowance = await publicClient.readContract({
-        address: CONTRACTS.USDC,
-        abi: USDC_ABI,
-        functionName: 'allowance',
-        args: [address as `0x${string}`, CONTRACTS.SEERSLEAGUE]
-      }) as bigint;
+      // Check if we need approval
+      const needsApproval = !currentAllowance || currentAllowance < totalFee;
+
+      if (needsApproval) {
+        console.log('📦 Sending batch: approve + predict (EIP-5792)');
+
+        // IMPORTANT: Approve for exact amount needed (not unlimited)
+        // Farcaster uses SEQUENTIAL execution (not atomic)
+        const approveData = encodeFunctionData({
+          abi: USDC_ABI,
+          functionName: 'approve',
+          args: [CONTRACTS.SEERSLEAGUE, totalFee]
+        });
+
+        // EIP-5792: Send both transactions in a single batch with one signature
+        const batchId = await sdk.wallet.ethProvider.request({
+          method: 'wallet_sendCalls',
+          params: [{
+            version: '1.0',
+            chainId: '0x2105', // Base mainnet
+            from: address as `0x${string}`,
+            calls: [
+              {
+                to: CONTRACTS.USDC,
+                data: approveData,
+                value: '0x0'
+              },
+              {
+                to: CONTRACTS.SEERSLEAGUE,
+                data: predictData,
+                value: '0x0'
+              }
+            ]
+          }]
+        });
+
+        console.log('✅ Batch transaction submitted:', batchId);
+      } else {
+        console.log('✅ Sufficient allowance, sending prediction only');
+
+        // Allowance already sufficient, just send prediction
+        await sdk.wallet.ethProvider.request({
+          method: 'eth_sendTransaction',
+          params: [{
+            to: CONTRACTS.SEERSLEAGUE,
+            data: predictData,
+            from: address as `0x${string}`,
+            value: '0x0'
+          }]
+        });
+
+        console.log('✅ Prediction transaction submitted');
+      }
+
+      // Refresh USDC data after successful transaction
+      const [newAllowance, newBalance] = await Promise.all([
+        publicClient.readContract({
+          address: CONTRACTS.USDC,
+          abi: USDC_ABI,
+          functionName: 'allowance',
+          args: [address as `0x${string}`, CONTRACTS.SEERSLEAGUE]
+        }) as Promise<bigint>,
+        publicClient.readContract({
+          address: CONTRACTS.USDC,
+          abi: USDC_ABI,
+          functionName: 'balanceOf',
+          args: [address as `0x${string}`]
+        }) as Promise<bigint>
+      ]);
+
       setCurrentAllowance(newAllowance);
+      setUsdcBalance(newBalance);
 
     } catch (error) {
-      console.error('Batch transaction failed:', error);
+      console.error('❌ EIP-5792 batch transaction failed:', error);
       throw error;
     }
   };
@@ -381,12 +457,22 @@ export function PredictionForm({ matches }: PredictionFormProps) {
       {/* Payment Summary */}
       {Object.keys(predictions).length > 0 && (
         <div className="bg-gradient-to-r from-green-500/10 to-emerald-500/5 border border-green-500/20 rounded-xl p-4">
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between mb-2">
             <span className="font-semibold text-white">Selected Matches: {Object.keys(predictions).length}</span>
             <span className="text-green-400 font-bold">
               {predictionsToPayFor > 0 ? `Fee: ${formatUSDC(totalFee)} USDC` : 'FREE'}
             </span>
           </div>
+          {/* USDC Balance Display */}
+          {usdcBalance !== null && predictionsToPayFor > 0 && (
+            <div className="flex items-center justify-between text-sm pt-2 border-t border-green-500/10">
+              <span className="text-gray-400">Your USDC Balance:</span>
+              <span className={`font-semibold ${usdcBalance >= totalFee ? 'text-green-400' : 'text-red-400'}`}>
+                {formatUSDC(usdcBalance)} USDC
+                {usdcBalance < totalFee && ' ⚠️ Insufficient'}
+              </span>
+            </div>
+          )}
         </div>
       )}
       
