@@ -326,44 +326,66 @@ export function PredictionForm({ matches }: PredictionFormProps) {
     try {
       console.log('🚀 Starting EIP-5792 batch transaction...');
 
-      // Prepare transaction data
-      const approveData = encodeFunctionData({
-        abi: USDC_ABI,
-        functionName: 'approve',
-        args: [CONTRACTS.SEERSLEAGUE, totalFee]
-      });
-
+      // Prepare prediction transaction
       const predictData = encodeFunctionData({
         abi: SEERSLEAGUE_ABI,
         functionName: 'submitPredictions',
         args: [matchIds, outcomes]
       });
 
-      // EIP-5792: Send both transactions in a single batch with one signature
-      console.log('📦 Sending batch: approve + predict in one transaction');
+      // Check if we need approval
+      const needsApproval = !currentAllowance || currentAllowance < totalFee;
 
-      const batchId = await sdk.wallet.ethProvider.request({
-        method: 'wallet_sendCalls',
-        params: [{
-          version: '1.0',
-          chainId: '0x2105', // Base mainnet
-          from: address as `0x${string}`,
-          calls: [
-            {
-              to: CONTRACTS.USDC,
-              data: approveData,
-              value: '0x0'
-            },
-            {
-              to: CONTRACTS.SEERSLEAGUE,
-              data: predictData,
-              value: '0x0'
-            }
-          ]
-        }]
-      });
+      if (needsApproval) {
+        console.log('📦 Sending batch: approve + predict (EIP-5792)');
 
-      console.log('✅ Batch transaction submitted:', batchId);
+        // IMPORTANT: Approve for exact amount needed (not unlimited)
+        // Farcaster uses SEQUENTIAL execution (not atomic)
+        const approveData = encodeFunctionData({
+          abi: USDC_ABI,
+          functionName: 'approve',
+          args: [CONTRACTS.SEERSLEAGUE, totalFee]
+        });
+
+        // EIP-5792: Send both transactions in a single batch with one signature
+        const batchId = await sdk.wallet.ethProvider.request({
+          method: 'wallet_sendCalls',
+          params: [{
+            version: '1.0',
+            chainId: '0x2105', // Base mainnet
+            from: address as `0x${string}`,
+            calls: [
+              {
+                to: CONTRACTS.USDC,
+                data: approveData,
+                value: '0x0'
+              },
+              {
+                to: CONTRACTS.SEERSLEAGUE,
+                data: predictData,
+                value: '0x0'
+              }
+            ]
+          }]
+        });
+
+        console.log('✅ Batch transaction submitted:', batchId);
+      } else {
+        console.log('✅ Sufficient allowance, sending prediction only');
+
+        // Allowance already sufficient, just send prediction
+        await sdk.wallet.ethProvider.request({
+          method: 'eth_sendTransaction',
+          params: [{
+            to: CONTRACTS.SEERSLEAGUE,
+            data: predictData,
+            from: address as `0x${string}`,
+            value: '0x0'
+          }]
+        });
+
+        console.log('✅ Prediction transaction submitted');
+      }
 
       // Refresh USDC data after successful transaction
       const [newAllowance, newBalance] = await Promise.all([
