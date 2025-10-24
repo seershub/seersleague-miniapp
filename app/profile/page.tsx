@@ -324,28 +324,29 @@ export default function ProfilePage() {
                     <p className="text-gray-500 text-sm">Start making predictions to build your history!</p>
                   </div>
                 ) : (
-                  <div className="space-y-2">
-                    {history.map((entry, index) => {
-                      // Determine which team user picked
-                      const userPickedHome = entry.userPrediction === 1;
-                      const userPickedDraw = entry.userPrediction === 2;
-                      const userPickedAway = entry.userPrediction === 3;
+                  <div className="max-h-96 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-600 scrollbar-track-gray-800">
+                    <div className="space-y-2">
+                      {history.map((entry, index) => {
+                        // Determine which team user picked
+                        const userPickedHome = entry.userPrediction === 1;
+                        const userPickedDraw = entry.userPrediction === 2;
+                        const userPickedAway = entry.userPrediction === 3;
 
-                      return (
-                        <div
-                          key={`${entry.matchId}-${index}`}
-                          className="relative rounded-lg p-3 bg-gray-800/30 border border-gray-700/30 hover:bg-gray-800/50 hover:border-gray-600/50 transition-all"
-                        >
-                          {/* Compact Header Row */}
-                          <div className="flex items-center justify-between gap-2 mb-2">
-                            <span className="text-xs text-gray-500 uppercase tracking-wide">{entry.league}</span>
+                        return (
+                          <div
+                            key={`${entry.matchId}-${index}`}
+                            className="relative rounded-lg p-3 bg-gray-800/30 border border-gray-700/30 hover:bg-gray-800/50 hover:border-gray-600/50 transition-all"
+                          >
+                            {/* Compact Header Row */}
+                            <div className="flex items-center justify-between gap-2 mb-2">
+                              <span className="text-xs text-gray-500 uppercase tracking-wide">{entry.league}</span>
 
-                            {/* Status Badge */}
-                            {entry.isCorrect !== null ? (
-                              <span className={`px-2 py-0.5 rounded text-xs font-medium ${
-                                entry.isCorrect
-                                  ? 'bg-green-500/20 text-green-400'
-                                  : 'bg-red-500/20 text-red-400'
+                              {/* Status Badge */}
+                              {entry.isCorrect !== null ? (
+                                <span className={`px-2 py-0.5 rounded text-xs font-medium ${
+                                  entry.isCorrect
+                                    ? 'bg-green-500/20 text-green-400'
+                                    : 'bg-red-500/20 text-red-400'
                               }`}>
                                 {entry.isCorrect ? '✓ Correct' : '✗ Wrong'}
                               </span>
@@ -424,6 +425,7 @@ export default function ProfilePage() {
                       );
                     })}
                   </div>
+                </div>
                 )}
               </div>
             </div>

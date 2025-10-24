@@ -1,0 +1,34 @@
+{
+  "accountAssociation": {
+    "header": "eyJmaWQiOjEzNzk1NDUsInR5cGUiOiJjdXN0b2R5Iiwia2V5IjoiMHg0ZGIwRmNjNTc5YkUwMDcxNmI4M2FjNDA4NTA0ODc3YTNiMjJmNmUzIn0",
+    "payload": "eyJkb21haW4iOiJsZWFndWUuc2VlcnNodWIuY29tIn0",
+    "signature": "pAp2aFOxDH9FSC+2WJmg/3i9ggjzmmnNJia1SLSuw5dgoKbHgZF7l8wf4x6SfPCPo5INcaW3l6Ninp+Bio1Nihs="
+  },
+  "baseBuilder": {
+    "allowedAddresses": ["0x2F8b89f74C0540B638CF808515dFabe565796aAA"]
+  },
+  "miniapp": {
+    "version": "1",
+    "name": "SeersLeague",
+    "homeUrl": "https://league.seershub.com",
+    "iconUrl": "https://league.seershub.com/icon-512.png",
+    "imageUrl": "https://league.seershub.com/og-image.png",
+    "splashImageUrl": "https://league.seershub.com/splash.png",
+    "splashBackgroundColor": "#000000",
+    "webhookUrl": "https://league.seershub.com/api/webhook",
+    "subtitle": "Daily Football Predictions",
+    "description": "Predict football matches daily. First 5 predictions free, then 0.5 USDC per match. Compete for prizes based on accuracy.",
+    "screenshotUrls": [
+      "https://league.seershub.com/screenshots/home.png",
+      "https://league.seershub.com/screenshots/leaderboard.png"
+    ],
+    "primaryCategory": "games",
+    "tags": ["games", "predictions", "football", "competition", "base"],
+    "heroImageUrl": "https://league.seershub.com/hero.png",
+    "tagline": "Predict, Compete, Win",
+    "ogTitle": "SeersLeague",
+    "ogDescription": "First 5 predictions free! Predict football matches daily, compete for prizes.",
+    "ogImageUrl": "https://league.seershub.com/og-image.png",
+    "noindex": false
+  }
+}

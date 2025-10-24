@@ -208,6 +208,26 @@ Script başarılı olduysa:
 2. **Blockchain:** Transaction hash'leri görünür
 3. **Anasayfa:** https://league.seershub.com/ → Maçlar görünür!
 
+## 💰 Treasury Address Update
+
+To update the treasury address in the deployed contract:
+
+1. Set `NEW_TREASURY_ADDRESS` in `.env.local`
+2. Ensure `PRIVATE_KEY` is set (must be contract owner)
+3. Run the update script:
+
+```bash
+node scripts/update-treasury.js
+```
+
+This will:
+- Update the treasury address in the contract
+- Save the transaction details
+- Update deployment info
+- Verify the change was successful
+
+**Note:** This only changes where USDC goes, doesn't break any functionality!
+
 ---
 
 **Son Güncelleme:** 2025-10-21
