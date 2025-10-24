@@ -321,10 +321,24 @@ export function PredictionForm({ matches }: PredictionFormProps) {
 
   // EIP-5792 Batch Transaction Functions using Farcaster SDK
   const submitBatchPredictions = async (matchIds: bigint[], outcomes: (1 | 2 | 3)[], totalFee: bigint) => {
-    if (!address || !sdk) return;
+    if (!address || !sdk) {
+      console.error('❌ Missing address or SDK:', { address, sdk: !!sdk });
+      throw new Error('Wallet not connected');
+    }
+
+    if (!sdk.wallet || !sdk.wallet.ethProvider) {
+      console.error('❌ Wallet ethProvider not available');
+      throw new Error('Wallet provider not available');
+    }
 
     try {
-      console.log('🚀 Starting EIP-5792 batch transaction...');
+      console.log('🚀 Starting batch transaction...');
+      console.log('SDK state:', {
+        hasSDK: !!sdk,
+        hasWallet: !!sdk.wallet,
+        hasEthProvider: !!sdk.wallet?.ethProvider,
+        address
+      });
 
       // Prepare prediction transaction
       const predictData = encodeFunctionData({
@@ -337,55 +351,46 @@ export function PredictionForm({ matches }: PredictionFormProps) {
       const needsApproval = !currentAllowance || currentAllowance < totalFee;
 
       if (needsApproval) {
-        console.log('📦 Sending batch: approve + predict (EIP-5792)');
+        console.log('📋 Step 1: Approving USDC...');
 
-        // IMPORTANT: Approve for exact amount needed (not unlimited)
-        // Farcaster uses SEQUENTIAL execution (not atomic)
+        // Step 1: Approve USDC
         const approveData = encodeFunctionData({
           abi: USDC_ABI,
           functionName: 'approve',
           args: [CONTRACTS.SEERSLEAGUE, totalFee]
         });
 
-        // EIP-5792: Send both transactions in a single batch with one signature
-        const batchId = await sdk.wallet.ethProvider.request({
-          method: 'wallet_sendCalls',
-          params: [{
-            version: '1.0',
-            chainId: '0x2105', // Base mainnet
-            from: address as `0x${string}`,
-            calls: [
-              {
-                to: CONTRACTS.USDC,
-                data: approveData,
-                value: '0x0'
-              },
-              {
-                to: CONTRACTS.SEERSLEAGUE,
-                data: predictData,
-                value: '0x0'
-              }
-            ]
-          }]
-        });
-
-        console.log('✅ Batch transaction submitted:', batchId);
-      } else {
-        console.log('✅ Sufficient allowance, sending prediction only');
-
-        // Allowance already sufficient, just send prediction
-        await sdk.wallet.ethProvider.request({
+        const approveTxHash = await sdk.wallet.ethProvider.request({
           method: 'eth_sendTransaction',
           params: [{
-            to: CONTRACTS.SEERSLEAGUE,
-            data: predictData,
+            to: CONTRACTS.USDC,
+            data: approveData,
             from: address as `0x${string}`,
             value: '0x0'
           }]
         });
 
-        console.log('✅ Prediction transaction submitted');
+        console.log('✅ Approval sent:', approveTxHash);
+        toast('USDC approval confirmed. Submitting prediction...');
+
+        // Wait for approval to process
+        await new Promise(resolve => setTimeout(resolve, 2000));
       }
+
+      // Step 2: Submit predictions
+      console.log('📋 Step 2: Submitting predictions...');
+
+      const predictTxHash = await sdk.wallet.ethProvider.request({
+        method: 'eth_sendTransaction',
+        params: [{
+          to: CONTRACTS.SEERSLEAGUE,
+          data: predictData,
+          from: address as `0x${string}`,
+          value: '0x0'
+        }]
+      });
+
+      console.log('✅ Prediction transaction sent:', predictTxHash);
 
       // Refresh USDC data after successful transaction
       const [newAllowance, newBalance] = await Promise.all([
@@ -406,17 +411,47 @@ export function PredictionForm({ matches }: PredictionFormProps) {
       setCurrentAllowance(newAllowance);
       setUsdcBalance(newBalance);
 
-    } catch (error) {
-      console.error('❌ EIP-5792 batch transaction failed:', error);
+    } catch (error: any) {
+      console.error('❌ Batch transaction failed:', error);
+      console.error('Error details:', {
+        message: error?.message,
+        code: error?.code,
+        data: error?.data,
+        stack: error?.stack
+      });
+
+      // More specific error messages
+      if (error?.message?.includes('User rejected')) {
+        toast.error('Transaction cancelled by user');
+      } else if (error?.message?.includes('insufficient')) {
+        toast.error('Insufficient USDC balance');
+      } else {
+        toast.error(`Transaction failed: ${error?.message || 'Unknown error'}`);
+      }
+
       throw error;
     }
   };
 
   const submitFreePredictions = async (matchIds: bigint[], outcomes: (1 | 2 | 3)[]) => {
-    if (!address || !sdk) return;
-    
+    if (!address || !sdk) {
+      console.error('❌ Missing address or SDK');
+      throw new Error('Wallet not connected');
+    }
+
+    if (!sdk.wallet || !sdk.wallet.ethProvider) {
+      console.error('❌ Wallet ethProvider not available');
+      throw new Error('Wallet provider not available');
+    }
+
     try {
       console.log('Submitting free predictions (no approval needed)');
+      console.log('SDK state:', {
+        hasSDK: !!sdk,
+        hasWallet: !!sdk.wallet,
+        hasEthProvider: !!sdk.wallet?.ethProvider,
+        address
+      });
       const predictData = encodeFunctionData({
         abi: SEERSLEAGUE_ABI,
         functionName: 'submitPredictions',
@@ -432,8 +467,20 @@ export function PredictionForm({ matches }: PredictionFormProps) {
           value: '0x0'
         }]
       });
-    } catch (error) {
-      console.error('Free prediction submission failed:', error);
+    } catch (error: any) {
+      console.error('❌ Free prediction submission failed:', error);
+      console.error('Error details:', {
+        message: error?.message,
+        code: error?.code,
+        data: error?.data
+      });
+
+      if (error?.message?.includes('User rejected')) {
+        toast.error('Transaction cancelled by user');
+      } else {
+        toast.error(`Transaction failed: ${error?.message || 'Unknown error'}`);
+      }
+
       throw error;
     }
   };
