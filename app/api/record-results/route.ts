@@ -1,14 +1,13 @@
 import { NextResponse } from 'next/server';
-import { createWalletClient, createPublicClient, http } from 'viem';
+import { createWalletClient, http } from 'viem';
 import { base } from 'viem/chains';
 import { privateKeyToAccount } from 'viem/accounts';
 import { CONTRACTS, SEERSLEAGUE_ABI } from '@/lib/contract-interactions';
+import { publicClient, baseRpcUrl } from '@/lib/viem-config';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 export const maxDuration = 300; // 5 minutes for processing
-
-const RPC_URL = process.env.NEXT_PUBLIC_BASE_RPC || 'https://mainnet.base.org';
 const FOOTBALL_DATA_API_KEY = process.env.FOOTBALL_DATA_API_KEY || '';
 const FOOTBALL_DATA_BASE = 'https://api.football-data.org/v4';
 
@@ -82,10 +81,7 @@ async function fetchMatchResult(matchId: string): Promise<{ homeScore: number; a
  */
 async function getUsersForMatch(matchId: bigint): Promise<string[]> {
   try {
-    const publicClient = createPublicClient({
-      chain: base,
-      transport: http(RPC_URL)
-    });
+    // Use shared publicClient with fallback RPC support
 
     const deploymentBlock = BigInt(process.env.NEXT_PUBLIC_DEPLOYMENT_BLOCK || '0');
     const currentBlock = await publicClient.getBlockNumber();
@@ -136,10 +132,7 @@ async function checkUserPrediction(
   actualOutcome: 1 | 2 | 3
 ): Promise<boolean> {
   try {
-    const publicClient = createPublicClient({
-      chain: base,
-      transport: http(RPC_URL)
-    });
+    // Use shared publicClient with fallback RPC support
 
     const prediction = await publicClient.readContract({
       address: CONTRACTS.SEERSLEAGUE,
@@ -179,7 +172,7 @@ async function batchRecordResults(
     const walletClient = createWalletClient({
       account,
       chain: base,
-      transport: http(RPC_URL)
+      transport: http(baseRpcUrl) // Use same RPC with fallback support
     });
 
     const txHash = await walletClient.writeContract({
@@ -216,11 +209,7 @@ export async function POST(request: Request) {
       );
     }
 
-    const publicClient = createPublicClient({
-      chain: base,
-      transport: http(RPC_URL)
-    });
-
+    // Use shared publicClient with fallback RPC support
     // Get all registered matches from contract
     const deploymentBlock = BigInt(process.env.NEXT_PUBLIC_DEPLOYMENT_BLOCK || '0');
     const currentBlock = await publicClient.getBlockNumber();
