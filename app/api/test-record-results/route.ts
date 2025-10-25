@@ -1,13 +1,11 @@
 import { NextResponse } from 'next/server';
-import { createPublicClient, http } from 'viem';
-import { base } from 'viem/chains';
 import { CONTRACTS, SEERSLEAGUE_ABI } from '@/lib/contract-interactions';
+import { publicClient, baseRpcUrl } from '@/lib/viem-config';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 export const maxDuration = 300;
 
-const RPC_URL = process.env.NEXT_PUBLIC_BASE_RPC || 'https://mainnet.base.org';
 const FOOTBALL_DATA_API_KEY = process.env.FOOTBALL_DATA_API_KEY || '';
 
 /**
@@ -25,12 +23,18 @@ export async function GET() {
   };
 
   // 1. Check Environment Variables
+  const alchemyKey = process.env.NEXT_PUBLIC_ALCHEMY_API_KEY;
+  const customRpc = process.env.NEXT_PUBLIC_BASE_RPC;
+
   results.environment = {
     FOOTBALL_DATA_API_KEY: FOOTBALL_DATA_API_KEY ? '✅ Set' : '❌ Missing',
     PRIVATE_KEY: process.env.PRIVATE_KEY ? '✅ Set' : '❌ Missing',
     CRON_SECRET: process.env.CRON_SECRET ? '✅ Set' : '❌ Missing',
     NEXT_PUBLIC_URL: process.env.NEXT_PUBLIC_URL ? '✅ Set' : '❌ Missing',
-    DEPLOYMENT_BLOCK: process.env.NEXT_PUBLIC_DEPLOYMENT_BLOCK || 'Not set (will scan last 10K blocks)'
+    NEXT_PUBLIC_ALCHEMY_API_KEY: alchemyKey ? '✅ Set' : '❌ Missing',
+    NEXT_PUBLIC_BASE_RPC: customRpc ? `✅ Set (${customRpc})` : '❌ Not set',
+    DEPLOYMENT_BLOCK: process.env.NEXT_PUBLIC_DEPLOYMENT_BLOCK || 'Not set (will scan last 10K blocks)',
+    ACTIVE_RPC: baseRpcUrl
   };
 
   if (!FOOTBALL_DATA_API_KEY) {
@@ -63,36 +67,48 @@ export async function GET() {
   // 2. Test Football Data API
   if (FOOTBALL_DATA_API_KEY) {
     try {
-      const testMatchId = '471534'; // Recent Premier League match for testing
-      const response = await fetch(`https://api.football-data.org/v4/matches/${testMatchId}`, {
+      // Test with competitions endpoint (more reliable than specific match)
+      const response = await fetch(`https://api.football-data.org/v4/competitions/PL/matches?status=FINISHED&limit=1`, {
         headers: { 'X-Auth-Token': FOOTBALL_DATA_API_KEY },
         cache: 'no-store'
       });
 
       if (response.ok) {
         const data = await response.json();
+        const match = data.matches?.[0];
         results.api.footballData = {
           status: '✅ Working',
-          testMatch: {
-            id: testMatchId,
-            status: data.match?.status,
-            homeTeam: data.match?.homeTeam?.name,
-            awayTeam: data.match?.awayTeam?.name
-          }
+          apiTier: response.headers.get('X-API-Version') || 'Unknown',
+          testMatch: match ? {
+            id: match.id,
+            status: match.status,
+            homeTeam: match.homeTeam?.name,
+            awayTeam: match.awayTeam?.name,
+            score: `${match.score?.fullTime?.home}-${match.score?.fullTime?.away}`
+          } : 'No finished matches found'
         };
       } else {
+        const errorText = await response.text();
         results.api.footballData = {
           status: '❌ Failed',
           error: `HTTP ${response.status}: ${response.statusText}`,
-          hint: response.status === 403 ? 'Invalid API key' : 'API error'
+          details: errorText,
+          hint: response.status === 403
+            ? 'Invalid API key or subscription tier issue'
+            : response.status === 429
+            ? 'Rate limit exceeded'
+            : 'API error'
         };
-        results.recommendations.push({
-          severity: 'CRITICAL',
-          issue: `Football Data API returned ${response.status}`,
-          fix: response.status === 403
-            ? 'Check your API key is correct'
-            : 'API might be temporarily down'
-        });
+
+        if (response.status !== 429) { // Don't flag rate limits as critical
+          results.recommendations.push({
+            severity: 'CRITICAL',
+            issue: `Football Data API returned ${response.status}`,
+            fix: response.status === 403
+              ? 'Check your API key at https://www.football-data.org/client/profile'
+              : 'API might be temporarily down'
+          });
+        }
       }
     } catch (error: any) {
       results.api.footballData = {
@@ -109,11 +125,7 @@ export async function GET() {
 
   // 3. Check Contract Data
   try {
-    const publicClient = createPublicClient({
-      chain: base,
-      transport: http(RPC_URL)
-    });
-
+    // Use shared publicClient with Alchemy fallback
     const deploymentBlock = BigInt(process.env.NEXT_PUBLIC_DEPLOYMENT_BLOCK || '0');
     const currentBlock = await publicClient.getBlockNumber();
 
@@ -213,11 +225,7 @@ export async function GET() {
 
   // 4. Check Prediction Events
   try {
-    const publicClient = createPublicClient({
-      chain: base,
-      transport: http(RPC_URL)
-    });
-
+    // Use shared publicClient with Alchemy fallback
     const deploymentBlock = BigInt(process.env.NEXT_PUBLIC_DEPLOYMENT_BLOCK || '0');
     const currentBlock = await publicClient.getBlockNumber();
 
