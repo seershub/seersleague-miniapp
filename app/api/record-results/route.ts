@@ -49,7 +49,12 @@ async function fetchMatchResult(matchId: string): Promise<{ homeScore: number; a
     }
 
     const data = await response.json();
-    const match = data.match;
+
+    // CRITICAL FIX: Football Data API returns match data directly
+    // NOT wrapped in data.match - API format: { id, status, score, ... }
+    const match = data;
+
+    console.log(`Match ${matchId} - Status: ${match.status}`);
 
     // Check if match is finished
     if (match.status === 'FINISHED') {
