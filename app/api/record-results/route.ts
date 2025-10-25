@@ -173,12 +173,22 @@ async function batchRecordResults(
       return { success: false, error: 'No private key configured' };
     }
 
+    console.log('[batchRecordResults] Preparing transaction...');
+    console.log('[batchRecordResults] Contract:', CONTRACTS.SEERSLEAGUE);
+    console.log('[batchRecordResults] Function: batchRecordResults');
+    console.log('[batchRecordResults] Args:');
+    console.log('  - users:', users);
+    console.log('  - matchIds:', matchIds.map(id => id.toString()));
+    console.log('  - corrects:', corrects);
+
     const account = privateKeyToAccount(privateKey as `0x${string}`);
     const walletClient = createWalletClient({
       account,
       chain: base,
       transport: http(baseRpcUrl) // Use same RPC with fallback support
     });
+
+    console.log('[batchRecordResults] Sending transaction from:', account.address);
 
     const txHash = await walletClient.writeContract({
       address: CONTRACTS.SEERSLEAGUE,
@@ -191,9 +201,28 @@ async function batchRecordResults(
       ]
     });
 
+    console.log('[batchRecordResults] Transaction sent:', txHash);
+    console.log('[batchRecordResults] Waiting for confirmation...');
+
+    // Wait for transaction receipt
+    const receipt = await publicClient.waitForTransactionReceipt({
+      hash: txHash,
+      timeout: 60_000 // 60 seconds
+    });
+
+    console.log('[batchRecordResults] Transaction confirmed!');
+    console.log('[batchRecordResults] Status:', receipt.status);
+    console.log('[batchRecordResults] Block:', receipt.blockNumber.toString());
+    console.log('[batchRecordResults] Gas used:', receipt.gasUsed.toString());
+    console.log('[batchRecordResults] Events emitted:', receipt.logs.length);
+
+    if (receipt.status === 'reverted') {
+      return { success: false, error: 'Transaction reverted', txHash };
+    }
+
     return { success: true, txHash };
   } catch (error) {
-    console.error('Error recording results to blockchain:', error);
+    console.error('[batchRecordResults] Error:', error);
     return { success: false, error: (error as Error).message };
   }
 }
@@ -321,14 +350,23 @@ export async function POST(request: Request) {
     }
 
     // Record all results in batch
+    console.log('=== BATCH RECORD RESULTS ===');
+    console.log('Users:', batchUsers);
+    console.log('Match IDs:', batchMatchIds.map(id => id.toString()));
+    console.log('Correct flags:', batchCorrects);
+    console.log('Total predictions to record:', batchUsers.length);
+
     const recordResult = await batchRecordResults(batchUsers, batchMatchIds, batchCorrects);
 
     if (!recordResult.success) {
+      console.error('❌ Batch record failed:', recordResult.error);
       return NextResponse.json(
         { error: recordResult.error || 'Failed to record results' },
         { status: 500 }
       );
     }
+
+    console.log('✅ Batch record successful, txHash:', recordResult.txHash);
 
     return NextResponse.json({
       success: true,
