@@ -25,7 +25,7 @@
     "version": "1",
     "name": "SeersLeague",
     "subtitle": "Daily Football Predictions",
-    "description": "Predict 5 football matches daily. First day free.",
+    "description": "Football predictions daily",
     "iconUrl": "https://league.seershub.com/icon-512.png",
     "splashImageUrl": "https://league.seershub.com/splash.png",
     "splashBackgroundColor": "#0052FF",
