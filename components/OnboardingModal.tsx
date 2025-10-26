@@ -146,3 +146,4 @@ function StepContent({ icon, title, text }: { icon: React.ReactNode, title: stri
     </>
   );
 }
+

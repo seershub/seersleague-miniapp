@@ -8,28 +8,38 @@
     "allowedAddresses": ["0x2F8b89f74C0540B638CF808515dFabe565796aAA"]
   },
   "frame": {
+    "version": "next",
+    "imageUrl": "https://league.seershub.com/og-image.png",
+    "button": {
+      "title": "Launch SeersLeague",
+      "action": {
+        "type": "launch_frame",
+        "name": "SeersLeague",
+        "url": "https://league.seershub.com",
+        "splashImageUrl": "https://league.seershub.com/splash.png",
+        "splashBackgroundColor": "#0052FF"
+      }
+    }
+  },
+  "miniapp": {
     "version": "1",
     "name": "SeersLeague",
-    "homeUrl": "https://league.seershub.com",
-    "iconUrl": "https://league.seershub.com/icon-512.png",
-    "imageUrl": "https://league.seershub.com/og-image.png",
-    "buttonTitle": "Launch SeersLeague",
-    "splashImageUrl": "https://league.seershub.com/splash.png",
-    "splashBackgroundColor": "#000000",
-    "webhookUrl": "https://league.seershub.com/api/webhook",
     "subtitle": "Daily Football Predictions",
-    "description": "Predict football matches daily. First 5 predictions free, then 0.5 USDC per match. Compete for prizes based on accuracy.",
+    "description": "Predict 5 matches daily. First day free, then $1 USDC per day. Compete for prizes based on accuracy. Build your on-chain reputation.",
+    "iconUrl": "https://league.seershub.com/icon-512.png",
+    "splashImageUrl": "https://league.seershub.com/splash.png",
+    "splashBackgroundColor": "#0052FF",
+    "homeUrl": "https://league.seershub.com",
+    "webhookUrl": "https://league.seershub.com/api/webhook",
     "screenshotUrls": [
       "https://league.seershub.com/screenshots/home.png",
       "https://league.seershub.com/screenshots/leaderboard.png"
     ],
-    "primaryCategory": "games",
-    "tags": ["games", "predictions", "football", "competition", "base"],
+    "primaryCategory": "social",
+    "tags": ["sports", "predictions", "competition", "base", "daily"],
     "heroImageUrl": "https://league.seershub.com/hero.png",
-    "tagline": "Predict, Compete, Win",
-    "ogTitle": "SeersLeague",
-    "ogDescription": "First 5 predictions free! Predict football matches daily, compete for prizes.",
-    "ogImageUrl": "https://league.seershub.com/og-image.png",
-    "castShareUrl": "https://league.seershub.com"
+    "ogTitle": "SeersLeague - Daily Football Predictions on Base",
+    "ogDescription": "First day free! Predict 5 matches daily, compete for prizes. Build your on-chain prediction reputation.",
+    "ogImageUrl": "https://league.seershub.com/og-image.png"
   }
 }

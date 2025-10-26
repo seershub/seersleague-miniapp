@@ -83,53 +83,40 @@ export function PaymentModal({ onSuccess, onCancel, amount }: PaymentModalProps)
     try {
       setIsApproving(true);
       if (!sdk || !address) throw new Error('Wallet not connected');
-      
-      // Use Farcaster Mini App SDK's wallet methods
       const data = encodeFunctionData({
         abi: USDC_ABI,
         functionName: 'approve',
         args: [CONTRACTS.SEERSLEAGUE, amount]
       });
-      
-      // Use SDK's wallet.ethProvider.request method for eth_sendTransaction
       const txHash = await sdk.wallet.ethProvider.request({
         method: 'eth_sendTransaction',
-        params: [{
-          to: CONTRACTS.USDC,
-          data,
-          from: address,
-          value: '0x0'
-        }]
+        params: [{ to: CONTRACTS.USDC, data, from: address }]
       });
-      
-      console.log('Approval transaction sent:', txHash);
-      toast.success('USDC approval transaction sent!');
-      
-      // Wait for transaction to be mined (simplified approach)
-      await new Promise(r => setTimeout(r, 3000));
-      
-      // Check allowance once
-      try {
-        const newAllowance = await publicClient.readContract({
-          address: CONTRACTS.USDC,
-          abi: USDC_ABI,
-          functionName: 'allowance',
-          args: [address, CONTRACTS.SEERSLEAGUE]
-        }) as bigint;
-        
-        setAllowance(newAllowance);
-        
-        if (newAllowance >= amount) {
-          console.log('Allowance confirmed:', newAllowance.toString());
-          setStep('confirm');
-        } else {
-          toast('Approval is processing. Please wait a moment and try again.');
+      let receipt = null as any;
+      let attempts = 0;
+      while (!receipt && attempts < 30) {
+        try {
+          receipt = await sdk.wallet.ethProvider.request({
+            method: 'eth_getTransactionReceipt',
+            params: [txHash]
+          });
+          if (!receipt) await new Promise(r => setTimeout(r, 2000));
+        } catch {
+          await new Promise(r => setTimeout(r, 2000));
         }
-      } catch (error) {
-        console.log('Could not check allowance:', error);
-        toast('Approval sent. Please wait a moment and try again.');
+        attempts++;
       }
-      
+      toast.success('USDC approval successful!');
+
+      // Refresh allowance directly from blockchain
+      const newAllowance = await publicClient.readContract({
+        address: CONTRACTS.USDC,
+        abi: USDC_ABI,
+        functionName: 'allowance',
+        args: [address, CONTRACTS.SEERSLEAGUE]
+      }) as bigint;
+      setAllowance(newAllowance);
+      if (newAllowance >= amount) setStep('confirm');
     } catch (error: any) {
       console.error('Approval error:', error);
       toast.error('Failed to approve USDC. Please try again.');

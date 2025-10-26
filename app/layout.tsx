@@ -24,17 +24,20 @@ export const metadata: Metadata = {
   other: {
     'fc:frame': 'vNext',
     'fc:frame:image': '/og-image.png',
-    'fc:frame:button:1': 'Start Predicting',
+    'fc:frame:button:1': 'Launch SeersLeague',
     'fc:frame:button:1:action': 'link',
     'fc:frame:button:1:target': 'https://league.seershub.com',
     'fc:miniapp': JSON.stringify({
       version: 'next',
       imageUrl: 'https://league.seershub.com/og-image.png',
       button: {
-        title: 'Open SeersLeague',
+        title: 'Launch SeersLeague',
         action: {
           type: 'launch_frame',
-          url: 'https://league.seershub.com'
+          name: 'SeersLeague',
+          url: 'https://league.seershub.com',
+          splashImageUrl: 'https://league.seershub.com/splash.png',
+          splashBackgroundColor: '#0052FF'
         }
       }
     }),
