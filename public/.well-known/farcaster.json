@@ -7,12 +7,13 @@
   "baseBuilder": {
     "allowedAddresses": ["0x2F8b89f74C0540B638CF808515dFabe565796aAA"]
   },
-  "miniapp": {
+  "frame": {
     "version": "1",
     "name": "SeersLeague",
     "homeUrl": "https://league.seershub.com",
     "iconUrl": "https://league.seershub.com/icon-512.png",
     "imageUrl": "https://league.seershub.com/og-image.png",
+    "buttonTitle": "Launch SeersLeague",
     "splashImageUrl": "https://league.seershub.com/splash.png",
     "splashBackgroundColor": "#000000",
     "webhookUrl": "https://league.seershub.com/api/webhook",
@@ -29,6 +30,6 @@
     "ogTitle": "SeersLeague",
     "ogDescription": "First 5 predictions free! Predict football matches daily, compete for prizes.",
     "ogImageUrl": "https://league.seershub.com/og-image.png",
-    "noindex": false
+    "castShareUrl": "https://league.seershub.com"
   }
 }
