@@ -25,7 +25,7 @@
     "version": "1",
     "name": "SeersLeague",
     "subtitle": "Daily Football Predictions",
-    "description": "Predict 5 matches daily. First day free, then $1 USDC per day. Compete for prizes based on accuracy. Build your on-chain reputation.",
+    "description": "Predict 5 matches daily. First day free, then 1 USDC per day. Compete for prizes based on accuracy. Build your on-chain reputation.",
     "iconUrl": "https://league.seershub.com/icon-512.png",
     "splashImageUrl": "https://league.seershub.com/splash.png",
     "splashBackgroundColor": "#0052FF",
@@ -39,8 +39,8 @@
     "tags": ["sports", "predictions", "competition", "base", "daily"],
     "heroImageUrl": "https://league.seershub.com/hero.png",
     "tagline": "Predict, Compete, Win",
-    "ogTitle": "SeersLeague - Daily Football Predictions on Base",
-    "ogDescription": "First day free! Predict 5 matches daily, compete for prizes. Build your on-chain prediction reputation.",
+    "ogTitle": "SeersLeague",
+    "ogDescription": "First day free! Predict 5 matches daily, compete for prizes.",
     "ogImageUrl": "https://league.seershub.com/og-image.png",
     "noindex": false
   }
