@@ -25,7 +25,7 @@
     "version": "1",
     "name": "SeersLeague",
     "subtitle": "Daily Football Predictions",
-    "description": "Predict 5 matches daily. First day free, then 1 USDC per day. Compete for prizes based on accuracy. Build your on-chain reputation.",
+    "description": "Predict 5 football matches daily. First day free.",
     "iconUrl": "https://league.seershub.com/icon-512.png",
     "splashImageUrl": "https://league.seershub.com/splash.png",
     "splashBackgroundColor": "#0052FF",
