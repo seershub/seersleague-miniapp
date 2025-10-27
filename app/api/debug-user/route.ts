@@ -6,7 +6,7 @@ import { CONTRACTS, SEERSLEAGUE_ABI } from '@/lib/contract-interactions';
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
-const RPC_URL = process.env.NEXT_PUBLIC_BASE_RPC || 'https://mainnet.base.org';
+const RPC_URL = process.env.NEXT_PUBLIC_BASE_RPC || 'https://api.developer.coinbase.com/rpc/v1/base/DzCv9JnMZKpreOiukHveGNUBbW7NBYUa';
 
 export async function GET(request: Request) {
   try {
