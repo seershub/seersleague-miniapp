@@ -35,7 +35,7 @@ function determineOutcome(homeScore: number, awayScore: number): 1 | 2 | 3 {
 async function sendPaymasterTransaction(
   account: any,
   contractAddress: string,
-  functionName: string,
+  functionName: 'submitPredictions' | 'registerMatches' | 'recordResult' | 'batchRecordResults' | 'distributePrizes' | 'setTreasury' | 'pause' | 'unpause',
   args: any[]
 ): Promise<{ success: boolean; txHash?: string; error?: string }> {
   try {
