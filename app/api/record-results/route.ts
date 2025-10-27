@@ -49,6 +49,7 @@ async function sendPaymasterTransaction(
       });
 
       const txHash = await walletClient.writeContract({
+        account,
         address: contractAddress as `0x${string}`,
         abi: SEERSLEAGUE_ABI,
         functionName,
