@@ -36,7 +36,7 @@ async function sendPaymasterTransaction(
   account: any,
   contractAddress: string,
   functionName: 'submitPredictions' | 'registerMatches' | 'recordResult' | 'batchRecordResults' | 'distributePrizes' | 'setTreasury' | 'pause' | 'unpause',
-  args: any[]
+  args: readonly unknown[]
 ): Promise<{ success: boolean; txHash?: string; error?: string }> {
   try {
     if (!PAYMASTER_URL) {
@@ -52,7 +52,7 @@ async function sendPaymasterTransaction(
         address: contractAddress as `0x${string}`,
         abi: SEERSLEAGUE_ABI,
         functionName,
-        args
+        args: args as any
       });
 
       return { success: true, txHash };
@@ -64,7 +64,7 @@ async function sendPaymasterTransaction(
       data: encodeFunctionData({
         abi: SEERSLEAGUE_ABI,
         functionName,
-        args
+        args: args as any
       })
     };
 
