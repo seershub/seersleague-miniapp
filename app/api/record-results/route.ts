@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { createWalletClient, createPublicClient, http } from 'viem';
+import { createWalletClient, createPublicClient, http, encodeFunctionData } from 'viem';
 import { base } from 'viem/chains';
 import { privateKeyToAccount } from 'viem/accounts';
 import { CONTRACTS, SEERSLEAGUE_ABI } from '@/lib/contract-interactions';
@@ -9,6 +9,7 @@ export const dynamic = 'force-dynamic';
 export const maxDuration = 300; // 5 minutes for processing
 
 const RPC_URL = process.env.NEXT_PUBLIC_BASE_RPC || 'https://mainnet.base.org';
+const PAYMASTER_URL = process.env.COINBASE_PAYMASTER_URL || '';
 const FOOTBALL_DATA_API_KEY = process.env.FOOTBALL_DATA_API_KEY || '';
 const FOOTBALL_DATA_BASE = 'https://api.football-data.org/v4';
 
@@ -26,6 +27,75 @@ function determineOutcome(homeScore: number, awayScore: number): 1 | 2 | 3 {
   if (homeScore > awayScore) return 1; // Home win
   if (homeScore < awayScore) return 3; // Away win
   return 2; // Draw
+}
+
+/**
+ * Send transaction with Coinbase Paymaster sponsorship
+ */
+async function sendPaymasterTransaction(
+  account: any,
+  contractAddress: string,
+  functionName: string,
+  args: any[]
+): Promise<{ success: boolean; txHash?: string; error?: string }> {
+  try {
+    if (!PAYMASTER_URL) {
+      console.log('Paymaster not configured, using regular transaction');
+      // Fallback to regular transaction
+      const walletClient = createWalletClient({
+        account,
+        chain: base,
+        transport: http(RPC_URL)
+      });
+
+      const txHash = await walletClient.writeContract({
+        address: contractAddress as `0x${string}`,
+        abi: SEERSLEAGUE_ABI,
+        functionName,
+        args
+      });
+
+      return { success: true, txHash };
+    }
+
+    // Create transaction data
+    const transactionData = {
+      to: contractAddress,
+      data: encodeFunctionData({
+        abi: SEERSLEAGUE_ABI,
+        functionName,
+        args
+      })
+    };
+
+    // Send to Paymaster
+    const response = await fetch(PAYMASTER_URL, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        method: 'eth_sendTransaction',
+        params: [transactionData],
+        id: 1
+      })
+    });
+
+    if (!response.ok) {
+      throw new Error(`Paymaster request failed: ${response.status}`);
+    }
+
+    const result = await response.json();
+    
+    if (result.error) {
+      throw new Error(`Paymaster error: ${result.error.message}`);
+    }
+
+    return { success: true, txHash: result.result };
+  } catch (error) {
+    console.error('Paymaster transaction failed:', error);
+    return { success: false, error: (error as Error).message };
+  }
 }
 
 /**
@@ -176,24 +246,24 @@ async function batchRecordResults(
     }
 
     const account = privateKeyToAccount(privateKey as `0x${string}`);
-    const walletClient = createWalletClient({
-      account,
-      chain: base,
-      transport: http(RPC_URL)
-    });
 
-    const txHash = await walletClient.writeContract({
-      address: CONTRACTS.SEERSLEAGUE,
-      abi: SEERSLEAGUE_ABI,
-      functionName: 'batchRecordResults',
-      args: [
+    // Use Paymaster for gas sponsorship
+    const result = await sendPaymasterTransaction(
+      account,
+      CONTRACTS.SEERSLEAGUE,
+      'batchRecordResults',
+      [
         users as `0x${string}`[],
         matchIds,
         corrects
       ]
-    });
+    );
 
-    return { success: true, txHash };
+    if (!result.success) {
+      throw new Error(result.error || 'Transaction failed');
+    }
+
+    return { success: true, txHash: result.txHash };
   } catch (error) {
     console.error('Error recording results to blockchain:', error);
     return { success: false, error: (error as Error).message };
