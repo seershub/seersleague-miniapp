@@ -41,6 +41,27 @@ async function sendPaymasterTransaction(
   args: readonly unknown[]
 ): Promise<{ success: boolean; txHash?: string; error?: string }> {
   try {
+    // TEMPORARY: Paymaster not fully configured yet, use regular transactions
+    // TODO: Properly integrate Coinbase Paymaster for gas-free transactions
+    console.log('Using regular transaction (Paymaster disabled temporarily)');
+
+    const walletClient = createWalletClient({
+      account,
+      chain: base,
+      transport: http(RPC_URL)
+    });
+
+    const txHash = await walletClient.writeContract({
+      account,
+      address: contractAddress as `0x${string}`,
+      abi: SEERSLEAGUE_ABI,
+      functionName,
+      args: args as any
+    });
+
+    return { success: true, txHash };
+
+    /* PAYMASTER CODE - Enable when properly configured
     if (!PAYMASTER_URL) {
       console.log('Paymaster not configured, using regular transaction');
       // Fallback to regular transaction
@@ -89,14 +110,15 @@ async function sendPaymasterTransaction(
     }
 
     const result = await response.json();
-    
+
     if (result.error) {
       throw new Error(`Paymaster error: ${result.error.message}`);
     }
 
     return { success: true, txHash: result.result };
+    */
   } catch (error) {
-    console.error('Paymaster transaction failed:', error);
+    console.error('Transaction failed:', error);
     return { success: false, error: (error as Error).message };
   }
 }
