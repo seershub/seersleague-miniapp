@@ -1,15 +1,16 @@
 import { NextResponse } from 'next/server';
-import { createWalletClient, createPublicClient, http, encodeFunctionData } from 'viem';
+import { createWalletClient, http, encodeFunctionData } from 'viem';
 import { base } from 'viem/chains';
 import { privateKeyToAccount } from 'viem/accounts';
 import { CONTRACTS, SEERSLEAGUE_ABI } from '@/lib/contract-interactions';
+import { publicClient, baseRpcUrl } from '@/lib/viem-config';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 export const maxDuration = 300; // 5 minutes for processing
 
-// Coinbase RPC endpoint (most reliable)
-const RPC_URL = process.env.NEXT_PUBLIC_BASE_RPC || 'https://api.developer.coinbase.com/rpc/v1/base/DzCv9JnMZKpreOiukHveGNUBbW7NBYUa';
+// Use centralized RPC configuration from viem-config (Alchemy)
+const RPC_URL = baseRpcUrl;
 const PAYMASTER_URL = process.env.COINBASE_PAYMASTER_URL || 'https://api.developer.coinbase.com/rpc/v1/base/DzCv9JnMZKpreOiukHveGNUBbW7NBYUa';
 const FOOTBALL_DATA_API_KEY = process.env.FOOTBALL_DATA_API_KEY || '';
 const FOOTBALL_DATA_BASE = 'https://api.football-data.org/v4';
@@ -154,11 +155,7 @@ async function fetchMatchResult(matchId: string): Promise<{ homeScore: number; a
  */
 async function getUsersForMatch(matchId: bigint): Promise<string[]> {
   try {
-    const publicClient = createPublicClient({
-      chain: base,
-      transport: http(RPC_URL)
-    });
-
+    // Use imported publicClient from viem-config (Alchemy RPC)
     const deploymentBlock = BigInt(process.env.NEXT_PUBLIC_DEPLOYMENT_BLOCK || '0');
     const currentBlock = await publicClient.getBlockNumber();
 
@@ -208,11 +205,7 @@ async function checkUserPrediction(
   actualOutcome: 1 | 2 | 3
 ): Promise<boolean> {
   try {
-    const publicClient = createPublicClient({
-      chain: base,
-      transport: http(RPC_URL)
-    });
-
+    // Use imported publicClient from viem-config (Alchemy RPC)
     const prediction = await publicClient.readContract({
       address: CONTRACTS.SEERSLEAGUE,
       abi: SEERSLEAGUE_ABI,
@@ -288,11 +281,7 @@ export async function POST(request: Request) {
       );
     }
 
-    const publicClient = createPublicClient({
-      chain: base,
-      transport: http(RPC_URL)
-    });
-
+    // Use imported publicClient from viem-config (Alchemy RPC)
     // Get all registered matches from contract
     const deploymentBlock = BigInt(process.env.NEXT_PUBLIC_DEPLOYMENT_BLOCK || '0');
     const currentBlock = await publicClient.getBlockNumber();

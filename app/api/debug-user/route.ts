@@ -1,12 +1,9 @@
 import { NextResponse } from 'next/server';
-import { createPublicClient, http } from 'viem';
-import { base } from 'viem/chains';
 import { CONTRACTS, SEERSLEAGUE_ABI } from '@/lib/contract-interactions';
+import { publicClient } from '@/lib/viem-config';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
-
-const RPC_URL = process.env.NEXT_PUBLIC_BASE_RPC || 'https://api.developer.coinbase.com/rpc/v1/base/DzCv9JnMZKpreOiukHveGNUBbW7NBYUa';
 
 export async function GET(request: Request) {
   try {
@@ -17,10 +14,7 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: 'Address required' }, { status: 400 });
     }
 
-    const publicClient = createPublicClient({
-      chain: base,
-      transport: http(RPC_URL)
-    });
+    // Use imported publicClient from viem-config (Alchemy RPC)
 
     // Get current block
     const currentBlock = await publicClient.getBlockNumber();

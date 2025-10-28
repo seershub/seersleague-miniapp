@@ -1,14 +1,15 @@
 import { NextResponse } from 'next/server';
-import { createWalletClient, createPublicClient, http } from 'viem';
+import { createWalletClient, http } from 'viem';
 import { base } from 'viem/chains';
 import { privateKeyToAccount } from 'viem/accounts';
 import { CONTRACTS, SEERSLEAGUE_ABI } from '@/lib/contract-interactions';
+import { publicClient, baseRpcUrl } from '@/lib/viem-config';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 export const maxDuration = 300;
 
-const RPC_URL = process.env.NEXT_PUBLIC_BASE_RPC || 'https://api.developer.coinbase.com/rpc/v1/base/DzCv9JnMZKpreOiukHveGNUBbW7NBYUa';
+const RPC_URL = baseRpcUrl;
 const FOOTBALL_DATA_API_KEY = process.env.FOOTBALL_DATA_API_KEY || '';
 const FOOTBALL_DATA_BASE = 'https://api.football-data.org/v4';
 
@@ -96,11 +97,7 @@ async function fetchUpcomingMatches(days: number = 14): Promise<MatchToRegister[
  * Check which matches are already registered on blockchain
  */
 async function filterUnregisteredMatches(matches: MatchToRegister[]): Promise<MatchToRegister[]> {
-  const publicClient = createPublicClient({
-    chain: base,
-    transport: http(RPC_URL)
-  });
-
+  // Use imported publicClient from viem-config (Alchemy RPC)
   const unregistered: MatchToRegister[] = [];
 
   for (const match of matches) {
