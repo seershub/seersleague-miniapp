@@ -116,13 +116,14 @@ export async function GET() {
           abi: SEERSLEAGUE_ABI,
           functionName: 'getUserStats',
           args: [user as `0x${string}`]
-        }) as { totalPredictions: bigint; correctPredictions: bigint; currentStreak: bigint; bestStreak: bigint };
+        }) as { correctPredictions: bigint; totalPredictions: bigint; freePredictionsUsed: bigint; currentStreak: bigint; longestStreak: bigint };
 
         userStatsFromContract.set(user, {
           totalPredictions: Number(stats.totalPredictions),
           correctPredictions: Number(stats.correctPredictions),
           currentStreak: Number(stats.currentStreak),
-          bestStreak: Number(stats.bestStreak)
+          longestStreak: Number(stats.longestStreak),
+          freePredictionsUsed: Number(stats.freePredictionsUsed)
         });
       } catch (error) {
         console.error(`Error fetching stats for ${user}:`, error);
