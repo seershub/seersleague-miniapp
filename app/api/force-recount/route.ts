@@ -157,7 +157,7 @@ async function fetchMatchResult(matchId: string): Promise<{ homeScore: number; a
     if (!response.ok) return null;
 
     const data = await response.json();
-    const match = data.match;
+    const match = data.match || data;  // Handle both response formats
 
     if (match.status === 'FINISHED') {
       const homeScore = match.score?.fullTime?.home ?? 0;
