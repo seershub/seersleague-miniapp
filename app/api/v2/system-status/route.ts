@@ -64,7 +64,7 @@ export async function GET() {
         address: contractAddress,
         abi: SEERSLEAGUE_ABI,
         functionName: 'getContractInfo'
-      }) as {
+      }) as unknown as {
         version: string;
         owner: string;
         treasury: string;
