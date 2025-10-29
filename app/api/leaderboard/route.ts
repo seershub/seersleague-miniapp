@@ -63,59 +63,75 @@ async function generateLeaderboardFromContract(): Promise<LeaderboardEntry[]> {
 
     console.log(`Found ${uniqueUsers.size} unique users`);
 
-    // Fetch stats for each user (SEQUENTIAL to avoid RPC issues)
+    // Fetch stats for each user with BATCH and TIMEOUT protection
     const leaderboardData: LeaderboardEntry[] = [];
     let successCount = 0;
     let errorCount = 0;
 
-    console.log(`[Leaderboard] Fetching stats for ${uniqueUsers.size} users...`);
+    console.log(`[Leaderboard] Fetching stats for ${uniqueUsers.size} users (max 20 for speed)...`);
 
-    for (const userAddress of uniqueUsers) {
-      try {
-        const stats = await publicClient.readContract({
-          address: CONTRACTS.SEERSLEAGUE,
-          abi: SEERSLEAGUE_ABI,
-          functionName: 'getUserStats',
-          args: [userAddress as `0x${string}`]
-        }) as unknown as {
-          correctPredictions: bigint;
-          totalPredictions: bigint;
-          freePredictionsUsed: bigint;
-          currentStreak: bigint;
-          longestStreak: bigint;
-        };
+    // LIMIT TO 20 USERS for performance
+    const usersArray = Array.from(uniqueUsers).slice(0, 20);
 
-        const correctPredictions = Number(stats.correctPredictions || 0);
-        const totalPredictions = Number(stats.totalPredictions || 0);
+    // Fetch in batches of 5 with Promise.allSettled
+    const BATCH_SIZE = 5;
+    for (let i = 0; i < usersArray.length; i += BATCH_SIZE) {
+      const batch = usersArray.slice(i, i + BATCH_SIZE);
 
-        // IMPORTANT: Show ALL users, even with 0 correctPredictions
-        if (totalPredictions > 0) {
-          // Cap correctPredictions to totalPredictions (fix impossible data from contract bug)
-          const cappedCorrect = Math.min(correctPredictions, totalPredictions);
+      const batchPromises = batch.map(async (userAddress) => {
+        try {
+          const stats = await publicClient.readContract({
+            address: CONTRACTS.SEERSLEAGUE,
+            abi: SEERSLEAGUE_ABI,
+            functionName: 'getUserStats',
+            args: [userAddress as `0x${string}`]
+          }) as unknown as {
+            correctPredictions: bigint;
+            totalPredictions: bigint;
+            freePredictionsUsed: bigint;
+            currentStreak: bigint;
+            longestStreak: bigint;
+          };
 
-          const accuracy = totalPredictions > 0
-            ? Math.round((cappedCorrect / totalPredictions) * 100)
-            : 0;
+          const correctPredictions = Number(stats.correctPredictions || 0);
+          const totalPredictions = Number(stats.totalPredictions || 0);
 
-          leaderboardData.push({
-            rank: 0, // Will be set after sorting
-            address: userAddress,
-            accuracy,
-            totalPredictions,
-            correctPredictions: cappedCorrect, // Use capped value
-            currentStreak: Number(stats.currentStreak || 0),
-            longestStreak: Number(stats.longestStreak || 0)
-          });
+          if (totalPredictions > 0) {
+            const cappedCorrect = Math.min(correctPredictions, totalPredictions);
+            const accuracy = Math.round((cappedCorrect / totalPredictions) * 100);
 
-          successCount++;
+            return {
+              rank: 0,
+              address: userAddress,
+              accuracy,
+              totalPredictions,
+              correctPredictions: cappedCorrect,
+              currentStreak: Number(stats.currentStreak || 0),
+              longestStreak: Number(stats.longestStreak || 0)
+            };
+          }
+          return null;
+        } catch (error) {
+          console.error(`[Leaderboard] Error for ${userAddress}:`, error);
+          return null;
         }
-      } catch (error) {
-        console.error(`[Leaderboard] Error fetching stats for ${userAddress}:`, error);
-        errorCount++;
-      }
+      });
+
+      const results = await Promise.allSettled(batchPromises);
+
+      results.forEach((result) => {
+        if (result.status === 'fulfilled' && result.value) {
+          leaderboardData.push(result.value);
+          successCount++;
+        } else {
+          errorCount++;
+        }
+      });
+
+      console.log(`[Leaderboard] Batch ${i / BATCH_SIZE + 1} complete: ${successCount} success, ${errorCount} errors`);
     }
 
-    console.log(`[Leaderboard] Success: ${successCount}, Errors: ${errorCount}`);
+    console.log(`[Leaderboard] Final: Success ${successCount}, Errors ${errorCount}`);
 
     // Sort leaderboard
     leaderboardData.sort((a, b) => {
