@@ -118,7 +118,7 @@ export async function POST(request: Request) {
       message: 'Matches updated successfully',
       matchesAdded: filteredMatches.length,
       txHash: txResult.txHash,
-      newTotal: Number(matchStatus.currentCount) + filteredMatches.length,
+      newTotal: currentCount + filteredMatches.length,
       version: '2.0.0',
       features: [
         'Smart filtering',
