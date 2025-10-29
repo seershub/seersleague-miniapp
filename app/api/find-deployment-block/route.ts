@@ -1,12 +1,9 @@
 import { NextResponse } from 'next/server';
-import { createPublicClient, http } from 'viem';
-import { base } from 'viem/chains';
 import { CONTRACTS } from '@/lib/contract-interactions';
+import { publicClient } from '@/lib/viem-config';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
-
-const RPC_URL = process.env.NEXT_PUBLIC_BASE_RPC || 'https://api.developer.coinbase.com/rpc/v1/base/DzCv9JnMZKpreOiukHveGNUBbW7NBYUa';
 
 /**
  * Find contract deployment block using binary search
@@ -115,11 +112,7 @@ async function findFirstEventBlock(publicClient: any): Promise<bigint | null> {
  */
 export async function GET() {
   try {
-    const publicClient = createPublicClient({
-      chain: base,
-      transport: http(RPC_URL)
-    });
-
+    // Use imported publicClient from viem-config (Alchemy RPC)
     const currentBlock = await publicClient.getBlockNumber();
     const contractAddress = CONTRACTS.SEERSLEAGUE;
 

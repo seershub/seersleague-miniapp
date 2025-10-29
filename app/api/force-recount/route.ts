@@ -1,14 +1,14 @@
 import { NextResponse } from 'next/server';
-import { createWalletClient, createPublicClient, http, encodeFunctionData } from 'viem';
+import { createWalletClient, http } from 'viem';
 import { base } from 'viem/chains';
 import { privateKeyToAccount } from 'viem/accounts';
 import { CONTRACTS, SEERSLEAGUE_ABI } from '@/lib/contract-interactions';
+import { publicClient, baseRpcUrl } from '@/lib/viem-config';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 export const maxDuration = 300;
 
-const RPC_URL = process.env.NEXT_PUBLIC_BASE_RPC || 'https://api.developer.coinbase.com/rpc/v1/base/DzCv9JnMZKpreOiukHveGNUBbW7NBYUa';
 const PAYMASTER_URL = process.env.COINBASE_PAYMASTER_URL;
 
 /**
@@ -24,7 +24,7 @@ async function sendTransaction(
     const walletClient = createWalletClient({
       account,
       chain: base,
-      transport: http(RPC_URL)
+      transport: http(baseRpcUrl)
     });
 
     console.log('Sending transaction without Paymaster (using private key wallet)...');
@@ -218,10 +218,9 @@ export async function POST(request: Request) {
     }
 
     const account = privateKeyToAccount(privateKey as `0x${string}`);
-    const publicClient = createPublicClient({
-      chain: base,
-      transport: http(RPC_URL)
-    });
+
+    // Use imported publicClient from viem-config (Alchemy RPC)
+    // No need to create a new one - reuse the optimized connection
 
     // Find deployment block by binary search (contract creation)
     console.log('Finding contract deployment block...');
