@@ -1,4 +1,5 @@
 import { parseUnits, formatUnits } from 'viem';
+import { SEERSLEAGUE_ABI } from './contracts/abi';
 
 // Unified contract system - V1 + V2
 export const CONTRACTS = {
