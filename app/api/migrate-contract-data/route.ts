@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { publicClient, walletClient } from '@/lib/viem-config';
+import { publicClient } from '@/lib/viem-config';
 import { CONTRACTS, SEERSLEAGUE_ABI } from '@/lib/contract-interactions';
 
 export const runtime = 'nodejs';
@@ -54,13 +54,8 @@ export async function POST(request: Request) {
 
     console.log(`🔧 Found ${inconsistentUsers.length} users with corrupted data`);
 
-    // Check if we have wallet client for transactions
-    if (!walletClient) {
-      return NextResponse.json({
-        error: 'Wallet client not available',
-        message: 'Cannot perform contract transactions without wallet client'
-      }, { status: 500 });
-    }
+    // Note: This endpoint only provides migration analysis
+    // Actual data migration would require contract transactions
 
     const migrationResults = [];
 
