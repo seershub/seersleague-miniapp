@@ -49,10 +49,10 @@ export default function LeaderboardPage() {
     const fetchLeaderboard = async () => {
       try {
         setLoading(true);
-        console.log('Fetching leaderboard from simple endpoint...');
-        
-        // Use simple-leaderboard endpoint (faster and more reliable)
-        const response = await fetch('/api/simple-leaderboard');
+        console.log('Fetching leaderboard from main endpoint...');
+
+        // Use main leaderboard endpoint (batched, optimized)
+        const response = await fetch('/api/leaderboard');
         if (!response.ok) throw new Error('Failed to fetch leaderboard');
 
         const leaderboardData = await response.json();
