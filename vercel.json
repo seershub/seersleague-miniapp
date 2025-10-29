@@ -10,11 +10,7 @@
   },
   "crons": [
     {
-      "path": "/api/cron/update-leaderboard",
-      "schedule": "0 0 * * *"
-    },
-    {
-      "path": "/api/cron/record-results",
+      "path": "/api/cron/daily-update",
       "schedule": "0 0 * * *"
     }
   ]
