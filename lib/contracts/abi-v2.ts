@@ -282,5 +282,12 @@ export const SEERSLEAGUE_V2_ABI = [
     ],
     "name": "ContractUpgraded",
     "type": "event"
+  },
+  {
+    "inputs": [],
+    "name": "updateLeaderboard",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
   }
 ] as const;
