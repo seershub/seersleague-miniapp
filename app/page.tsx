@@ -19,9 +19,13 @@ export default function Home() {
         setIsReady(true);
         
         // Get user context if available
-        const context = sdk.context;
-        if (context?.user) {
-          setUserAddress(context.user.fid);
+        try {
+          const context = await sdk.context;
+          if (context?.user) {
+            setUserAddress(context.user.fid);
+          }
+        } catch (error) {
+          console.log('No user context available:', error);
         }
         
         console.log('✅ [SEERS LEAGUE V2] App initialized successfully');
