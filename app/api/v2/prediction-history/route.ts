@@ -121,24 +121,28 @@ export async function GET(request: Request) {
     // Get user's detailed stats
     let userStats;
     try {
-      userStats = await publicClient.readContract({
+      // Use getUserStats instead of getUserDetailedStats (which doesn't exist)
+      const basicStats = await publicClient.readContract({
         address: CONTRACTS_V2.SEERSLEAGUE,
         abi: SEERSLEAGUE_V2_ABI,
-        functionName: 'getUserDetailedStats',
+        functionName: 'getUserStats',
         args: [userAddress as `0x${string}`]
       }) as {
-        stats: {
-          correctPredictions: bigint;
-          totalPredictions: bigint;
-          freePredictionsUsed: bigint;
-          currentStreak: bigint;
-          longestStreak: bigint;
-          lastPredictionTime: bigint;
-          totalFeesPaid: bigint;
-        };
-        accuracy: bigint;
-        rank: bigint;
-        recentPredictions: any[];
+        correctPredictions: bigint;
+        totalPredictions: bigint;
+        freePredictionsUsed: bigint;
+        currentStreak: bigint;
+        longestStreak: bigint;
+        lastPredictionTime: bigint;
+        totalFeesPaid: bigint;
+      };
+
+      // Create detailed stats structure
+      userStats = {
+        stats: basicStats,
+        accuracy: basicStats.totalPredictions > 0n ? (basicStats.correctPredictions * 100n) / basicStats.totalPredictions : 0n,
+        rank: 0n, // Not available
+        recentPredictions: [] // Not available
       };
     } catch (error) {
       console.error('Error fetching user stats:', error);
