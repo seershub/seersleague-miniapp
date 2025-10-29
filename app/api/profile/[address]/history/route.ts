@@ -67,10 +67,11 @@ export async function GET(
       });
     }
 
-    // FAST FETCH: Use deployment block or last 5K blocks
+    // FAST FETCH: Use deployment block or last 5M blocks (~1 month on Base)
+    // CRITICAL FIX: Was 5000n (2.7 hours) - now 5000000n (1 month)
     const currentBlock = await publicClient.getBlockNumber();
     const deploymentBlock = BigInt(process.env.NEXT_PUBLIC_DEPLOYMENT_BLOCK || '0');
-    const fromBlock = deploymentBlock > 0n ? deploymentBlock : currentBlock - 5000n;
+    const fromBlock = deploymentBlock > 0n ? deploymentBlock : currentBlock - 5000000n;
 
     console.log(`[History] Fetching from block ${fromBlock} to ${currentBlock}`);
 
