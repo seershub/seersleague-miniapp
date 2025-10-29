@@ -207,10 +207,9 @@ export async function POST(request: Request) {
         }) as { startTime: bigint; exists: boolean };
 
         const startTime = Number(matchInfo.startTime);
-        const twoHours = 2 * 60 * 60;
 
-        // Skip if not started yet (with 2 hour buffer)
-        if (now < startTime + twoHours) {
+        // Skip if not started yet (no buffer needed - Football-data API will tell us if finished)
+        if (now < startTime) {
           continue;
         }
 

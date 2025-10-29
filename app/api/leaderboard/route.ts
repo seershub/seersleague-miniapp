@@ -26,8 +26,9 @@ async function generateLeaderboardFromContract(): Promise<LeaderboardEntry[]> {
     const currentBlock = await publicClient.getBlockNumber();
 
     // CRITICAL FIX: Use much wider block range to catch all users
-    // If deployment block not set, scan last 1M blocks (~23 days on Base)
-    const fromBlock = deploymentBlock > 0n ? deploymentBlock : currentBlock - 1000000n;
+    // If deployment block not set, scan last 5M blocks (~1 month on Base)
+    // This matches smart-recount's range to ensure we find all users
+    const fromBlock = deploymentBlock > 0n ? deploymentBlock : currentBlock - 5000000n;
 
     console.log(`[Leaderboard] Scanning from block ${fromBlock} to latest (${currentBlock})`);
     console.log(`[Leaderboard] Block range: ${currentBlock - fromBlock} blocks`);
