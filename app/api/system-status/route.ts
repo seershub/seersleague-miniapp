@@ -153,7 +153,7 @@ export async function GET() {
         status.leaderboard.cacheStatus = 'empty';
       }
 
-      status.leaderboard.lastUpdated = lastUpdated as string || null;
+      status.leaderboard.lastUpdated = lastUpdated as string | null;
 
     } catch (error) {
       status.leaderboard.cacheStatus = 'error';
