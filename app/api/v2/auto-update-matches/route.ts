@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { publicClient, walletClient } from '@/lib/viem-config';
+import { publicClient } from '@/lib/viem-config';
 import { getContractAddress, getDeploymentBlock, getActiveContract, SEERSLEAGUE_ABI } from '@/lib/contract-interactions-unified';
 
 export const runtime = 'nodejs';
