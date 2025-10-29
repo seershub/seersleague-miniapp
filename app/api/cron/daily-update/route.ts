@@ -207,5 +207,5 @@ export async function GET() {
 
 // Also allow POST for manual triggers
 export async function POST(request: Request) {
-  return GET(request);
+  return GET();
 }
