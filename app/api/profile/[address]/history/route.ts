@@ -96,6 +96,39 @@ export async function GET(
 
     console.log(`[History] Found ${predictionEvents.length} prediction events`);
 
+    // CRITICAL FIX: Fetch ResultRecorded events to detect finished matches
+    // Contract bug: batchRecordResults doesn't set matches[matchId].isRecorded = true
+    // So we need to check ResultRecorded events to know which matches are finished
+    const resultEvents = await publicClient.getLogs({
+      address: CONTRACTS.SEERSLEAGUE,
+      event: {
+        type: 'event',
+        name: 'ResultRecorded',
+        inputs: [
+          { name: 'user', type: 'address', indexed: true },
+          { name: 'matchId', type: 'uint256', indexed: false },
+          { name: 'correct', type: 'bool', indexed: false }
+        ]
+      },
+      args: { user: address }, // Only this user's results
+      fromBlock,
+      toBlock: 'latest'
+    });
+
+    console.log(`[History] Found ${resultEvents.length} ResultRecorded events`);
+
+    // Build a map of recorded results: matchId -> correct
+    const recordedResults = new Map<string, boolean>();
+    resultEvents.forEach((event: any) => {
+      const matchId = event.args?.matchId?.toString();
+      const correct = event.args?.correct;
+      if (matchId !== undefined && correct !== undefined) {
+        recordedResults.set(matchId, correct);
+      }
+    });
+
+    console.log(`[History] ${recordedResults.size} matches have recorded results`);
+
     // Build history with OPTIMIZED batch fetching
     const history: PredictionHistoryEntry[] = [];
     const processedMatches = new Set<string>(); // Avoid duplicates
@@ -177,23 +210,43 @@ export async function GET(
 
         console.log(`[History] Match ${matchId} - userPrediction.outcome: ${predictionNum}`);
 
+        // WORKAROUND: Check ResultRecorded event instead of matchInfo.isRecorded
+        // Contract bug: batchRecordResults doesn't set matches[matchId].isRecorded = true
+        const matchIdStr = matchId.toString();
+        const hasRecordedResult = recordedResults.has(matchIdStr);
+
         // Calculate outcome from scores (1=Home Win, 2=Draw, 3=Away Win)
         let outcomeNum: number | null = null;
-        if (matchInfo.isRecorded) {
-          const homeScore = Number(matchInfo.homeScore);
-          const awayScore = Number(matchInfo.awayScore);
-          if (homeScore > awayScore) {
-            outcomeNum = 1;
-          } else if (homeScore === awayScore) {
-            outcomeNum = 2;
-          } else {
-            outcomeNum = 3;
+        if (matchInfo.isRecorded || hasRecordedResult) {
+          // Try to get from contract scores first
+          if (matchInfo.isRecorded) {
+            const homeScore = Number(matchInfo.homeScore);
+            const awayScore = Number(matchInfo.awayScore);
+            if (homeScore > awayScore) {
+              outcomeNum = 1;
+            } else if (homeScore === awayScore) {
+              outcomeNum = 2;
+            } else {
+              outcomeNum = 3;
+            }
           }
         }
 
-        // Determine correctness
+        // Determine correctness - use ResultRecorded event as source of truth
         let isCorrect: boolean | null = null;
-        if (matchInfo.isRecorded && predictionNum > 0 && outcomeNum !== null) {
+        if (hasRecordedResult) {
+          // Use the correct flag from ResultRecorded event (most reliable)
+          isCorrect = recordedResults.get(matchIdStr)!;
+
+          // If we have isCorrect but no outcomeNum, derive it from user prediction + correctness
+          if (outcomeNum === null && predictionNum > 0) {
+            if (isCorrect) {
+              outcomeNum = predictionNum; // User was correct, so outcome = their prediction
+            }
+            // If incorrect, we can't derive the actual outcome without more info
+          }
+        } else if (matchInfo.isRecorded && predictionNum > 0 && outcomeNum !== null) {
+          // Fallback to contract data if no ResultRecorded event
           isCorrect = predictionNum === outcomeNum;
         }
 
