@@ -34,13 +34,12 @@ export async function GET(request: Request) {
 
     console.log(`🏈 [MATCHES V2] Fetching matches - offset: ${offset}, limit: ${limit}, showFinished: ${showFinished}`);
 
-    // Get upcoming matches from contract
-    const upcomingMatches = await publicClient.readContract({
-      address: CONTRACTS_V2.SEERSLEAGUE,
-      abi: SEERSLEAGUE_V2_ABI,
-      functionName: 'getUpcomingMatches',
-      args: [BigInt(limit + offset + 10)] // Get more to filter
-    }) as unknown as { matchIds: bigint[]; startTimes: bigint[] };
+    // Get upcoming matches from contract (simplified for now)
+    // Since getUpcomingMatches doesn't exist, we'll return empty for now
+    const upcomingMatches = {
+      matchIds: [] as bigint[],
+      startTimes: [] as bigint[]
+    };
 
     console.log(`[MATCHES V2] Found ${upcomingMatches.matchIds.length} upcoming matches`);
 
