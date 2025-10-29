@@ -40,7 +40,7 @@ export async function GET() {
       },
       leaderboard: {
         totalPlayers: 0,
-        lastUpdated: null,
+        lastUpdated: null as string | null,
         cacheStatus: 'unknown'
       },
       matches: {
