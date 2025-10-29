@@ -1,13 +1,11 @@
 import { parseUnits, formatUnits } from 'viem';
+import { SEERSLEAGUE_V2_ABI } from './contracts/abi-v2';
 
 // Contract addresses
 export const CONTRACTS_V2 = {
   SEERSLEAGUE: process.env.NEXT_PUBLIC_SEERSLEAGUE_V2_CONTRACT as `0x${string}`,
   USDC: '0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913' as `0x${string}`,
 } as const;
-
-// Contract ABI
-export { SEERSLEAGUE_V2_ABI } from './contracts/abi-v2';
 
 // Constants
 export const PREDICTION_FEE = 500_000n; // 0.5 USDC (6 decimals)
