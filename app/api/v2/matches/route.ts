@@ -116,12 +116,13 @@ export async function GET(request: Request) {
     // Apply pagination
     const paginatedMatches = filteredMatches.slice(offset, offset + limit);
 
-    // Get match statistics
-    const stats = await publicClient.readContract({
-      address: CONTRACTS_V2.SEERSLEAGUE,
-      abi: SEERSLEAGUE_V2_ABI,
-      functionName: 'getMatchStatistics'
-    }) as unknown as { total: bigint; upcoming: bigint; finished: bigint; recorded: bigint };
+    // Get match statistics (simplified for now)
+    const stats = {
+      total: BigInt(upcomingMatches.matchIds.length),
+      upcoming: BigInt(upcomingMatches.matchIds.length),
+      finished: BigInt(0),
+      recorded: BigInt(0)
+    };
 
     console.log(`[MATCHES V2] Returning ${paginatedMatches.length} matches (${filteredMatches.length} total after filtering)`);
 
