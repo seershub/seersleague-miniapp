@@ -204,7 +204,7 @@ async function registerMatchesInContract(
       account,
       address: CONTRACTS_V2.SEERSLEAGUE,
       abi: SEERSLEAGUE_V2_ABI,
-      functionName: 'batchRegisterMatchesFromAPI',
+      functionName: 'registerMatches',
       args: [matchIds, startTimes]
     });
 
