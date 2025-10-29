@@ -138,7 +138,9 @@ export async function GET(request: Request) {
         inputs: [
           { name: 'user', type: 'address', indexed: true },
           { name: 'matchIds', type: 'uint256[]', indexed: false },
-          { name: 'predictions', type: 'uint8[]', indexed: false }
+          { name: 'predictionsCount', type: 'uint256', indexed: false },
+          { name: 'freeUsed', type: 'uint256', indexed: false },
+          { name: 'feePaid', type: 'uint256', indexed: false }
         ]
       },
       fromBlock,
@@ -152,9 +154,16 @@ export async function GET(request: Request) {
     const now = Math.floor(Date.now() / 1000);
     const finishedMatches: { matchId: string; status: string; homeScore?: number; awayScore?: number }[] = [];
 
+    // Debug: Show first 5 matches with their startTimes
+    console.log(`\n🔍 DEBUG: Current timestamp: ${now} (${new Date(now * 1000).toISOString()})`);
+    console.log(`🔍 DEBUG: First 5 matches:`);
+    matchStates.slice(0, 5).forEach(m => {
+      console.log(`  Match ${m.matchId}: startTime=${m.startTime} (${new Date(m.startTime * 1000).toISOString()}) - ${m.startTime < now ? 'STARTED' : 'UPCOMING'}`);
+    });
+
     // Only check matches that have already started
     const startedMatches = matchStates.filter(m => m.startTime < now);
-    console.log(`📊 ${startedMatches.length} matches have started (out of ${matchStates.length} total)`);
+    console.log(`\n📊 ${startedMatches.length} matches have started (out of ${matchStates.length} total)`);
 
     for (const match of startedMatches.slice(0, 20)) { // Limit to first 20 to avoid rate limits
       try {
@@ -225,6 +234,19 @@ export async function GET(request: Request) {
     });
 
     return NextResponse.json({
+      debug: {
+        currentTimestamp: now,
+        currentDate: new Date(now * 1000).toISOString(),
+        first5Matches: matchStates.slice(0, 5).map(m => ({
+          matchId: m.matchId,
+          startTime: m.startTime,
+          startDate: new Date(m.startTime * 1000).toISOString(),
+          isStarted: m.startTime < now,
+          exists: m.exists,
+          isRecorded: m.isRecorded
+        }))
+      },
+
       summary: analysis,
 
       recordedMatches: recordedMatches.map(m => ({
