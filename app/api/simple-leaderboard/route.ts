@@ -80,6 +80,7 @@ async function generateLeaderboardFromContract(): Promise<SimpleLeaderboardEntry
       const correctPredictions = Number(stats.correctPredictions || 0);
       const totalPredictions = Number(stats.totalPredictions || 0);
 
+      // CRITICAL FIX: Show ALL users with predictions, not just those with correct predictions
       if (totalPredictions > 0) {
         const accuracy = Math.round((correctPredictions / totalPredictions) * 100);
 

@@ -7,7 +7,7 @@ import { publicClient, baseRpcUrl } from '@/lib/viem-config';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
-export const maxDuration = 600; // 10 minutes for processing 49 matches with rate limiting
+export const maxDuration = 900; // 15 minutes for processing 49 matches with rate limiting
 
 const FOOTBALL_DATA_API_KEY = process.env.FOOTBALL_DATA_API_KEY || '';
 const FOOTBALL_DATA_BASE = 'https://api.football-data.org/v4';
@@ -247,8 +247,8 @@ export async function POST(request: Request) {
           console.log(`Progress: ${checkedCount}/${matchIdSet.size} matches checked...`);
         }
 
-        // Rate limiting: Wait 2 seconds between API requests to avoid 429
-        await sleep(2000);
+        // Rate limiting: Wait 1.5 seconds between API requests to avoid 429
+        await sleep(1500);
 
       } catch (error) {
         console.error(`Error checking match ${matchId}:`, error);
