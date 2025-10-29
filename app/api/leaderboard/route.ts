@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { kv } from '@vercel/kv';
 import { publicClient } from '@/lib/viem-config';
-import { CONTRACTS, SEERSLEAGUE_ABI } from '@/lib/contract-interactions';
+import { getContractAddress, getDeploymentBlock, SEERSLEAGUE_ABI } from '@/lib/contract-interactions-unified';
 
 export interface LeaderboardEntry {
   rank: number;
@@ -22,7 +22,7 @@ async function generateLeaderboardFromContract(): Promise<LeaderboardEntry[]> {
   
   try {
     // Get contract deployment block
-    const deploymentBlock = BigInt(process.env.NEXT_PUBLIC_DEPLOYMENT_BLOCK || '0');
+    const deploymentBlock = getDeploymentBlock();
     const currentBlock = await publicClient.getBlockNumber();
 
     // CRITICAL FIX: Use much wider block range to catch all users
@@ -38,7 +38,7 @@ async function generateLeaderboardFromContract(): Promise<LeaderboardEntry[]> {
 
     // Fetch PredictionsSubmitted events
     const predictionEvents = await publicClient.getLogs({
-      address: CONTRACTS.SEERSLEAGUE,
+      address: getContractAddress(),
       event: {
         type: 'event',
         name: 'PredictionsSubmitted',
@@ -70,7 +70,7 @@ async function generateLeaderboardFromContract(): Promise<LeaderboardEntry[]> {
     const userStatsPromises = Array.from(uniqueUsers).map(async (userAddress) => {
       try {
         const stats = await publicClient.readContract({
-          address: CONTRACTS.SEERSLEAGUE,
+          address: getContractAddress(),
           abi: SEERSLEAGUE_ABI,
           functionName: 'getUserStats',
           args: [userAddress as `0x${string}`]

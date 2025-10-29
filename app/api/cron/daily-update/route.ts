@@ -37,7 +37,7 @@ export async function GET() {
     const step1Start = Date.now();
     
     try {
-      const smartRecountResponse = await fetch(`${process.env.NEXT_PUBLIC_URL || 'http://localhost:3000'}/api/smart-recount`, {
+      const smartRecountResponse = await fetch(`${process.env.NEXT_PUBLIC_URL || 'http://localhost:3000'}/api/v2/smart-recount`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${authHeader}`,
@@ -74,7 +74,7 @@ export async function GET() {
     const step2Start = Date.now();
     
     try {
-      const leaderboardResponse = await fetch(`${process.env.NEXT_PUBLIC_URL || 'http://localhost:3000'}/api/cron/update-leaderboard`, {
+      const leaderboardResponse = await fetch(`${process.env.NEXT_PUBLIC_URL || 'http://localhost:3000'}/api/v2/update-leaderboard`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${authHeader}`,

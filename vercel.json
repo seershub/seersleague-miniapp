@@ -8,10 +8,14 @@
       "maxDuration": 800
     }
   },
-  "crons": [
-    {
-      "path": "/api/cron/daily-update",
-      "schedule": "0 0 * * *"
-    }
-  ]
+      "crons": [
+        {
+          "path": "/api/cron/daily-update",
+          "schedule": "0 0 * * *"
+        }
+      ],
+      "env": {
+        "NEXT_PUBLIC_SEERSLEAGUE_V2_CONTRACT": "@seersleague-v2-contract",
+        "NEXT_PUBLIC_DEPLOYMENT_BLOCK_V2": "@seersleague-v2-deployment-block"
+      }
 }
