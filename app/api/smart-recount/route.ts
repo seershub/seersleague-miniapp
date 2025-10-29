@@ -267,10 +267,42 @@ export async function POST(request: Request) {
       });
     }
 
-    // STEP 4: For each finished match, check all users who predicted it
+    // STEP 4: Get already recorded results (DUPLICATE PROTECTION)
+    console.log('🔍 Fetching already recorded results to prevent duplicates...');
+
+    const resultEvents = await publicClient.getLogs({
+      address: CONTRACTS.SEERSLEAGUE,
+      event: {
+        type: 'event',
+        name: 'ResultRecorded',
+        inputs: [
+          { name: 'user', type: 'address', indexed: true },
+          { name: 'matchId', type: 'uint256', indexed: false },
+          { name: 'correct', type: 'bool', indexed: false }
+        ]
+      },
+      fromBlock,
+      toBlock: 'latest'
+    });
+
+    // Build a Set of already recorded (user, matchId) pairs
+    const alreadyRecorded = new Set<string>();
+    resultEvents.forEach((event: any) => {
+      const user = event.args?.user?.toLowerCase();
+      const matchId = event.args?.matchId?.toString();
+      if (user && matchId) {
+        alreadyRecorded.add(`${user}-${matchId}`);
+      }
+    });
+
+    console.log(`✅ Found ${resultEvents.length} already recorded results`);
+    console.log(`✅ ${alreadyRecorded.size} unique (user, match) pairs already recorded`);
+
+    // STEP 5: For each finished match, check all users who predicted it (SKIP DUPLICATES)
     const batchUsers: string[] = [];
     const batchMatchIds: bigint[] = [];
     const batchCorrects: boolean[] = [];
+    let skippedDuplicates = 0;
 
     console.log('🔍 Checking user predictions...');
 
@@ -280,6 +312,13 @@ export async function POST(request: Request) {
       // Find all users who predicted this match
       for (const user of userSet) {
         if (userMatchMap.get(user)?.has(matchId)) {
+          // DUPLICATE CHECK: Skip if already recorded
+          const pairKey = `${user}-${matchId}`;
+          if (alreadyRecorded.has(pairKey)) {
+            skippedDuplicates++;
+            continue; // Skip this pair
+          }
+
           const userPrediction = await getUserPrediction(user, matchIdBigInt);
 
           if (userPrediction !== 0) {
@@ -293,19 +332,21 @@ export async function POST(request: Request) {
       }
     }
 
-    console.log(`✅ Total predictions to record: ${batchUsers.length}`);
+    console.log(`✅ Total NEW predictions to record: ${batchUsers.length}`);
+    console.log(`⏭️  Skipped ${skippedDuplicates} already recorded predictions`);
 
     if (batchUsers.length === 0) {
       return NextResponse.json({
         success: true,
-        message: 'No predictions to record',
+        message: 'All predictions already recorded (no new data to record)',
         usersFound: userSet.size,
         finishedMatches: finishedMatches.size,
+        alreadyRecorded: skippedDuplicates,
         predictionsFound: 0
       });
     }
 
-    // STEP 5: Send batch transaction
+    // STEP 6: Send batch transaction
     console.log('📤 Sending batch transaction to blockchain...');
     const txResult = await sendTransaction(account, batchUsers, batchMatchIds, batchCorrects);
 
@@ -325,11 +366,15 @@ export async function POST(request: Request) {
       matchIdsFromPredictions: matchIdSet.size,
       finishedMatches: finishedMatches.size,
       predictionsRecorded: batchUsers.length,
+      duplicatesSkipped: skippedDuplicates,
       txHash: txResult.txHash,
       breakdown: {
         correctPredictions: batchCorrects.filter(c => c).length,
         incorrectPredictions: batchCorrects.filter(c => !c).length
-      }
+      },
+      note: skippedDuplicates > 0 ?
+        `Skipped ${skippedDuplicates} already recorded predictions to prevent duplicate counting` :
+        'No duplicates found'
     });
 
   } catch (error) {
