@@ -7,6 +7,9 @@ export const CONTRACTS_V2 = {
   USDC: '0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913' as `0x${string}`,
 } as const;
 
+// Export ABI
+export { SEERSLEAGUE_V2_ABI };
+
 // Constants
 export const PREDICTION_FEE = 500_000n; // 0.5 USDC (6 decimals)
 export const TOTAL_FREE_PREDICTIONS = 5;
