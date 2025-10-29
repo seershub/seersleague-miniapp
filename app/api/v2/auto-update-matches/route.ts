@@ -59,7 +59,7 @@ export async function POST(request: Request) {
       }
 
       // Register new matches (simplified - function not in ABI yet)
-      const newMatches = []; // Placeholder - would fetch from external API
+      const newMatches: any[] = []; // Placeholder - would fetch from external API
       const registeredCount = 0; // Placeholder - would register matches
 
       console.log(`✅ [AUTO UPDATE MATCHES V2] Registered ${registeredCount} new matches`);
