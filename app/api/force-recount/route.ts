@@ -71,7 +71,7 @@ async function getAllUsers(publicClient: any, fromBlock: bigint): Promise<Set<st
   });
 
   const users = new Set<string>();
-  events.forEach(event => {
+  events.forEach((event: any) => {
     if (event.args?.user) {
       users.add(event.args.user.toLowerCase());
     }
