@@ -43,25 +43,29 @@ export async function POST(request: Request) {
     }
 
     // Check if we need more matches (with spam protection)
-    const matchStatus = await publicClient.readContract({
+    const matchStats = await publicClient.readContract({
       address: CONTRACTS_V2.SEERSLEAGUE,
       abi: SEERSLEAGUE_V2_ABI,
-      functionName: 'checkMatchStatus'
-    }) as { needsUpdate: boolean; currentCount: bigint; reason: string };
+      functionName: 'getMatchStatistics'
+    }) as { total: bigint; upcoming: bigint; finished: bigint; recorded: bigint };
 
-    console.log(`[AUTO-UPDATE V2] Match status: ${matchStatus.reason}`);
+    const currentCount = Number(matchStats.total);
+    const needsUpdate = currentCount < 50; // MIN_MATCHES_THRESHOLD
+    const reason = needsUpdate ? `Only ${currentCount} matches available, need at least 50` : `Sufficient matches (${currentCount})`;
 
-    if (!matchStatus.needsUpdate) {
+    console.log(`[AUTO-UPDATE V2] Match status: ${reason}`);
+
+    if (!needsUpdate) {
       return NextResponse.json({
         success: true,
         message: 'No update needed',
-        reason: matchStatus.reason,
-        currentCount: Number(matchStatus.currentCount),
+        reason,
+        currentCount,
         version: '2.0.0'
       });
     }
 
-    console.log(`[AUTO-UPDATE V2] Current matches: ${matchStatus.currentCount}, need more...`);
+    console.log(`[AUTO-UPDATE V2] Current matches: ${currentCount}, need more...`);
 
     // Fetch upcoming matches from football-data.org
     const upcomingMatches = await fetchUpcomingMatches();
