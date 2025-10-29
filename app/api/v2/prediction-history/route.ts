@@ -45,18 +45,14 @@ export async function GET(request: Request) {
 
     console.log(`📊 [PREDICTION HISTORY V2] Fetching history for ${userAddress}`);
 
-    // Get user's prediction history with results from contract
-    const historyData = await publicClient.readContract({
-      address: CONTRACTS_V2.SEERSLEAGUE,
-      abi: SEERSLEAGUE_V2_ABI,
-      functionName: 'getUserPredictionHistoryWithResults',
-      args: [userAddress as `0x${string}`, BigInt(offset), BigInt(limit)]
-    }) as {
-      matchIds: bigint[];
-      outcomes: number[];
-      timestamps: bigint[];
-      results: number[];
-      matchResults: number[];
+    // Get user's prediction history with results from contract (simplified for now)
+    // Since getUserPredictionHistoryWithResults doesn't exist, we'll return empty for now
+    const historyData = {
+      matchIds: [] as bigint[],
+      outcomes: [] as number[],
+      timestamps: [] as bigint[],
+      results: [] as number[],
+      matchResults: [] as number[]
     };
 
     console.log(`[PREDICTION HISTORY V2] Found ${historyData.matchIds.length} predictions`);
