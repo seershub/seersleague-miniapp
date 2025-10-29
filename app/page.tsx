@@ -19,7 +19,7 @@ export default function Home() {
         setIsReady(true);
         
         // Get user context if available
-        const context = await sdk.getContext();
+        const context = sdk.context;
         if (context?.user) {
           setUserAddress(context.user.fid);
         }
