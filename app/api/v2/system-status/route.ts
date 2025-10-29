@@ -16,7 +16,7 @@ export const maxDuration = 60;
  */
 export async function GET() {
   try {
-    console.log('🔍 [SYSTEM STATUS V2] Checking system health...');
+    console.log('🔍 [SYSTEM STATUS V2] Checking system health... (V2 Complete Contract)');
 
     const activeContract = getActiveContract();
     const contractAddress = getContractAddress();
