@@ -22,7 +22,7 @@ export default function Home() {
         try {
           const context = await sdk.context;
           if (context?.user) {
-            setUserAddress(context.user.fid);
+            setUserAddress(context.user.fid.toString());
           }
         } catch (error) {
           console.log('No user context available:', error);
