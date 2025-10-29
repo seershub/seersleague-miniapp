@@ -7,7 +7,7 @@ import { publicClient, baseRpcUrl } from '@/lib/viem-config';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
-export const maxDuration = 900; // 15 minutes for processing 49 matches with rate limiting
+export const maxDuration = 800; // 13.3 minutes for processing 49 matches with rate limiting
 
 const FOOTBALL_DATA_API_KEY = process.env.FOOTBALL_DATA_API_KEY || '';
 const FOOTBALL_DATA_BASE = 'https://api.football-data.org/v4';
@@ -210,16 +210,20 @@ export async function POST(request: Request) {
     console.log(`👥 Found ${userSet.size} unique users`);
     console.log(`⚽ Found ${matchIdSet.size} unique match IDs from predictions`);
 
-    // STEP 3: Check which matches are finished
+    // STEP 3: Check which matches are finished (OPTIMIZED for 800s limit)
     const now = Math.floor(Date.now() / 1000);
     const finishedMatches = new Map<string, MatchResult>();
 
     console.log('🔍 Checking match statuses from Football-data.org...');
-    console.log('⚠️ Using rate limiting (1 request per second) to avoid HTTP 429...');
+    console.log('⚠️ Using optimized approach to fit 800s limit...');
 
-    let checkedCount = 0;
-    for (const matchId of Array.from(matchIdSet)) {
-      // First check if match has started (from contract)
+    // OPTIMIZATION: Process matches in batches and skip recent ones
+    const twoHoursAgo = now - (2 * 60 * 60);
+    const allMatchIds = Array.from(matchIdSet);
+    
+    // First, filter matches by start time (synchronous check)
+    const matchesToCheck = [];
+    for (const matchId of allMatchIds) {
       try {
         const matchInfo = await publicClient.readContract({
           address: CONTRACTS.SEERSLEAGUE,
@@ -229,12 +233,26 @@ export async function POST(request: Request) {
         }) as { startTime: bigint; exists: boolean };
 
         const startTime = Number(matchInfo.startTime);
-
-        // Skip if not started yet (no buffer needed - Football-data API will tell us if finished)
-        if (now < startTime) {
-          continue;
+        if (startTime < twoHoursAgo) {
+          matchesToCheck.push(matchId);
         }
+      } catch (error) {
+        // If we can't get match info, skip it
+        console.log(`⚠️ Skipping match ${matchId} (can't get info)`);
+      }
+    }
 
+    console.log(`📊 Filtered to ${matchesToCheck.length} matches (older than 2 hours)`);
+
+    // If we have too many matches, limit to first 30 to fit in 800s
+    const maxMatches = Math.min(matchesToCheck.length, 30);
+    const limitedMatches = matchesToCheck.slice(0, maxMatches);
+    
+    console.log(`📊 Processing ${limitedMatches.length} matches to fit 800s limit`);
+
+    let checkedCount = 0;
+    for (const matchId of limitedMatches) {
+      try {
         // Fetch result from Football-data (with retry logic)
         const result = await fetchMatchResult(matchId);
         if (result && result.finished) {
@@ -243,12 +261,12 @@ export async function POST(request: Request) {
         }
 
         checkedCount++;
-        if (checkedCount % 10 === 0) {
-          console.log(`Progress: ${checkedCount}/${matchIdSet.size} matches checked...`);
+        if (checkedCount % 5 === 0) {
+          console.log(`Progress: ${checkedCount}/${limitedMatches.length} matches checked...`);
         }
 
-        // Rate limiting: Wait 1.5 seconds between API requests to avoid 429
-        await sleep(1500);
+        // Rate limiting: Wait 1 second between API requests to avoid 429
+        await sleep(1000);
 
       } catch (error) {
         console.error(`Error checking match ${matchId}:`, error);
