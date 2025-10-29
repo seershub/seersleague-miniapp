@@ -7,7 +7,7 @@ import { publicClient, baseRpcUrl } from '@/lib/viem-config';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
-export const maxDuration = 300;
+export const maxDuration = 600; // Vercel Pro max: 10 minutes
 
 const FOOTBALL_DATA_API_KEY = process.env.FOOTBALL_DATA_API_KEY || '';
 const FOOTBALL_DATA_BASE = 'https://api.football-data.org/v4';

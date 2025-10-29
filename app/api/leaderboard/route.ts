@@ -63,8 +63,14 @@ async function generateLeaderboardFromContract(): Promise<LeaderboardEntry[]> {
 
     console.log(`Found ${uniqueUsers.size} unique users`);
 
-    // Fetch stats for each user in PARALLEL (much faster!)
-    const userStatsPromises = Array.from(uniqueUsers).map(async (userAddress) => {
+    // Fetch stats for each user (SEQUENTIAL to avoid RPC issues)
+    const leaderboardData: LeaderboardEntry[] = [];
+    let successCount = 0;
+    let errorCount = 0;
+
+    console.log(`[Leaderboard] Fetching stats for ${uniqueUsers.size} users...`);
+
+    for (const userAddress of uniqueUsers) {
       try {
         const stats = await publicClient.readContract({
           address: CONTRACTS.SEERSLEAGUE,
@@ -82,31 +88,34 @@ async function generateLeaderboardFromContract(): Promise<LeaderboardEntry[]> {
         const correctPredictions = Number(stats.correctPredictions || 0);
         const totalPredictions = Number(stats.totalPredictions || 0);
 
+        // IMPORTANT: Show ALL users, even with 0 correctPredictions
         if (totalPredictions > 0) {
+          // Cap correctPredictions to totalPredictions (fix impossible data from contract bug)
+          const cappedCorrect = Math.min(correctPredictions, totalPredictions);
+
           const accuracy = totalPredictions > 0
-            ? Math.round((correctPredictions / totalPredictions) * 100)
+            ? Math.round((cappedCorrect / totalPredictions) * 100)
             : 0;
 
-          return {
+          leaderboardData.push({
             rank: 0, // Will be set after sorting
             address: userAddress,
             accuracy,
             totalPredictions,
-            correctPredictions,
+            correctPredictions: cappedCorrect, // Use capped value
             currentStreak: Number(stats.currentStreak || 0),
             longestStreak: Number(stats.longestStreak || 0)
-          };
+          });
+
+          successCount++;
         }
-
-        return null;
       } catch (error) {
-        console.error(`Error fetching stats for ${userAddress}:`, error);
-        return null;
+        console.error(`[Leaderboard] Error fetching stats for ${userAddress}:`, error);
+        errorCount++;
       }
-    });
+    }
 
-    const allUserStats = await Promise.all(userStatsPromises);
-    const leaderboardData = allUserStats.filter((entry): entry is LeaderboardEntry => entry !== null);
+    console.log(`[Leaderboard] Success: ${successCount}, Errors: ${errorCount}`);
 
     // Sort leaderboard
     leaderboardData.sort((a, b) => {
