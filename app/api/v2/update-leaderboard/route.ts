@@ -1,9 +1,9 @@
 import { NextResponse } from 'next/server';
-import { publicClient, walletClient } from '@/lib/viem-config';
-import { CONTRACTS_V2, SEERSLEAGUE_V2_ABI } from '@/lib/contract-interactions-v2';
+import { publicClient } from '@/lib/viem-config';
+import { createWalletClient, http } from 'viem';
 import { privateKeyToAccount } from 'viem/accounts';
 import { base } from 'viem/chains';
-import { http } from 'viem';
+import { CONTRACTS_V2, SEERSLEAGUE_V2_ABI } from '@/lib/contract-interactions-v2';
 import { kv } from '@vercel/kv';
 
 export const runtime = 'nodejs';
