@@ -11,7 +11,13 @@ async function fetchMatchesServer(): Promise<Match[]> {
   try {
     // Fetch from our API endpoint which gets blockchain registered matches
     // and enriches them with Football-data.org
-    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000';
+    // CRITICAL FIX: Use VERCEL_URL in production, fallback to localhost in dev
+    const protocol = process.env.VERCEL_URL ? 'https' : 'http';
+    const host = process.env.VERCEL_URL || 'localhost:3000';
+    const baseUrl = `${protocol}://${host}`;
+
+    console.log(`[Homepage] Fetching from: ${baseUrl}/api/matches`);
+
     const response = await fetch(`${baseUrl}/api/matches?limit=20`, {
       cache: 'no-store' // Always get fresh data
     });
