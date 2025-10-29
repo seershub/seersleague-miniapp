@@ -47,7 +47,7 @@ export async function POST(request: Request) {
       address: CONTRACTS_V2.SEERSLEAGUE,
       abi: SEERSLEAGUE_V2_ABI,
       functionName: 'getMatchStatistics'
-    }) as { total: bigint; upcoming: bigint; finished: bigint; recorded: bigint };
+    }) as unknown as { total: bigint; upcoming: bigint; finished: bigint; recorded: bigint };
 
     const currentCount = Number(matchStats.total);
     const needsUpdate = currentCount < 50; // MIN_MATCHES_THRESHOLD

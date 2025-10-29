@@ -108,7 +108,7 @@ export async function POST(request: Request) {
           abi: SEERSLEAGUE_V2_ABI,
           functionName: 'getMatch',
           args: [BigInt(matchId)]
-        }) as { startTime: bigint; exists: boolean; isRecorded: boolean };
+        }) as unknown as { startTime: bigint; exists: boolean; isRecorded: boolean };
 
         const startTime = Number(matchInfo.startTime);
         if (startTime < twoHoursAgo && !matchInfo.isRecorded) {
@@ -194,7 +194,7 @@ export async function POST(request: Request) {
               abi: SEERSLEAGUE_V2_ABI,
               functionName: 'getUserPrediction',
               args: [user as `0x${string}`, matchIdBigInt]
-            }) as { outcome: number; timestamp: bigint; isProcessed: boolean };
+            }) as unknown as { outcome: number; timestamp: bigint; isProcessed: boolean };
 
             if (userPrediction.outcome !== 0 && !userPrediction.isProcessed) {
               const isCorrect = userPrediction.outcome === result.outcome;

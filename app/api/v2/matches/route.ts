@@ -40,7 +40,7 @@ export async function GET(request: Request) {
       abi: SEERSLEAGUE_V2_ABI,
       functionName: 'getUpcomingMatches',
       args: [BigInt(limit + offset + 10)] // Get more to filter
-    }) as { matchIds: bigint[]; startTimes: bigint[] };
+    }) as unknown as { matchIds: bigint[]; startTimes: bigint[] };
 
     console.log(`[MATCHES V2] Found ${upcomingMatches.matchIds.length} upcoming matches`);
 
@@ -121,7 +121,7 @@ export async function GET(request: Request) {
       address: CONTRACTS_V2.SEERSLEAGUE,
       abi: SEERSLEAGUE_V2_ABI,
       functionName: 'getMatchStatistics'
-    }) as { total: bigint; upcoming: bigint; finished: bigint; recorded: bigint };
+    }) as unknown as { total: bigint; upcoming: bigint; finished: bigint; recorded: bigint };
 
     console.log(`[MATCHES V2] Returning ${paginatedMatches.length} matches (${filteredMatches.length} total after filtering)`);
 
