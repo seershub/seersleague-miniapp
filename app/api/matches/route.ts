@@ -46,8 +46,9 @@ async function getUpcomingRegisteredMatches(): Promise<{ matchId: string; startT
   const currentBlock = await publicClient.getBlockNumber();
   const deploymentBlock = BigInt(process.env.NEXT_PUBLIC_DEPLOYMENT_BLOCK || '0');
 
-  // FAST FETCH: Use deployment block if set, otherwise last 1000 blocks only
-  const fromBlock = deploymentBlock > 0n ? deploymentBlock : currentBlock - 1000n;
+  // FIXED: Use wider range to catch all registered matches
+  // If deployment block not set, scan last 100K blocks (~2 days on Base)
+  const fromBlock = deploymentBlock > 0n ? deploymentBlock : currentBlock - 100000n;
 
   console.log(`[Matches] Fetching from block ${fromBlock} to ${currentBlock}`);
 
