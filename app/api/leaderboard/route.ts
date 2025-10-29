@@ -25,6 +25,13 @@ async function generateLeaderboardFromContract(): Promise<LeaderboardEntry[]> {
     const deploymentBlock = BigInt(process.env.NEXT_PUBLIC_DEPLOYMENT_BLOCK || '0');
     const currentBlock = await publicClient.getBlockNumber();
 
+    // CRITICAL FIX: Use much wider block range to catch all users
+    // If deployment block not set, scan last 1M blocks (~23 days on Base)
+    const fromBlock = deploymentBlock > 0n ? deploymentBlock : currentBlock - 1000000n;
+
+    console.log(`[Leaderboard] Scanning from block ${fromBlock} to latest (${currentBlock})`);
+    console.log(`[Leaderboard] Block range: ${currentBlock - fromBlock} blocks`);
+
     // Fetch PredictionsSubmitted events
     const predictionEvents = await publicClient.getLogs({
       address: CONTRACTS.SEERSLEAGUE,
@@ -39,7 +46,7 @@ async function generateLeaderboardFromContract(): Promise<LeaderboardEntry[]> {
           { name: 'feePaid', type: 'uint256', indexed: false }
         ]
       },
-      fromBlock: deploymentBlock > 0n ? deploymentBlock : currentBlock - 10000n,
+      fromBlock,
       toBlock: 'latest'
     });
 

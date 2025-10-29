@@ -151,6 +151,7 @@ async function fetchMatchResult(matchId: string): Promise<{ homeScore: number; a
 
 /**
  * Get all users who made predictions for a specific match
+ * IMPROVED: Uses wider block range to catch all users
  */
 async function getUsersForMatch(matchId: bigint): Promise<string[]> {
   try {
@@ -161,6 +162,13 @@ async function getUsersForMatch(matchId: bigint): Promise<string[]> {
 
     const deploymentBlock = BigInt(process.env.NEXT_PUBLIC_DEPLOYMENT_BLOCK || '0');
     const currentBlock = await publicClient.getBlockNumber();
+
+    // CRITICAL FIX: Use much wider block range to catch all users
+    // If deployment block not set, scan last 1M blocks (~23 days on Base)
+    const fromBlock = deploymentBlock > 0n ? deploymentBlock : currentBlock - 1000000n;
+
+    console.log(`[getUsersForMatch] Scanning from block ${fromBlock} to latest (${currentBlock})`);
+    console.log(`[getUsersForMatch] Block range: ${currentBlock - fromBlock} blocks`);
 
     // Fetch PredictionsSubmitted events
     const events = await publicClient.getLogs({
@@ -176,9 +184,11 @@ async function getUsersForMatch(matchId: bigint): Promise<string[]> {
           { name: 'feePaid', type: 'uint256', indexed: false }
         ]
       },
-      fromBlock: deploymentBlock > 0n ? deploymentBlock : currentBlock - 10000n,
+      fromBlock,
       toBlock: 'latest'
     });
+
+    console.log(`[getUsersForMatch] Found ${events.length} total prediction events`);
 
     // Filter events where matchIds includes our matchId
     const users = new Set<string>();
@@ -192,6 +202,7 @@ async function getUsersForMatch(matchId: bigint): Promise<string[]> {
       }
     }
 
+    console.log(`[getUsersForMatch] Match ${matchId}: Found ${users.size} users with predictions`);
     return Array.from(users);
   } catch (error) {
     console.error(`Error fetching users for match ${matchId}:`, error);
@@ -297,6 +308,14 @@ export async function POST(request: Request) {
     const deploymentBlock = BigInt(process.env.NEXT_PUBLIC_DEPLOYMENT_BLOCK || '0');
     const currentBlock = await publicClient.getBlockNumber();
 
+    // CRITICAL FIX: Use much wider block range
+    // If deployment block not set, scan last 1M blocks (~23 days on Base)
+    const fromBlock = deploymentBlock > 0n ? deploymentBlock : currentBlock - 1000000n;
+
+    console.log(`[record-results] Scanning from block ${fromBlock} to latest (${currentBlock})`);
+    console.log(`[record-results] Block range: ${currentBlock - fromBlock} blocks`);
+    console.log(`[record-results] Deployment block env: ${process.env.NEXT_PUBLIC_DEPLOYMENT_BLOCK || 'NOT SET'}`);
+
     const matchEvents = await publicClient.getLogs({
       address: CONTRACTS.SEERSLEAGUE,
       event: {
@@ -307,11 +326,11 @@ export async function POST(request: Request) {
           { name: 'startTime', type: 'uint256', indexed: false }
         ]
       },
-      fromBlock: deploymentBlock > 0n ? deploymentBlock : currentBlock - 10000n,
+      fromBlock,
       toBlock: 'latest'
     });
 
-    console.log(`Found ${matchEvents.length} registered matches`);
+    console.log(`[record-results] Found ${matchEvents.length} registered matches`);
 
     // Check each match to see if it's finished and not yet recorded
     const matchesToProcess: MatchToRecord[] = [];
@@ -376,9 +395,15 @@ export async function POST(request: Request) {
     const batchMatchIds: bigint[] = [];
     const batchCorrects: boolean[] = [];
 
+    console.log(`[record-results] Processing ${matchesToProcess.length} finished matches...`);
+
     for (const match of matchesToProcess) {
       const users = await getUsersForMatch(match.matchId);
-      console.log(`Match ${match.matchId}: ${users.length} users made predictions`);
+      console.log(`[record-results] Match ${match.matchId}: ${users.length} users made predictions`);
+
+      if (users.length === 0) {
+        console.warn(`[record-results] ⚠️ No users found for match ${match.matchId} - this is suspicious!`);
+      }
 
       for (const user of users) {
         const isCorrect = await checkUserPrediction(user, match.matchId, match.outcome);
@@ -386,8 +411,13 @@ export async function POST(request: Request) {
         batchUsers.push(user);
         batchMatchIds.push(match.matchId);
         batchCorrects.push(isCorrect);
+
+        console.log(`[record-results]   User ${user.slice(0, 10)}...: ${isCorrect ? '✓ CORRECT' : '✗ WRONG'}`);
       }
     }
+
+    console.log(`[record-results] Total predictions to record: ${batchUsers.length}`);
+    console.log(`[record-results] Breakdown: ${batchCorrects.filter(c => c).length} correct, ${batchCorrects.filter(c => !c).length} incorrect`);
 
     if (batchUsers.length === 0) {
       return NextResponse.json({
