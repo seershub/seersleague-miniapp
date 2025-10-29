@@ -31,37 +31,58 @@ interface MatchResult {
   finished: boolean;
 }
 
-async function fetchMatchResult(matchId: string): Promise<MatchResult | null> {
-  try {
-    const response = await fetch(`${FOOTBALL_DATA_BASE}/matches/${matchId}`, {
-      headers: { 'X-Auth-Token': FOOTBALL_DATA_API_KEY },
-      cache: 'no-store'
-    });
+// Helper: Sleep function for rate limiting
+function sleep(ms: number): Promise<void> {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
 
-    if (!response.ok) return null;
+async function fetchMatchResult(matchId: string, retries = 3): Promise<MatchResult | null> {
+  for (let attempt = 0; attempt < retries; attempt++) {
+    try {
+      const response = await fetch(`${FOOTBALL_DATA_BASE}/matches/${matchId}`, {
+        headers: { 'X-Auth-Token': FOOTBALL_DATA_API_KEY },
+        cache: 'no-store'
+      });
 
-    const data = await response.json();
-    const match = data.match || data;  // Handle both response formats
+      // Handle rate limiting (429)
+      if (response.status === 429) {
+        const waitTime = Math.min(5000 * Math.pow(2, attempt), 30000); // Exponential backoff: 5s, 10s, 20s
+        console.log(`⚠️ Rate limited for match ${matchId}, waiting ${waitTime}ms...`);
+        await sleep(waitTime);
+        continue; // Retry
+      }
 
-    if (match.status === 'FINISHED') {
-      const homeScore = match.score?.fullTime?.home ?? 0;
-      const awayScore = match.score?.fullTime?.away ?? 0;
-      const outcome = homeScore > awayScore ? 1 : homeScore < awayScore ? 3 : 2;
+      if (!response.ok) {
+        console.error(`API error for match ${matchId}: ${response.status}`);
+        return null;
+      }
 
-      return {
-        matchId,
-        homeScore,
-        awayScore,
-        outcome: outcome as 1 | 2 | 3,
-        finished: true
-      };
+      const data = await response.json();
+      const match = data.match || data;  // Handle both response formats
+
+      if (match.status === 'FINISHED') {
+        const homeScore = match.score?.fullTime?.home ?? 0;
+        const awayScore = match.score?.fullTime?.away ?? 0;
+        const outcome = homeScore > awayScore ? 1 : homeScore < awayScore ? 3 : 2;
+
+        return {
+          matchId,
+          homeScore,
+          awayScore,
+          outcome: outcome as 1 | 2 | 3,
+          finished: true
+        };
+      }
+
+      return null;
+    } catch (error) {
+      console.error(`Failed to fetch match ${matchId} (attempt ${attempt + 1}/${retries}):`, error);
+      if (attempt < retries - 1) {
+        await sleep(2000); // Wait 2s before retry
+      }
     }
-
-    return null;
-  } catch (error) {
-    console.error(`Failed to fetch match ${matchId}:`, error);
-    return null;
   }
+  return null;
 }
 
 async function getUserPrediction(
@@ -194,6 +215,7 @@ export async function POST(request: Request) {
     const finishedMatches = new Map<string, MatchResult>();
 
     console.log('🔍 Checking match statuses from Football-data.org...');
+    console.log('⚠️ Using rate limiting (1 request per second) to avoid HTTP 429...');
 
     let checkedCount = 0;
     for (const matchId of Array.from(matchIdSet)) {
@@ -213,7 +235,7 @@ export async function POST(request: Request) {
           continue;
         }
 
-        // Fetch result from Football-data
+        // Fetch result from Football-data (with retry logic)
         const result = await fetchMatchResult(matchId);
         if (result && result.finished) {
           finishedMatches.set(matchId, result);
@@ -224,6 +246,10 @@ export async function POST(request: Request) {
         if (checkedCount % 10 === 0) {
           console.log(`Progress: ${checkedCount}/${matchIdSet.size} matches checked...`);
         }
+
+        // Rate limiting: Wait 1 second between API requests to avoid 429
+        await sleep(1000);
+
       } catch (error) {
         console.error(`Error checking match ${matchId}:`, error);
       }
