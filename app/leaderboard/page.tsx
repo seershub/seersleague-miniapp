@@ -165,8 +165,8 @@ export default function LeaderboardPage() {
           </div>
         </div>
 
-        {/* User Rank Card (if far from top 65) */}
-        {data?.userRank && data.userRank.rank > 65 && (
+        {/* User Rank Card (if far from top 20) */}
+        {data?.userRank && data.userRank.rank > 20 && (
           <div className="mb-6">
             <div className="relative rounded-2xl overflow-hidden bg-gradient-to-r from-blue-500/10 to-cyan-500/5 border-2 border-blue-500/30 p-4">
               <div className="absolute inset-0 bg-gradient-to-b from-blue-500/[0.02] to-transparent"></div>
@@ -217,7 +217,7 @@ export default function LeaderboardPage() {
 
           <div className="relative z-10 p-6">
             <div className="flex items-center justify-between mb-6">
-              <h2 className="text-xl font-bold text-white">Top 65 Champions</h2>
+              <h2 className="text-xl font-bold text-white">Top 20 Champions</h2>
               <div className="flex items-center gap-2 px-3 py-1 rounded-full bg-yellow-500/10 border border-yellow-500/20">
                 <div className="w-2 h-2 bg-yellow-400 rounded-full animate-pulse"></div>
                 <span className="text-xs text-yellow-400 font-medium">Live</span>

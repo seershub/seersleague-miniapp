@@ -2,14 +2,14 @@ import { NextResponse } from 'next/server';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
-export const maxDuration = 300;
+export const maxDuration = 600; // 10 minutes for smart-recount with duplicate protection
 
 /**
  * Vercel Cron Job: Record match results
  * Runs daily at 00:00 UTC
  *
- * This endpoint calls the record-results API to process finished matches
- * and update user stats on the blockchain.
+ * This endpoint calls the smart-recount API to process finished matches
+ * and update user stats on the blockchain with duplicate protection.
  */
 export async function GET(request: Request) {
   try {
@@ -24,9 +24,9 @@ export async function GET(request: Request) {
       );
     }
 
-    // Call the record-results API endpoint
+    // Call the smart-recount API endpoint (has duplicate protection)
     const baseUrl = process.env.NEXT_PUBLIC_URL || 'http://localhost:3000';
-    const response = await fetch(`${baseUrl}/api/record-results`, {
+    const response = await fetch(`${baseUrl}/api/smart-recount`, {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${cronSecret}`,

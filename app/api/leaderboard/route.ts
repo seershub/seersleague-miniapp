@@ -17,9 +17,10 @@ export const dynamic = 'force-dynamic';
 export const revalidate = 0;
 
 // Generate leaderboard directly from contract (fallback when KV fails)
-async function generateLeaderboardFromContract(): Promise<LeaderboardEntry[]> {
+// Returns top 20 users in leaderboard, but totalUsers count includes ALL users
+async function generateLeaderboardFromContract(): Promise<{ leaderboard: LeaderboardEntry[], totalUsers: number }> {
   console.log('Generating leaderboard directly from contract...');
-  
+
   try {
     // Get contract deployment block
     const deploymentBlock = BigInt(process.env.NEXT_PUBLIC_DEPLOYMENT_BLOCK || '0');
@@ -62,6 +63,9 @@ async function generateLeaderboardFromContract(): Promise<LeaderboardEntry[]> {
     });
 
     console.log(`Found ${uniqueUsers.size} unique users`);
+
+    // Store total unique users count (for accurate totalPlayers display)
+    const totalUniqueUsers = uniqueUsers.size;
 
     // Fetch stats for each user with BATCH and TIMEOUT protection
     const leaderboardData: LeaderboardEntry[] = [];
@@ -149,12 +153,15 @@ async function generateLeaderboardFromContract(): Promise<LeaderboardEntry[]> {
       entry.rank = index + 1;
     });
 
-    console.log(`Generated leaderboard with ${leaderboardData.length} entries`);
-    return leaderboardData;
+    console.log(`Generated leaderboard with ${leaderboardData.length} entries (out of ${totalUniqueUsers} total users)`);
+    return {
+      leaderboard: leaderboardData,
+      totalUsers: totalUniqueUsers
+    };
 
   } catch (error) {
     console.error('Error generating leaderboard from contract:', error);
-    return [];
+    return { leaderboard: [], totalUsers: 0 };
   }
 }
 
@@ -208,12 +215,16 @@ export async function GET(request: Request) {
     // Always generate leaderboard directly from contract (KV is unreliable)
     console.log('Generating leaderboard directly from contract...');
     let leaderboard: LeaderboardEntry[] = [];
+    let totalUsers = 0;
     try {
-      leaderboard = await generateLeaderboardFromContract();
-      console.log(`Generated leaderboard with ${leaderboard.length} entries`);
+      const result = await generateLeaderboardFromContract();
+      leaderboard = result.leaderboard;
+      totalUsers = result.totalUsers;
+      console.log(`Generated leaderboard with ${leaderboard.length} entries out of ${totalUsers} total users`);
     } catch (contractError) {
       console.error('Contract fetch failed:', contractError);
       leaderboard = [];
+      totalUsers = 0;
     }
 
     if (!leaderboard || leaderboard.length === 0) {
@@ -228,8 +239,8 @@ export async function GET(request: Request) {
       });
     }
 
-    // Get top 65 players
-    const topPlayers = leaderboard.slice(0, 65);
+    // Get top 20 players (already limited in generateLeaderboardFromContract)
+    const topPlayers = leaderboard.slice(0, 20);
 
     // Find user rank if address provided
     let userRank = null;
@@ -249,7 +260,7 @@ export async function GET(request: Request) {
       leaderboard: topPlayers,
       topPlayers,
       userRank,
-      totalPlayers: leaderboard.length,
+      totalPlayers: totalUsers, // Total unique users who made predictions
       lastUpdated: await kv.get('leaderboard:lastUpdated')
     });
 
