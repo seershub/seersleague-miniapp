@@ -74,6 +74,39 @@ async function generateLeaderboardFromContract(): Promise<{ leaderboard: Leaderb
 
     console.log(`[Leaderboard] Fetching stats for ${uniqueUsers.size} users (max 20 for speed)...`);
 
+    // CRITICAL FIX: Fetch ResultRecorded events to get REAL correctPredictions count
+    // Contract has duplicate bug, so we can't trust stats.correctPredictions
+    // Instead, count unique ResultRecorded events per user
+    console.log('[Leaderboard] Fetching ResultRecorded events for accurate counts...');
+    const resultEvents = await publicClient.getLogs({
+      address: CONTRACTS.SEERSLEAGUE,
+      event: {
+        type: 'event',
+        name: 'ResultRecorded',
+        inputs: [
+          { name: 'user', type: 'address', indexed: true },
+          { name: 'matchId', type: 'uint256', indexed: false },
+          { name: 'correct', type: 'bool', indexed: false }
+        ]
+      },
+      fromBlock,
+      toBlock: 'latest'
+    });
+
+    console.log(`[Leaderboard] Found ${resultEvents.length} ResultRecorded events`);
+
+    // Count REAL correctPredictions per user from events
+    const userCorrectCounts = new Map<string, number>();
+    resultEvents.forEach((event: any) => {
+      const user = event.args?.user?.toLowerCase();
+      const correct = event.args?.correct;
+      if (user && correct === true) {
+        userCorrectCounts.set(user, (userCorrectCounts.get(user) || 0) + 1);
+      }
+    });
+
+    console.log(`[Leaderboard] Calculated correct counts for ${userCorrectCounts.size} users`);
+
     // LIMIT TO 20 USERS for performance
     const usersArray = Array.from(uniqueUsers).slice(0, 20);
 
@@ -97,19 +130,21 @@ async function generateLeaderboardFromContract(): Promise<{ leaderboard: Leaderb
             longestStreak: bigint;
           };
 
-          const correctPredictions = Number(stats.correctPredictions || 0);
           const totalPredictions = Number(stats.totalPredictions || 0);
 
+          // CRITICAL: Use REAL correctPredictions from events, NOT from contract
+          // Contract has duplicate bug (batchRecordResults called multiple times)
+          const realCorrectPredictions = userCorrectCounts.get(userAddress) || 0;
+
           if (totalPredictions > 0) {
-            const cappedCorrect = Math.min(correctPredictions, totalPredictions);
-            const accuracy = Math.round((cappedCorrect / totalPredictions) * 100);
+            const accuracy = Math.round((realCorrectPredictions / totalPredictions) * 100);
 
             return {
               rank: 0,
               address: userAddress,
               accuracy,
               totalPredictions,
-              correctPredictions: cappedCorrect,
+              correctPredictions: realCorrectPredictions, // Use event count, not contract
               currentStreak: Number(stats.currentStreak || 0),
               longestStreak: Number(stats.longestStreak || 0)
             };

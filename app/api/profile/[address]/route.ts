@@ -47,8 +47,39 @@ export async function GET(
       longestStreak: bigint;
     };
 
-    const correctPredictions = Number(stats.correctPredictions || 0);
     const totalPredictions = Number(stats.totalPredictions || 0);
+
+    // CRITICAL FIX: Get REAL correctPredictions from ResultRecorded events
+    // Contract has duplicate bug, so we can't trust stats.correctPredictions
+    const currentBlock = await publicClient.getBlockNumber();
+    const deploymentBlock = BigInt(process.env.NEXT_PUBLIC_DEPLOYMENT_BLOCK || '0');
+    const fromBlock = deploymentBlock > 0n ? deploymentBlock : currentBlock - 5000000n;
+
+    const resultEvents = await publicClient.getLogs({
+      address: CONTRACTS.SEERSLEAGUE,
+      event: {
+        type: 'event',
+        name: 'ResultRecorded',
+        inputs: [
+          { name: 'user', type: 'address', indexed: true },
+          { name: 'matchId', type: 'uint256', indexed: false },
+          { name: 'correct', type: 'bool', indexed: false }
+        ]
+      },
+      args: { user: address },
+      fromBlock,
+      toBlock: 'latest'
+    });
+
+    // Count REAL correct predictions from events
+    let correctPredictions = 0;
+    resultEvents.forEach((event: any) => {
+      if (event.args?.correct === true) {
+        correctPredictions++;
+      }
+    });
+
+    console.log(`[Profile] User ${address}: ${correctPredictions} correct (from events) vs ${Number(stats.correctPredictions)} (from contract)`);
     const freePredictionsUsed = Number(stats.freePredictionsUsed || 0);
     const accuracy = totalPredictions > 0
       ? Math.round((correctPredictions / totalPredictions) * 100)
