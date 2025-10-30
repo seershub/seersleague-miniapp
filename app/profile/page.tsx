@@ -216,7 +216,7 @@ export default function ProfilePage() {
             </div>
 
             {/* Stats Grid */}
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 mb-6">
+            <div className="grid grid-cols-2 gap-4 mb-6">
               {/* Accuracy */}
               <div className="relative rounded-2xl overflow-hidden bg-gradient-to-br from-green-500/10 to-emerald-500/5 border border-green-500/20 p-4">
                 <div className="absolute inset-0 bg-gradient-to-b from-green-500/[0.02] to-transparent"></div>
@@ -268,8 +268,25 @@ export default function ProfilePage() {
                 </div>
               </div>
 
+              {/* USDC Winnings */}
+              <div className="relative rounded-2xl overflow-hidden bg-gradient-to-br from-yellow-500/10 to-amber-500/5 border border-yellow-500/20 p-4">
+                <div className="absolute inset-0 bg-gradient-to-b from-yellow-500/[0.02] to-transparent"></div>
+                <div className="relative z-10">
+                  <div className="flex items-center gap-2 mb-2">
+                    <Trophy className="w-5 h-5 text-yellow-400" />
+                    <span className="text-xs text-gray-400">USDC Winnings</span>
+                  </div>
+                  <div className="text-3xl font-bold text-yellow-400">
+                    $0.00
+                  </div>
+                  <div className="text-xs text-gray-500 mt-1">
+                    Coming soon
+                  </div>
+                </div>
+              </div>
+
               {/* Free Predictions */}
-              <div className="relative rounded-2xl overflow-hidden bg-gradient-to-br from-blue-500/10 to-cyan-500/5 border border-blue-500/20 p-4 col-span-2 sm:col-span-3">
+              <div className="relative rounded-2xl overflow-hidden bg-gradient-to-br from-blue-500/10 to-cyan-500/5 border border-blue-500/20 p-4 col-span-2">
                 <div className="absolute inset-0 bg-gradient-to-b from-blue-500/[0.02] to-transparent"></div>
                 <div className="relative z-10">
                   <div className="flex items-center justify-between">
@@ -300,6 +317,25 @@ export default function ProfilePage() {
               </div>
             </div>
 
+            {/* Claim Button */}
+            <div className="mb-6">
+              <button
+                disabled
+                className="w-full relative rounded-2xl overflow-hidden bg-gradient-to-r from-blue-500/10 to-cyan-500/10 border-2 border-blue-500/30 p-4 cursor-not-allowed opacity-50"
+              >
+                <div className="flex items-center justify-center gap-3">
+                  <Trophy className="w-6 h-6 text-blue-400" />
+                  <span className="text-lg font-bold text-blue-400">Claim Winnings</span>
+                  <span className="px-3 py-1 rounded-full bg-blue-500/20 text-blue-400 text-sm font-medium">
+                    Coming Soon
+                  </span>
+                </div>
+                <div className="text-xs text-gray-500 text-center mt-2">
+                  Prize distribution will be enabled after the first season ends
+                </div>
+              </button>
+            </div>
+
             {/* Prediction History */}
             <div className="relative rounded-2xl overflow-hidden bg-gradient-to-br from-gray-900/50 to-gray-800/30 border border-gray-700/50">
               <div className="absolute inset-0 bg-gradient-to-b from-purple-500/[0.02] to-transparent"></div>
@@ -324,8 +360,8 @@ export default function ProfilePage() {
                     <p className="text-gray-500 text-sm">Start making predictions to build your history!</p>
                   </div>
                 ) : (
-                  <div className="max-h-96 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-600 scrollbar-track-gray-800">
-                    <div className="space-y-2">
+                  <div className="max-h-96 overflow-y-auto overflow-x-hidden scrollbar-thin scrollbar-thumb-gray-600 scrollbar-track-gray-800">
+                    <div className="space-y-2 pr-1">
                       {history.map((entry, index) => {
                         // Determine which team user picked
                         const userPickedHome = entry.userPrediction === 1;
@@ -358,17 +394,17 @@ export default function ProfilePage() {
                           </div>
 
                           {/* Horizontal Match Display */}
-                          <div className="flex items-center gap-2">
+                          <div className="flex items-center gap-1.5 overflow-hidden">
                             {/* Home Team */}
-                            <div className={`flex-1 flex items-center gap-2 p-2 rounded ${
+                            <div className={`flex-1 flex items-center gap-1.5 p-2 rounded min-w-0 ${
                               userPickedHome
                                 ? 'bg-blue-500/10 border border-blue-500/30'
                                 : 'bg-transparent'
                             }`}>
-                              {userPickedHome && <CheckCircle className="w-4 h-4 text-blue-400 flex-shrink-0" />}
-                              <span className={`text-sm font-medium truncate ${
+                              {userPickedHome && <CheckCircle className="w-3.5 h-3.5 text-blue-400 flex-shrink-0" />}
+                              <span className={`text-xs font-medium truncate ${
                                 userPickedHome ? 'text-blue-400' : 'text-gray-400'
-                              }`}>
+                              }`} title={entry.homeTeam}>
                                 {entry.homeTeam}
                               </span>
                             </div>
@@ -376,7 +412,7 @@ export default function ProfilePage() {
                             {/* VS / Draw Indicator */}
                             <div className="flex-shrink-0">
                               {userPickedDraw ? (
-                                <div className="px-3 py-1 rounded bg-yellow-500/10 border border-yellow-500/30 flex items-center gap-1">
+                                <div className="px-2 py-1 rounded bg-yellow-500/10 border border-yellow-500/30 flex items-center gap-1">
                                   <CheckCircle className="w-3 h-3 text-yellow-400" />
                                   <span className="text-xs font-medium text-yellow-400">Draw</span>
                                 </div>
@@ -386,17 +422,17 @@ export default function ProfilePage() {
                             </div>
 
                             {/* Away Team */}
-                            <div className={`flex-1 flex items-center justify-end gap-2 p-2 rounded ${
+                            <div className={`flex-1 flex items-center justify-end gap-1.5 p-2 rounded min-w-0 ${
                               userPickedAway
                                 ? 'bg-purple-500/10 border border-purple-500/30'
                                 : 'bg-transparent'
                             }`}>
-                              <span className={`text-sm font-medium truncate ${
+                              <span className={`text-xs font-medium truncate ${
                                 userPickedAway ? 'text-purple-400' : 'text-gray-400'
-                              }`}>
+                              }`} title={entry.awayTeam}>
                                 {entry.awayTeam}
                               </span>
-                              {userPickedAway && <CheckCircle className="w-4 h-4 text-purple-400 flex-shrink-0" />}
+                              {userPickedAway && <CheckCircle className="w-3.5 h-3.5 text-purple-400 flex-shrink-0" />}
                             </div>
                           </div>
 
