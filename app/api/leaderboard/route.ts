@@ -186,14 +186,24 @@ async function generateLeaderboardFromContract(): Promise<{ leaderboard: Leaderb
 
     console.log(`[Leaderboard] Final: Success ${successCount}, Errors ${errorCount}`);
 
-    // Sort leaderboard
+    // Sort leaderboard - FIXED LOGIC
+    // PRIMARY: correctPredictions (most correct wins!)
+    // SECONDARY: accuracy (if same correct, higher % wins)
+    // TERTIARY: totalPredictions (if still tied, more participation wins)
     leaderboardData.sort((a, b) => {
+      // 1. Most important: Who got MORE correct predictions?
+      if (a.correctPredictions !== b.correctPredictions) {
+        return b.correctPredictions - a.correctPredictions;
+      }
+      // 2. If same correct: Who has HIGHER accuracy?
       if (a.accuracy !== b.accuracy) {
         return b.accuracy - a.accuracy;
       }
+      // 3. If still tied: Who made MORE predictions (more active)?
       if (a.totalPredictions !== b.totalPredictions) {
         return b.totalPredictions - a.totalPredictions;
       }
+      // 4. Final tiebreaker: current streak
       return b.currentStreak - a.currentStreak;
     });
 
