@@ -71,15 +71,23 @@ export async function GET(
       toBlock: 'latest'
     });
 
-    // Count REAL correct predictions from events
-    let correctPredictions = 0;
+    // Count REAL correct predictions from UNIQUE (user, matchId) pairs
+    // CRITICAL FIX: Same match can have multiple ResultRecorded events (duplicate bug)
+    // A user can only be correct ONCE per match, so count unique pairs only
+    const uniqueCorrectPairs = new Set<string>();
     resultEvents.forEach((event: any) => {
-      if (event.args?.correct === true) {
-        correctPredictions++;
+      const matchId = event.args?.matchId?.toString();
+      const correct = event.args?.correct;
+
+      if (matchId && correct === true) {
+        // Only count each match once
+        uniqueCorrectPairs.add(`${address}-${matchId}`);
       }
     });
 
-    console.log(`[Profile] User ${address}: ${correctPredictions} correct (from events) vs ${Number(stats.correctPredictions)} (from contract)`);
+    const correctPredictions = uniqueCorrectPairs.size;
+
+    console.log(`[Profile] User ${address}: ${correctPredictions} correct (from ${resultEvents.length} events, ${uniqueCorrectPairs.size} unique) vs ${Number(stats.correctPredictions)} (from contract)`);
     const freePredictionsUsed = Number(stats.freePredictionsUsed || 0);
     const accuracy = totalPredictions > 0
       ? Math.round((correctPredictions / totalPredictions) * 100)

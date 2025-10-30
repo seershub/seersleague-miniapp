@@ -95,14 +95,28 @@ async function generateLeaderboardFromContract(): Promise<{ leaderboard: Leaderb
 
     console.log(`[Leaderboard] Found ${resultEvents.length} ResultRecorded events`);
 
-    // Count REAL correctPredictions per user from events
-    const userCorrectCounts = new Map<string, number>();
+    // Count REAL correctPredictions per user from UNIQUE (user, matchId) pairs
+    // CRITICAL FIX: Same (user, match) can have multiple ResultRecorded events (duplicate bug)
+    // We must count unique pairs only - a user can only be correct ONCE per match
+    const uniqueCorrectPairs = new Set<string>();
     resultEvents.forEach((event: any) => {
       const user = event.args?.user?.toLowerCase();
+      const matchId = event.args?.matchId?.toString();
       const correct = event.args?.correct;
-      if (user && correct === true) {
-        userCorrectCounts.set(user, (userCorrectCounts.get(user) || 0) + 1);
+
+      if (user && matchId && correct === true) {
+        // Only count each (user, match) pair once
+        uniqueCorrectPairs.add(`${user}-${matchId}`);
       }
+    });
+
+    console.log(`[Leaderboard] ${uniqueCorrectPairs.size} unique correct predictions (after dedup from ${resultEvents.length} events)`);
+
+    // Now count per user from unique pairs
+    const userCorrectCounts = new Map<string, number>();
+    uniqueCorrectPairs.forEach(pair => {
+      const [user] = pair.split('-');
+      userCorrectCounts.set(user, (userCorrectCounts.get(user) || 0) + 1);
     });
 
     console.log(`[Leaderboard] Calculated correct counts for ${userCorrectCounts.size} users`);
