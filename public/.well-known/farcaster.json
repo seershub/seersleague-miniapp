@@ -10,12 +10,22 @@
       "0x2F8b89f74C0540B638CF808515dFabe565796aAA"
     ]
   },
+  "frame": {
+    "version": "1",
+    "name": "SeersLeague",
+    "iconUrl": "https://league.seershub.com/icon-1024.png",
+    "homeUrl": "https://league.seershub.com",
+    "imageUrl": "https://league.seershub.com/og-image.png",
+    "splashImageUrl": "https://league.seershub.com/splash.png",
+    "splashBackgroundColor": "#0052FF",
+    "webhookUrl": "https://league.seershub.com/api/webhook"
+  },
   "miniapp": {
     "version": "1",
     "name": "SeersLeague",
     "author": "SeersHub",
     "authorUrl": "https://warpcast.com/seershub",
-    "description": "Predict five daily football matches on Base First day is completely FREE then half USDC per match Compete on leaderboard and earn rewards",
+    "description": "Predict five daily football matches on Base. First day is completely FREE, then 0.5 USDC per match. Compete on leaderboard and earn rewards.",
     "iconUrl": "https://league.seershub.com/icon-1024.png",
     "homeUrl": "https://league.seershub.com",
     "imageUrl": "https://league.seershub.com/icon-1024.png",
