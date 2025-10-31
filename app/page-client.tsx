@@ -62,6 +62,8 @@ export default function Home({ initialMatches = [] }: HomeProps) {
 
   // Matches Fetch (ONLY when needed)
   useEffect(() => {
+    console.log('[Matches] Effect initialized - checking SSR matches...');
+
     // If SSR provided matches, use them and don't fetch immediately
     if (initialMatches.length > 0) {
       console.log(`✅ Using ${initialMatches.length} SSR matches (stable, no refetch)`);
