@@ -22,15 +22,30 @@ export const dynamic = 'force-dynamic';
 
 export async function POST(request: NextRequest) {
   try {
+    console.log('[Webhook] 📥 Incoming request received');
+
     // Parse the request body
     const requestJson = await request.json();
+    console.log('[Webhook] ✅ Request body parsed');
+
+    // Check if Neynar API key is available
+    if (!process.env.NEYNAR_API_KEY) {
+      console.error('[Webhook] ❌ NEYNAR_API_KEY not found!');
+      return NextResponse.json(
+        { error: 'Webhook verification not configured' },
+        { status: 500 }
+      );
+    }
+
+    console.log('[Webhook] 🔐 Verifying with Neynar...');
 
     // Parse and verify the webhook event
     let data;
     try {
       data = await parseWebhookEvent(requestJson, verifyAppKeyWithNeynar);
+      console.log('[Webhook] ✅ Verification successful!');
     } catch (error) {
-      console.error('Webhook verification failed:', error);
+      console.error('[Webhook] ❌ Verification failed:', error);
       return NextResponse.json(
         { error: 'Invalid webhook signature' },
         { status: 401 }
@@ -39,7 +54,7 @@ export async function POST(request: NextRequest) {
 
     const { fid, appFid, event } = data;
 
-    console.log(`[Webhook] Received event: ${event.event} for fid=${fid}, appFid=${appFid}`);
+    console.log(`[Webhook] 📨 Event: ${event.event} | FID: ${fid} | AppFID: ${appFid}`);
 
     // CRITICAL: Respond immediately (within 10 seconds for Base app)
     // Process token storage asynchronously after response
