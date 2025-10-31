@@ -6,27 +6,33 @@
   "display": "standalone",
   "background_color": "#000000",
   "theme_color": "#000000",
+  "orientation": "portrait-primary",
+  "noindex": false,
+  "primaryCategory": "social",
   "icons": [
     {
       "src": "/icon-1024.png",
-      "sizes": "1024x1024",
+      "sizes": "192x192",
       "type": "image/png",
       "purpose": "any maskable"
     },
     {
-      "src": "/icon-512.png",
+      "src": "/icon-1024.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "any maskable"
     },
     {
-      "src": "/icon-192.png",
-      "sizes": "192x192",
+      "src": "/icon-1024.png",
+      "sizes": "1024x1024",
       "type": "image/png",
       "purpose": "any maskable"
     }
   ],
-  "categories": ["games", "sports", "entertainment"],
-  "lang": "en",
-  "orientation": "portrait"
+  "categories": ["social", "games", "entertainment"],
+  "frame": {
+    "url": "https://league.seershub.com",
+    "version": "next"
+  },
+  "lang": "en"
 }

@@ -24,24 +24,29 @@
   "miniapp": {
     "version": "1",
     "name": "SeersLeague",
-    "subtitle": "Daily Football Predictions",
-    "description": "Football predictions daily",
-    "iconUrl": "https://league.seershub.com/icon-512.png",
+    "author": "SeersHub",
+    "authorUrl": "https://warpcast.com/seershub",
+    "description": "Predict 5 featured football matches daily on Base Mainnet and compete for prizes. First day FREE, then 0.5 USDC per match. Earn rewards based on prediction accuracy and compete on the global leaderboard.",
+    "iconUrl": "https://league.seershub.com/icon-1024.png",
+    "homeUrl": "https://league.seershub.com",
+    "imageUrl": "https://league.seershub.com/icon-1024.png",
     "splashImageUrl": "https://league.seershub.com/splash.png",
     "splashBackgroundColor": "#0052FF",
-    "homeUrl": "https://league.seershub.com",
-    "webhookUrl": "https://league.seershub.com/api/webhook",
-    "screenshotUrls": [
-      "https://league.seershub.com/screenshots/home.png",
-      "https://league.seershub.com/screenshots/leaderboard.png"
-    ],
-    "primaryCategory": "social",
-    "tags": ["sports", "predictions", "competition", "base", "daily"],
+    "subtitle": "Daily Football Predictions",
     "heroImageUrl": "https://league.seershub.com/hero.png",
     "tagline": "Predict, Compete, Win",
-    "ogTitle": "SeersLeague",
-    "ogDescription": "First day free! Predict 5 matches daily, compete for prizes.",
+    "ogTitle": "SeersLeague - Daily Football Predictions",
+    "ogDescription": "Predict 5 featured football matches daily on Base Mainnet and compete for prizes!",
     "ogImageUrl": "https://league.seershub.com/og-image.png",
-    "noindex": false
+    "castShareUrl": "https://league.seershub.com",
+    "webhookUrl": "https://league.seershub.com/api/webhook",
+    "license": "MIT",
+    "tags": ["sports", "predictions", "competition", "base", "daily"],
+    "screenshotUrls": [
+      "https://league.seershub.com/og-image.png",
+      "https://league.seershub.com/hero.png"
+    ],
+    "noindex": false,
+    "primaryCategory": "social"
   }
 }
