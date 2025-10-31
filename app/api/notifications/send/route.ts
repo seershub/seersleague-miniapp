@@ -15,7 +15,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { sendNotification } from '@/lib/notifications';
 
-export const runtime = 'edge';
 export const dynamic = 'force-dynamic';
 
 interface SendNotificationBody {

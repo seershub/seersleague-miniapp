@@ -18,7 +18,6 @@ import {
   deleteNotificationDetails,
 } from '@/lib/notifications/storage';
 
-export const runtime = 'edge'; // Use Edge runtime for faster response
 export const dynamic = 'force-dynamic';
 
 export async function POST(request: NextRequest) {
@@ -48,7 +47,7 @@ export async function POST(request: NextRequest) {
 
     // Fire-and-forget: Process event after sending response
     // This ensures we respond quickly to avoid timeout
-    setImmediate(async () => {
+    Promise.resolve().then(async () => {
       try {
         switch (event.event) {
           case 'miniapp_added':
