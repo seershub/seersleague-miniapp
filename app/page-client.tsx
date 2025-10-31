@@ -61,8 +61,8 @@ export default function Home({ initialMatches = [] }: HomeProps) {
       }
     }
 
-    // Always fetch matches and keep them fresh
-    const fetchMatches = async (isBackgroundRefresh = false) => {
+    // ROBUST FETCH with auto-recovery
+    const fetchMatches = async (isBackgroundRefresh = false, retryCount = 0) => {
       try {
         const isInitial = matches.length === 0 && initialMatches.length === 0;
         if (isInitial) {
@@ -70,35 +70,66 @@ export default function Home({ initialMatches = [] }: HomeProps) {
         } else if (!isBackgroundRefresh) {
           setRefreshing(true);
         }
-        console.log('Fetching matches...');
-        const response = await fetch(`/api/matches?limit=50&t=${Date.now()}`, { cache: 'no-store' });
+        console.log(`[Attempt ${retryCount + 1}] Fetching matches...`);
+
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 25000); // 25s timeout
+
+        const response = await fetch(`/api/matches?limit=50&t=${Date.now()}`, {
+          cache: 'no-store',
+          signal: controller.signal
+        });
+        clearTimeout(timeoutId);
+
         if (!response.ok) {
           throw new Error(`HTTP error! status: ${response.status}`);
         }
+
         const data = await response.json();
         console.log('Matches API response:', data);
 
         // Extract matches array from response object
         const matchesArray: Match[] = data.matches || [];
-        console.log('Matches received:', matchesArray);
-        
+        console.log(`Matches received: ${matchesArray.length}`);
+
+        // AUTO-RECOVERY: If empty and we have retries left, try again
+        if (matchesArray.length === 0 && retryCount < 2 && !isBackgroundRefresh) {
+          console.warn(`⚠️ Empty response. Retrying in ${(retryCount + 1) * 3}s...`);
+          setTimeout(() => {
+            fetchMatches(false, retryCount + 1);
+          }, (retryCount + 1) * 3000); // 3s, 6s delays
+          return;
+        }
+
         // Only update if there are actual changes to avoid unnecessary re-renders
         setMatches(prevMatches => {
           if (JSON.stringify(prevMatches) !== JSON.stringify(matchesArray)) {
+            console.log(`✅ Updated with ${matchesArray.length} matches`);
             return matchesArray;
           }
           return prevMatches;
         });
 
         setFilteredMatches(matchesArray);
-
         setError(null);
+
       } catch (err) {
-        console.error('Error fetching matches:', err);
-        setError(err instanceof Error ? err.message : 'Unknown error occurred');
+        console.error(`❌ Error (attempt ${retryCount + 1}):`, err);
+
+        // Retry on error (max 2 retries)
+        if (retryCount < 2 && !isBackgroundRefresh) {
+          console.log(`🔄 Retrying in ${(retryCount + 1) * 3}s...`);
+          setTimeout(() => {
+            fetchMatches(false, retryCount + 1);
+          }, (retryCount + 1) * 3000);
+        } else {
+          setError(err instanceof Error ? err.message : 'Unknown error occurred');
+        }
       } finally {
-        setRefreshing(false);
-        setLoading(false);
+        if (retryCount === 0) {
+          setRefreshing(false);
+          setLoading(false);
+        }
       }
     };
 
