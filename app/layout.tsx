@@ -22,16 +22,27 @@ export const metadata: Metadata = {
     type: 'website',
   },
   other: {
-    'fc:frame': 'vNext',
-    'fc:frame:image': '/og-image.png',
-    'fc:frame:button:1': 'Launch SeersLeague',
-    'fc:frame:button:1:action': 'link',
-    'fc:frame:button:1:target': 'https://league.seershub.com',
     'fc:miniapp': JSON.stringify({
-      version: 'next',
+      version: "1",
       imageUrl: 'https://league.seershub.com/og-image.png',
+      aspectRatio: "3:2",
       button: {
-        title: 'Launch SeersLeague',
+        title: 'Open SeersLeague',
+        action: {
+          type: 'launch_miniapp',
+          name: 'SeersLeague',
+          url: 'https://league.seershub.com',
+          splashImageUrl: 'https://league.seershub.com/splash.png',
+          splashBackgroundColor: '#0052FF'
+        }
+      }
+    }),
+    'fc:frame': JSON.stringify({
+      version: "1",
+      imageUrl: 'https://league.seershub.com/og-image.png',
+      aspectRatio: "3:2",
+      button: {
+        title: 'Open SeersLeague',
         action: {
           type: 'launch_frame',
           name: 'SeersLeague',
