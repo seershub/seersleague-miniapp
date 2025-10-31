@@ -5,21 +5,10 @@
     "signature": "VUnvoCHt3JgNYvLPXR8LKxFKj4NMqvSMlpbhKgEGlRAnT4f8oAwRRniscwikY5t5PRc1/RDTm7iloTuNYx9PjRw="
   },
   "baseBuilder": {
-    "ownerAddress": "0x2F8b89f74C0540B638CF808515dFabe565796aAA"
-  },
-  "frame": {
-    "version": "1",
-    "imageUrl": "https://league.seershub.com/og-image.png",
-    "button": {
-      "title": "Launch SeersLeague",
-      "action": {
-        "type": "launch_frame",
-        "name": "SeersLeague",
-        "url": "https://league.seershub.com",
-        "splashImageUrl": "https://league.seershub.com/splash.png",
-        "splashBackgroundColor": "#0052FF"
-      }
-    }
+    "ownerAddress": "0x2F8b89f74C0540B638CF808515dFabe565796aAA",
+    "allowedAddresses": [
+      "0x2F8b89f74C0540B638CF808515dFabe565796aAA"
+    ]
   },
   "miniapp": {
     "version": "1",

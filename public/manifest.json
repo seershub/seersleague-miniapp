@@ -30,9 +30,17 @@
     }
   ],
   "categories": ["social", "games", "entertainment"],
+  "screenshots": [
+    {
+      "src": "/og-image.png",
+      "sizes": "1200x630",
+      "type": "image/png",
+      "form_factor": "wide"
+    }
+  ],
   "frame": {
     "url": "https://league.seershub.com",
-    "version": "next"
+    "version": "vNext"
   },
   "lang": "en"
 }
