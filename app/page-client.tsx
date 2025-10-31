@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { WalletConnect } from '@/components/WalletConnect';
 import { PredictionForm } from '@/components/PredictionForm';
 import { SearchBox } from '@/components/SearchBox';
@@ -16,130 +16,143 @@ interface HomeProps {
 export default function Home({ initialMatches = [] }: HomeProps) {
   const [matches, setMatches] = useState<Match[]>(initialMatches);
   const [filteredMatches, setFilteredMatches] = useState<Match[]>(initialMatches);
-  const [loading, setLoading] = useState(initialMatches.length === 0);
+  const [loading, setLoading] = useState(false); // Don't show loading if SSR provided matches
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [chainId, setChainId] = useState<string | null>(null);
   const [showAll, setShowAll] = useState(false);
   const { isReady } = useMiniKit();
-  
-  // Check chain ID and fetch matches
+  const lastFetchTimeRef = useRef<number>(Date.now());
+
+  // SDK Initialization (separate effect)
   useEffect(() => {
-    // Initialize Farcaster MiniApp SDK
     const initializeSDK = async () => {
       try {
         await sdk.actions.ready();
-        console.log('Farcaster MiniApp SDK ready!');
+        console.log('✅ Farcaster MiniApp SDK ready!');
       } catch (error) {
-        console.error('SDK initialization error:', error);
+        console.error('❌ SDK initialization error:', error);
       }
     };
 
     initializeSDK();
 
-    // Initialize Base SDK when MiniKit is ready
     if (isReady) {
-      console.log('MiniKit ready!');
+      console.log('✅ MiniKit ready!');
       if (typeof window !== 'undefined' && (window as any).base) {
-        console.log('Base SDK ready!');
+        console.log('✅ Base SDK ready!');
       }
     }
+  }, [isReady]);
 
-    // Check if we're in Base App context
-    if (typeof window !== 'undefined') {
-      // Check for Base App context
-      if ((window as any).ethereum) {
-        (window as any).ethereum.request({ method: 'eth_chainId' })
-          .then((id: string) => {
-            setChainId(id);
-            console.log('Current chain ID:', id);
-            if (id !== '0x2105') {
-              console.warn('Not on Base Mainnet! Current chain:', id, 'Expected: 0x2105');
-            }
-          })
-          .catch(console.error);
-      }
-    }
-
-    // ROBUST FETCH with auto-recovery
-    const fetchMatches = async (isBackgroundRefresh = false, retryCount = 0) => {
-      try {
-        const isInitial = matches.length === 0 && initialMatches.length === 0;
-        if (isInitial) {
-          setLoading(true);
-        } else if (!isBackgroundRefresh) {
-          setRefreshing(true);
-        }
-        console.log(`[Attempt ${retryCount + 1}] Fetching matches...`);
-
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 25000); // 25s timeout
-
-        const response = await fetch(`/api/matches?limit=50&t=${Date.now()}`, {
-          cache: 'no-store',
-          signal: controller.signal
-        });
-        clearTimeout(timeoutId);
-
-        if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`);
-        }
-
-        const data = await response.json();
-        console.log('Matches API response:', data);
-
-        // Extract matches array from response object
-        const matchesArray: Match[] = data.matches || [];
-        console.log(`Matches received: ${matchesArray.length}`);
-
-        // AUTO-RECOVERY: If empty and we have retries left, try again
-        if (matchesArray.length === 0 && retryCount < 2 && !isBackgroundRefresh) {
-          console.warn(`⚠️ Empty response. Retrying in ${(retryCount + 1) * 3}s...`);
-          setTimeout(() => {
-            fetchMatches(false, retryCount + 1);
-          }, (retryCount + 1) * 3000); // 3s, 6s delays
-          return;
-        }
-
-        // Only update if there are actual changes to avoid unnecessary re-renders
-        setMatches(prevMatches => {
-          if (JSON.stringify(prevMatches) !== JSON.stringify(matchesArray)) {
-            console.log(`✅ Updated with ${matchesArray.length} matches`);
-            return matchesArray;
+  // Chain ID Check (separate effect)
+  useEffect(() => {
+    if (typeof window !== 'undefined' && (window as any).ethereum) {
+      (window as any).ethereum.request({ method: 'eth_chainId' })
+        .then((id: string) => {
+          setChainId(id);
+          console.log('Current chain ID:', id);
+          if (id !== '0x2105') {
+            console.warn('⚠️ Not on Base Mainnet! Current:', id, 'Expected: 0x2105');
           }
-          return prevMatches;
-        });
+        })
+        .catch(console.error);
+    }
+  }, []);
 
-        setFilteredMatches(matchesArray);
-        setError(null);
+  // Matches Fetch (ONLY when needed)
+  useEffect(() => {
+    // If SSR provided matches, use them and don't fetch immediately
+    if (initialMatches.length > 0) {
+      console.log(`✅ Using ${initialMatches.length} SSR matches (stable, no refetch)`);
+      lastFetchTimeRef.current = Date.now();
+    } else {
+      // Only fetch if no SSR matches
+      console.log('⚠️ No SSR matches, fetching from API...');
 
-      } catch (err) {
-        console.error(`❌ Error (attempt ${retryCount + 1}):`, err);
+      const fetchMatches = async () => {
+        try {
+          setLoading(true);
+          console.log('[Client] Fetching matches because SSR provided none...');
 
-        // Retry on error (max 2 retries)
-        if (retryCount < 2 && !isBackgroundRefresh) {
-          console.log(`🔄 Retrying in ${(retryCount + 1) * 3}s...`);
-          setTimeout(() => {
-            fetchMatches(false, retryCount + 1);
-          }, (retryCount + 1) * 3000);
-        } else {
-          setError(err instanceof Error ? err.message : 'Unknown error occurred');
-        }
-      } finally {
-        if (retryCount === 0) {
-          setRefreshing(false);
+          const response = await fetch('/api/matches?limit=50', {
+            cache: 'no-store'
+          });
+
+          if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+          }
+
+          const data = await response.json();
+          const matchesArray: Match[] = data.matches || [];
+
+          console.log(`✅ Fetched ${matchesArray.length} matches from API`);
+
+          setMatches(matchesArray);
+          setFilteredMatches(matchesArray);
+          setError(null);
+          lastFetchTimeRef.current = Date.now();
+
+        } catch (err) {
+          console.error('❌ Error fetching matches:', err);
+          setError(err instanceof Error ? err.message : 'Failed to load matches');
+        } finally {
           setLoading(false);
+        }
+      };
+
+      fetchMatches();
+    }
+
+    // Smart refresh: Only when user returns to tab after 5+ minutes
+    const handleVisibilityChange = async () => {
+      if (document.visibilityState === 'visible') {
+        const timeSinceLastFetch = Date.now() - lastFetchTimeRef.current;
+        const FIVE_MINUTES = 5 * 60 * 1000;
+
+        // If user was away for 5+ minutes, refresh matches
+        if (timeSinceLastFetch > FIVE_MINUTES) {
+          console.log('🔄 User returned after 5+ min, refreshing matches...');
+          setRefreshing(true);
+
+          try {
+            const response = await fetch('/api/matches?limit=50', {
+              cache: 'no-store'
+            });
+
+            if (response.ok) {
+              const data = await response.json();
+              const matchesArray: Match[] = data.matches || [];
+
+              // Only update if there are changes
+              setMatches(prevMatches => {
+                if (JSON.stringify(prevMatches) !== JSON.stringify(matchesArray)) {
+                  console.log(`✅ Updated: ${matchesArray.length} matches`);
+                  setFilteredMatches(matchesArray);
+                  return matchesArray;
+                } else {
+                  console.log('✅ No changes detected');
+                  return prevMatches;
+                }
+              });
+
+              lastFetchTimeRef.current = Date.now();
+            }
+          } catch (err) {
+            console.error('❌ Background refresh failed:', err);
+          } finally {
+            setRefreshing(false);
+          }
         }
       }
     };
 
-    // Initial fetch (even if SSR provided matches)
-    fetchMatches();
+    document.addEventListener('visibilitychange', handleVisibilityChange);
 
-    // Poll every 5 minutes to keep list updated (less frequent for better UX)
-    const interval = setInterval(() => fetchMatches(true), 300000);
-    return () => clearInterval(interval);
-  }, []);
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
+  }, [initialMatches.length]);
 
   return (
     <div className="min-h-screen bg-black">
