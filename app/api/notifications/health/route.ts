@@ -7,7 +7,16 @@ import { NextResponse } from 'next/server';
 export const dynamic = 'force-dynamic';
 
 export async function GET() {
-  const checks = {
+  const checks: {
+    timestamp: string;
+    environment: {
+      NOTIFY_REST_API_URL: string;
+      NOTIFY_REST_API_TOKEN: string;
+    };
+    runtime: string;
+    redis?: string;
+    error?: string;
+  } = {
     timestamp: new Date().toISOString(),
     environment: {
       NOTIFY_REST_API_URL: process.env.NOTIFY_REST_API_URL ? '✅ Set' : '❌ Missing',
@@ -21,11 +30,9 @@ export async function GET() {
     const { Redis } = await import('@upstash/redis');
 
     if (!process.env.NOTIFY_REST_API_URL || !process.env.NOTIFY_REST_API_TOKEN) {
-      return NextResponse.json({
-        ...checks,
-        redis: '❌ Environment variables missing',
-        error: 'NOTIFY_REST_API_URL or NOTIFY_REST_API_TOKEN not set',
-      });
+      checks.redis = '❌ Environment variables missing';
+      checks.error = 'NOTIFY_REST_API_URL or NOTIFY_REST_API_TOKEN not set';
+      return NextResponse.json(checks);
     }
 
     const redis = new Redis({
