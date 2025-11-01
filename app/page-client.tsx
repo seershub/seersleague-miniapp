@@ -79,9 +79,32 @@ export default function Home({ initialMatches = [] }: HomeProps) {
       fetch('/api/matches?limit=50', { cache: 'no-store' })
         .then(res => res.ok ? res.json() : null)
         .then(data => {
-          if (data?.matches && data.matches.length > 0) {
-            console.log(`✅ [CLIENT] Enriched ${data.matches.length} matches with team names`);
-            setMatches(data.matches);
+          if (data?.matches && Array.isArray(data.matches) && data.matches.length > 0) {
+            console.log(`✅ [CLIENT] API returned ${data.matches.length} enriched matches`);
+
+            // CRITICAL FIX: MERGE enriched data with SSR matches to prevent disappearing
+            // Create a map of enriched matches by ID for fast lookup
+            const enrichedMap = new Map<string, Match>();
+            data.matches.forEach((match: Match) => {
+              enrichedMap.set(match.id, match);
+            });
+
+            // Merge: Keep ALL SSR matches, update with enriched data where available
+            const mergedMatches = initialMatches.map(ssrMatch => {
+              const enrichedMatch = enrichedMap.get(ssrMatch.id);
+              if (enrichedMatch) {
+                // Found enriched data for this match - use it
+                console.log(`[CLIENT] ✓ Enriched: ${enrichedMatch.homeTeam} vs ${enrichedMatch.awayTeam}`);
+                return enrichedMatch;
+              } else {
+                // No enriched data (match may have started during enrichment) - keep SSR data
+                console.log(`[CLIENT] ○ Keeping SSR data for match ${ssrMatch.id}`);
+                return ssrMatch;
+              }
+            });
+
+            console.log(`✅ [CLIENT] Merged ${mergedMatches.length} matches (preserved all SSR matches)`);
+            setMatches(mergedMatches);
           }
         })
         .catch(err => {
