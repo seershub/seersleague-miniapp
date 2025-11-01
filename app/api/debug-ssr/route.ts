@@ -1,10 +1,13 @@
 import { NextResponse } from 'next/server';
+import { publicClient } from '@/lib/viem-config';
+import { CONTRACTS } from '@/lib/contract-interactions';
 
 export const dynamic = 'force-dynamic';
+export const maxDuration = 60;
 
 /**
- * Debug SSR Configuration
- * Checks if SSR can properly fetch matches
+ * Debug SSR - Test NEW blockchain-direct fetching
+ * SSR no longer uses API calls, fetches directly from blockchain
  */
 export async function GET() {
   const diagnostics = {
@@ -12,49 +15,70 @@ export async function GET() {
     vercelUrl: process.env.VERCEL_URL || 'NOT SET',
     nodeEnv: process.env.NODE_ENV,
     deployment: process.env.VERCEL ? 'Vercel' : 'Local',
-
-    // Construct the URL that SSR uses
-    protocol: process.env.VERCEL_URL ? 'https' : 'http',
-    host: process.env.VERCEL_URL || 'localhost:3000',
+    deploymentBlock: process.env.NEXT_PUBLIC_DEPLOYMENT_BLOCK || 'NOT SET',
+    footballApiKey: process.env.FOOTBALL_DATA_API_KEY ? 'SET ✅' : 'NOT SET ❌'
   };
 
-  const baseUrl = `${diagnostics.protocol}://${diagnostics.host}`;
-
-  // Try to fetch matches like SSR does
-  let ssrFetchResult = null;
+  // Test NEW SSR logic - Direct blockchain fetch
+  let blockchainTest = null;
   try {
-    const response = await fetch(`${baseUrl}/api/matches?limit=20`, {
-      cache: 'no-store'
+    const currentBlock = await publicClient.getBlockNumber();
+    const deploymentBlock = BigInt(process.env.NEXT_PUBLIC_DEPLOYMENT_BLOCK || '0');
+    const fromBlock = deploymentBlock > 0n ? deploymentBlock : currentBlock - 100000n;
+
+    const events = await publicClient.getLogs({
+      address: CONTRACTS.SEERSLEAGUE,
+      event: {
+        type: 'event',
+        name: 'MatchRegistered',
+        inputs: [
+          { name: 'matchId', type: 'uint256', indexed: true },
+          { name: 'startTime', type: 'uint256', indexed: false }
+        ]
+      },
+      fromBlock,
+      toBlock: 'latest'
     });
 
-    if (response.ok) {
-      const data = await response.json();
-      ssrFetchResult = {
-        success: true,
-        status: response.status,
-        matchesCount: data.matches?.length || 0,
-        total: data.total
-      };
-    } else {
-      ssrFetchResult = {
-        success: false,
-        status: response.status,
-        error: `HTTP ${response.status}`
-      };
-    }
+    const now = Math.floor(Date.now() / 1000);
+    const upcoming = events
+      .filter((e): e is typeof e & { args: { matchId: bigint; startTime: bigint } } =>
+        Boolean(e.args?.matchId && e.args?.startTime)
+      )
+      .map(e => ({
+        matchId: e.args.matchId.toString(),
+        startTime: Number(e.args.startTime)
+      }))
+      .filter(m => m.startTime > now);
+
+    blockchainTest = {
+      success: true,
+      currentBlock: currentBlock.toString(),
+      scannedFrom: fromBlock.toString(),
+      totalEvents: events.length,
+      upcomingMatches: upcoming.length,
+      sampleMatchIds: upcoming.slice(0, 3).map(m => m.matchId)
+    };
   } catch (error) {
-    ssrFetchResult = {
+    blockchainTest = {
       success: false,
       error: error instanceof Error ? error.message : String(error)
     };
   }
 
+  // Verdict
+  const ssrWillWork = blockchainTest?.success && (blockchainTest?.upcomingMatches ?? 0) > 0;
+
   return NextResponse.json({
     diagnostics,
-    baseUrl,
-    ssrFetchResult,
-    verdict: ssrFetchResult?.success
-      ? '✅ SSR should work correctly'
-      : '❌ SSR WILL FAIL - This causes matches to disappear!'
+    blockchainDirectFetch: blockchainTest,
+    verdict: ssrWillWork
+      ? `✅ NEW SSR WORKING! Found ${blockchainTest?.upcomingMatches} matches from blockchain`
+      : '❌ SSR WILL FAIL - Blockchain fetch failed or no matches found',
+    note: 'SSR now fetches DIRECTLY from blockchain (no API dependency)',
+    deployment: {
+      latestCommit: '9cfcf6b - TypeScript fix',
+      expectedBehavior: 'SSR should bypass API completely and fetch from blockchain'
+    }
   });
 }
