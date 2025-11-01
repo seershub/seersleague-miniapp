@@ -3,6 +3,10 @@ import Home from './page-client';
 import { publicClient } from '@/lib/viem-config';
 import { CONTRACTS } from '@/lib/contract-interactions';
 
+// CRITICAL: Force dynamic rendering - disable Next.js page cache
+export const dynamic = 'force-dynamic';
+export const revalidate = 0; // Never cache, always fresh
+
 const FOOTBALL_DATA_API_KEY = process.env.FOOTBALL_DATA_API_KEY || '';
 const FOOTBALL_DATA_BASE = 'https://api.football-data.org/v4';
 
@@ -11,7 +15,9 @@ const FOOTBALL_DATA_BASE = 'https://api.football-data.org/v4';
  * This ensures SSR always works and provides stable embedded matches
  */
 async function fetchMatchesServer(): Promise<Match[]> {
-  console.log('=== SSR: FETCHING MATCHES DIRECTLY FROM BLOCKCHAIN ===');
+  const timestamp = new Date().toISOString();
+  console.log(`\n=== SSR: FETCHING MATCHES (${timestamp}) ===`);
+  console.log('[SSR] DYNAMIC RENDERING ENABLED - Fresh data on every request');
 
   try {
     const currentBlock = await publicClient.getBlockNumber();
@@ -57,13 +63,20 @@ async function fetchMatchesServer(): Promise<Match[]> {
       return [];
     }
 
-    // Enrich with Football-data.org in parallel
+    // Enrich with Football-data.org in parallel (with timeout protection)
     const enrichPromises = upcoming.map(async (match) => {
       try {
+        // 5 second timeout per match to prevent SSR hanging
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 5000);
+
         const response = await fetch(`${FOOTBALL_DATA_BASE}/matches/${match.matchId}`, {
           headers: { 'X-Auth-Token': FOOTBALL_DATA_API_KEY },
+          signal: controller.signal,
           next: { revalidate: 1800 } // Cache 30min
         });
+
+        clearTimeout(timeoutId);
 
         if (!response.ok) {
           // Fallback data
@@ -94,8 +107,11 @@ async function fetchMatchesServer(): Promise<Match[]> {
           awayTeamBadge: m.awayTeam?.crest || '/default-badge.svg',
           status: 'Not Started' as const
         };
-      } catch {
-        // Fallback on error
+      } catch (error) {
+        // Fallback on error (timeout, API failure, etc.)
+        const errorMsg = error instanceof Error ? error.message : 'Unknown';
+        console.warn(`[SSR] Match ${match.matchId} enrichment failed (${errorMsg}), using fallback`);
+
         return {
           id: match.matchId,
           homeTeam: 'Home Team',
@@ -112,6 +128,7 @@ async function fetchMatchesServer(): Promise<Match[]> {
 
     const enriched = await Promise.all(enrichPromises);
     console.log(`✅ [SSR] Successfully enriched ${enriched.length} matches`);
+    console.log(`[SSR] Returning ${enriched.length} matches to client\n`);
 
     return enriched;
 

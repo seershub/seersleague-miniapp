@@ -62,17 +62,22 @@ export default function Home({ initialMatches = [] }: HomeProps) {
 
   // Matches Fetch (ONLY ONCE on mount)
   useEffect(() => {
-    console.log('[Matches] Component mounted, initialMatches:', initialMatches.length);
+    console.log(`\n=== [CLIENT] Component Mounted ===`);
+    console.log(`[CLIENT] initialMatches received: ${initialMatches.length}`);
+    if (initialMatches.length > 0) {
+      console.log(`[CLIENT] Sample match IDs:`, initialMatches.slice(0, 3).map(m => m.id));
+    }
 
     // If SSR provided matches, use them - NO REFETCH
     if (initialMatches.length > 0) {
-      console.log(`✅ Using ${initialMatches.length} SSR matches (STABLE - no background fetch)`);
+      console.log(`✅ [CLIENT] Using ${initialMatches.length} SSR matches (STABLE)`);
+      console.log(`[CLIENT] No fetch will occur - matches are embedded\n`);
       lastFetchTimeRef.current = Date.now();
       return; // CRITICAL: Return early, no event listeners, no fetching
     }
 
     // Only if SSR failed - fetch on client
-    console.log('⚠️ No SSR matches - fetching from API...');
+    console.log('⚠️ [CLIENT] No SSR matches - fetching from API...');
     setLoading(true);
 
     fetch('/api/matches?limit=50', { cache: 'no-store' })
