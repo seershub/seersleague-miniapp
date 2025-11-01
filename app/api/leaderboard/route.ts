@@ -26,33 +26,71 @@ async function generateLeaderboardFromContract(): Promise<{ leaderboard: Leaderb
     const deploymentBlock = BigInt(process.env.NEXT_PUBLIC_DEPLOYMENT_BLOCK || '0');
     const currentBlock = await publicClient.getBlockNumber();
 
-    // CRITICAL FIX: Use much wider block range to catch all users
-    // If deployment block not set, scan last 5M blocks (~1 month on Base)
-    // This matches smart-recount's range to ensure we find all users
-    const fromBlock = deploymentBlock > 0n ? deploymentBlock : currentBlock - 5000000n;
+    // CRITICAL FIX: Limit block range to prevent RPC timeout
+    // Match disappearing fix proved 100K blocks can timeout
+    // Use 200K as fallback (safer than 5M but covers ~1.5 days)
+    // PERMANENT SOLUTION: Set NEXT_PUBLIC_DEPLOYMENT_BLOCK in Vercel env
+    const maxFallbackRange = 200000n;
+    let fromBlock: bigint;
+
+    if (deploymentBlock > 0n) {
+      // Deployment block is set - use it (most reliable)
+      fromBlock = deploymentBlock;
+      console.log(`[Leaderboard] ✅ Using deployment block: ${fromBlock}`);
+    } else {
+      // No deployment block - use limited fallback
+      fromBlock = currentBlock - maxFallbackRange;
+      console.warn(`[Leaderboard] ⚠️ NEXT_PUBLIC_DEPLOYMENT_BLOCK not set!`);
+      console.warn(`[Leaderboard] ⚠️ Using fallback: last ${maxFallbackRange} blocks`);
+      console.warn(`[Leaderboard] ⚠️ This may miss older users! Set deployment block for full history.`);
+    }
 
     console.log(`[Leaderboard] Scanning from block ${fromBlock} to latest (${currentBlock})`);
     console.log(`[Leaderboard] Block range: ${currentBlock - fromBlock} blocks`);
 
-    // Fetch PredictionsSubmitted events
-    const predictionEvents = await publicClient.getLogs({
-      address: CONTRACTS.SEERSLEAGUE,
-      event: {
-        type: 'event',
-        name: 'PredictionsSubmitted',
-        inputs: [
-          { name: 'user', type: 'address', indexed: true },
-          { name: 'matchIds', type: 'uint256[]', indexed: false },
-          { name: 'predictionsCount', type: 'uint256', indexed: false },
-          { name: 'freeUsed', type: 'uint256', indexed: false },
-          { name: 'feePaid', type: 'uint256', indexed: false }
-        ]
-      },
-      fromBlock,
-      toBlock: 'latest'
-    });
+    // CRITICAL FIX: Add retry mechanism (same as match disappearing fix)
+    // RPC can timeout on heavy queries, retry with exponential backoff
+    let predictionEvents: any[] = [];
+    let retryCount = 0;
+    const maxRetries = 3;
 
-    console.log(`Found ${predictionEvents.length} prediction events`);
+    while (retryCount < maxRetries) {
+      try {
+        // Fetch PredictionsSubmitted events
+        predictionEvents = await publicClient.getLogs({
+          address: CONTRACTS.SEERSLEAGUE,
+          event: {
+            type: 'event',
+            name: 'PredictionsSubmitted',
+            inputs: [
+              { name: 'user', type: 'address', indexed: true },
+              { name: 'matchIds', type: 'uint256[]', indexed: false },
+              { name: 'predictionsCount', type: 'uint256', indexed: false },
+              { name: 'freeUsed', type: 'uint256', indexed: false },
+              { name: 'feePaid', type: 'uint256', indexed: false }
+            ]
+          },
+          fromBlock,
+          toBlock: 'latest'
+        });
+
+        console.log(`[Leaderboard] ✅ Found ${predictionEvents.length} prediction events`);
+        break; // Success, exit retry loop
+
+      } catch (error) {
+        retryCount++;
+        if (retryCount < maxRetries) {
+          const delayMs = Math.pow(2, retryCount - 1) * 1000; // 1s, 2s, 4s
+          console.warn(`[Leaderboard] ⚠️ Attempt ${retryCount} failed, retrying in ${delayMs}ms...`);
+          console.warn(`[Leaderboard] Error:`, error);
+          await new Promise(resolve => setTimeout(resolve, delayMs));
+          continue;
+        } else {
+          console.error(`[Leaderboard] ❌ All ${maxRetries} attempts failed`);
+          throw error; // Re-throw after all retries exhausted
+        }
+      }
+    }
 
     // Extract unique user addresses
     const uniqueUsers = new Set<string>();
@@ -78,22 +116,46 @@ async function generateLeaderboardFromContract(): Promise<{ leaderboard: Leaderb
     // Contract has duplicate bug, so we can't trust stats.correctPredictions
     // Instead, count unique ResultRecorded events per user
     console.log('[Leaderboard] Fetching ResultRecorded events for accurate counts...');
-    const resultEvents = await publicClient.getLogs({
-      address: CONTRACTS.SEERSLEAGUE,
-      event: {
-        type: 'event',
-        name: 'ResultRecorded',
-        inputs: [
-          { name: 'user', type: 'address', indexed: true },
-          { name: 'matchId', type: 'uint256', indexed: false },
-          { name: 'correct', type: 'bool', indexed: false }
-        ]
-      },
-      fromBlock,
-      toBlock: 'latest'
-    });
 
-    console.log(`[Leaderboard] Found ${resultEvents.length} ResultRecorded events`);
+    // CRITICAL FIX: Add retry mechanism for ResultRecorded events too
+    let resultEvents: any[] = [];
+    retryCount = 0;
+
+    while (retryCount < maxRetries) {
+      try {
+        resultEvents = await publicClient.getLogs({
+          address: CONTRACTS.SEERSLEAGUE,
+          event: {
+            type: 'event',
+            name: 'ResultRecorded',
+            inputs: [
+              { name: 'user', type: 'address', indexed: true },
+              { name: 'matchId', type: 'uint256', indexed: false },
+              { name: 'correct', type: 'bool', indexed: false }
+            ]
+          },
+          fromBlock,
+          toBlock: 'latest'
+        });
+
+        console.log(`[Leaderboard] ✅ Found ${resultEvents.length} ResultRecorded events`);
+        break; // Success
+
+      } catch (error) {
+        retryCount++;
+        if (retryCount < maxRetries) {
+          const delayMs = Math.pow(2, retryCount - 1) * 1000;
+          console.warn(`[Leaderboard] ⚠️ ResultRecorded attempt ${retryCount} failed, retrying in ${delayMs}ms...`);
+          await new Promise(resolve => setTimeout(resolve, delayMs));
+          continue;
+        } else {
+          console.error(`[Leaderboard] ❌ ResultRecorded fetch failed after ${maxRetries} attempts`);
+          // Don't throw - continue with empty resultEvents (better than total failure)
+          resultEvents = [];
+          break;
+        }
+      }
+    }
 
     // Count REAL correctPredictions per user from UNIQUE (user, matchId) pairs
     // CRITICAL FIX: Same (user, match) can have multiple ResultRecorded events (duplicate bug)
