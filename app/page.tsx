@@ -19,74 +19,112 @@ async function fetchMatchesServer(): Promise<Match[]> {
   console.log(`\n=== SSR: FETCHING MATCHES (${timestamp}) ===`);
   console.log('[SSR] DYNAMIC RENDERING ENABLED - Fresh data on every request');
 
-  try {
-    const currentBlock = await publicClient.getBlockNumber();
-    const deploymentBlock = BigInt(process.env.NEXT_PUBLIC_DEPLOYMENT_BLOCK || '0');
-    const fromBlock = deploymentBlock > 0n ? deploymentBlock : currentBlock - 100000n;
+  // CRITICAL FIX: Multi-layered approach with retries and safer block range
+  let retryCount = 0;
+  const maxRetries = 3;
 
-    console.log(`[SSR] Scanning blocks ${fromBlock} to ${currentBlock}`);
+  while (retryCount < maxRetries) {
+    try {
+      const currentBlock = await publicClient.getBlockNumber();
+      const deploymentBlock = BigInt(process.env.NEXT_PUBLIC_DEPLOYMENT_BLOCK || '0');
 
-    // Fetch MatchRegistered events
-    const events = await publicClient.getLogs({
-      address: CONTRACTS.SEERSLEAGUE,
-      event: {
-        type: 'event',
-        name: 'MatchRegistered',
-        inputs: [
-          { name: 'matchId', type: 'uint256', indexed: true },
-          { name: 'startTime', type: 'uint256', indexed: false }
-        ]
-      },
-      fromBlock,
-      toBlock: 'latest'
-    });
+      // CRITICAL FIX: Limit block range to prevent timeout
+      // Max 50K blocks (~7 days) even if deployment block not set
+      // This prevents Alchemy RPC timeout/rate limit issues
+      const maxBlockRange = 50000n;
+      let fromBlock: bigint;
 
-    const now = Math.floor(Date.now() / 1000);
+      if (deploymentBlock > 0n) {
+        fromBlock = deploymentBlock;
+        console.log(`[SSR] Using deployment block: ${fromBlock}`);
+      } else {
+        fromBlock = currentBlock - maxBlockRange;
+        console.warn(`⚠️ [SSR] NEXT_PUBLIC_DEPLOYMENT_BLOCK not set! Using last ${maxBlockRange} blocks`);
+        console.warn(`⚠️ [SSR] Set NEXT_PUBLIC_DEPLOYMENT_BLOCK in Vercel for better performance`);
+      }
 
-    // Filter to upcoming matches only
-    const upcoming = events
-      .filter((e): e is typeof e & { args: { matchId: bigint; startTime: bigint } } =>
-        Boolean(e.args?.matchId && e.args?.startTime)
-      )
-      .map(e => ({
-        matchId: e.args.matchId.toString(),
-        startTime: Number(e.args.startTime)
-      }))
-      .filter(m => m.startTime > now)
-      .sort((a, b) => a.startTime - b.startTime)
-      .slice(0, 20); // Take first 20
+      const blockRange = currentBlock - fromBlock;
+      console.log(`[SSR] Scanning blocks ${fromBlock} to ${currentBlock} (${blockRange} blocks)`);
 
-    console.log(`[SSR] Found ${upcoming.length} upcoming matches`);
+      // Fetch MatchRegistered events
+      const events = await publicClient.getLogs({
+        address: CONTRACTS.SEERSLEAGUE,
+        event: {
+          type: 'event',
+          name: 'MatchRegistered',
+          inputs: [
+            { name: 'matchId', type: 'uint256', indexed: true },
+            { name: 'startTime', type: 'uint256', indexed: false }
+          ]
+        },
+        fromBlock,
+        toBlock: 'latest'
+      });
 
-    if (upcoming.length === 0) {
-      console.log('[SSR] No upcoming matches, returning empty');
+      const now = Math.floor(Date.now() / 1000);
+
+      // Filter to upcoming matches only
+      const upcoming = events
+        .filter((e): e is typeof e & { args: { matchId: bigint; startTime: bigint } } =>
+          Boolean(e.args?.matchId && e.args?.startTime)
+        )
+        .map(e => ({
+          matchId: e.args.matchId.toString(),
+          startTime: Number(e.args.startTime)
+        }))
+        .filter(m => m.startTime > now)
+        .sort((a, b) => a.startTime - b.startTime)
+        .slice(0, 20); // Take first 20
+
+      console.log(`✅ [SSR] Found ${events.length} total events, ${upcoming.length} upcoming matches`);
+
+      if (upcoming.length === 0) {
+        console.warn('⚠️ [SSR] No upcoming matches found in blockchain');
+        console.warn('[SSR] Possible reasons: 1) No matches registered, 2) All matches started, 3) Wrong contract address');
+        return [];
+      }
+
+      // FAST SSR: Return basic match data immediately (no Football API enrichment)
+      // This ensures SSR completes quickly and matches are always embedded
+      const matches = upcoming.map(match => ({
+        id: match.matchId,
+        homeTeam: `Match ${match.matchId}`, // Will be enriched client-side
+        awayTeam: 'vs TBD',
+        league: 'Football',
+        kickoff: new Date(match.startTime * 1000).toISOString(),
+        venue: 'TBA',
+        homeTeamBadge: '/default-badge.svg',
+        awayTeamBadge: '/default-badge.svg',
+        status: 'Not Started' as const
+      }));
+
+      console.log(`✅ [SSR] Returning ${matches.length} matches (basic data - fast!)`);
+      console.log(`[SSR] Client will enrich with team names in background\n`);
+
+      return matches;
+
+    } catch (error) {
+      retryCount++;
+      const isLastRetry = retryCount >= maxRetries;
+
+      console.error(`❌ [SSR] Error fetching matches (attempt ${retryCount}/${maxRetries}):`, error);
+
+      if (!isLastRetry) {
+        // Exponential backoff: 1s, 2s, 4s
+        const delayMs = Math.pow(2, retryCount - 1) * 1000;
+        console.log(`[SSR] Retrying in ${delayMs}ms...`);
+        await new Promise(resolve => setTimeout(resolve, delayMs));
+        continue;
+      }
+
+      // All retries failed - return empty and let client handle
+      console.error(`❌ [SSR] All ${maxRetries} attempts failed. Blockchain query not responding.`);
+      console.error('[SSR] Client-side fallback will attempt to fetch matches from API');
       return [];
     }
-
-    // FAST SSR: Return basic match data immediately (no Football API enrichment)
-    // This ensures SSR completes quickly and matches are always embedded
-    const matches = upcoming.map(match => ({
-      id: match.matchId,
-      homeTeam: `Match ${match.matchId}`, // Will be enriched client-side
-      awayTeam: 'vs TBD',
-      league: 'Football',
-      kickoff: new Date(match.startTime * 1000).toISOString(),
-      venue: 'TBA',
-      homeTeamBadge: '/default-badge.svg',
-      awayTeamBadge: '/default-badge.svg',
-      status: 'Not Started' as const
-    }));
-
-    console.log(`✅ [SSR] Returning ${matches.length} matches (basic data - fast!)`);
-    console.log(`[SSR] Client will enrich with team names in background\n`);
-
-    return matches;
-
-  } catch (error) {
-    console.error('❌ [SSR] Error fetching matches:', error);
-    // Return empty - client will handle
-    return [];
   }
+
+  return [];
 }
 
 export default async function Page() {

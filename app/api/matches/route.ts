@@ -46,11 +46,22 @@ async function getUpcomingRegisteredMatches(): Promise<{ matchId: string; startT
   const currentBlock = await publicClient.getBlockNumber();
   const deploymentBlock = BigInt(process.env.NEXT_PUBLIC_DEPLOYMENT_BLOCK || '0');
 
-  // FIXED: Use wider range to catch all registered matches
-  // If deployment block not set, scan last 100K blocks (~2 days on Base)
-  const fromBlock = deploymentBlock > 0n ? deploymentBlock : currentBlock - 100000n;
+  // CRITICAL FIX: Limit block range to prevent timeout
+  // Max 50K blocks (~7 days) to avoid Alchemy RPC timeout/rate limit
+  const maxBlockRange = 50000n;
+  let fromBlock: bigint;
 
-  console.log(`[Matches] Fetching from block ${fromBlock} to ${currentBlock}`);
+  if (deploymentBlock > 0n) {
+    fromBlock = deploymentBlock;
+    console.log(`[API] Using deployment block: ${deploymentBlock}`);
+  } else {
+    fromBlock = currentBlock - maxBlockRange;
+    console.warn(`⚠️ [API] NEXT_PUBLIC_DEPLOYMENT_BLOCK not set! Using last ${maxBlockRange} blocks`);
+    console.warn(`⚠️ [API] Set NEXT_PUBLIC_DEPLOYMENT_BLOCK in Vercel for better performance`);
+  }
+
+  const blockRange = currentBlock - fromBlock;
+  console.log(`[API] Scanning blocks ${fromBlock} to ${currentBlock} (${blockRange} blocks)`);
 
   // Single fetch - much faster for matches
   const events = await publicClient.getLogs({
@@ -81,7 +92,7 @@ async function getUpcomingRegisteredMatches(): Promise<{ matchId: string; startT
     .filter(m => m.startTime > now) // Only future matches
     .sort((a, b) => a.startTime - b.startTime); // Earliest first
 
-  console.log(`📊 Found ${events.length} registered matches, ${upcoming.length} upcoming`);
+  console.log(`📊 [API] Found ${events.length} registered matches, ${upcoming.length} upcoming`);
 
   return upcoming;
 }
