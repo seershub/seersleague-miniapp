@@ -63,74 +63,24 @@ async function fetchMatchesServer(): Promise<Match[]> {
       return [];
     }
 
-    // Enrich with Football-data.org in parallel (with timeout protection)
-    const enrichPromises = upcoming.map(async (match) => {
-      try {
-        // 5 second timeout per match to prevent SSR hanging
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 5000);
+    // FAST SSR: Return basic match data immediately (no Football API enrichment)
+    // This ensures SSR completes quickly and matches are always embedded
+    const matches = upcoming.map(match => ({
+      id: match.matchId,
+      homeTeam: `Match ${match.matchId}`, // Will be enriched client-side
+      awayTeam: 'vs TBD',
+      league: 'Football',
+      kickoff: new Date(match.startTime * 1000).toISOString(),
+      venue: 'TBA',
+      homeTeamBadge: '/default-badge.svg',
+      awayTeamBadge: '/default-badge.svg',
+      status: 'Not Started' as const
+    }));
 
-        const response = await fetch(`${FOOTBALL_DATA_BASE}/matches/${match.matchId}`, {
-          headers: { 'X-Auth-Token': FOOTBALL_DATA_API_KEY },
-          signal: controller.signal,
-          next: { revalidate: 1800 } // Cache 30min
-        });
+    console.log(`✅ [SSR] Returning ${matches.length} matches (basic data - fast!)`);
+    console.log(`[SSR] Client will enrich with team names in background\n`);
 
-        clearTimeout(timeoutId);
-
-        if (!response.ok) {
-          // Fallback data
-          return {
-            id: match.matchId,
-            homeTeam: 'Home Team',
-            awayTeam: 'Away Team',
-            league: 'Football',
-            kickoff: new Date(match.startTime * 1000).toISOString(),
-            venue: 'TBA',
-            homeTeamBadge: '/default-badge.svg',
-            awayTeamBadge: '/default-badge.svg',
-            status: 'Not Started' as const
-          };
-        }
-
-        const data = await response.json();
-        const m = data.match || data;
-
-        return {
-          id: match.matchId,
-          homeTeam: m?.homeTeam?.name || 'Home Team',
-          awayTeam: m?.awayTeam?.name || 'Away Team',
-          league: m.competition?.name || 'Football',
-          kickoff: m.utcDate || new Date(match.startTime * 1000).toISOString(),
-          venue: m.venue || 'TBA',
-          homeTeamBadge: m.homeTeam?.crest || '/default-badge.svg',
-          awayTeamBadge: m.awayTeam?.crest || '/default-badge.svg',
-          status: 'Not Started' as const
-        };
-      } catch (error) {
-        // Fallback on error (timeout, API failure, etc.)
-        const errorMsg = error instanceof Error ? error.message : 'Unknown';
-        console.warn(`[SSR] Match ${match.matchId} enrichment failed (${errorMsg}), using fallback`);
-
-        return {
-          id: match.matchId,
-          homeTeam: 'Home Team',
-          awayTeam: 'Away Team',
-          league: 'Football',
-          kickoff: new Date(match.startTime * 1000).toISOString(),
-          venue: 'TBA',
-          homeTeamBadge: '/default-badge.svg',
-          awayTeamBadge: '/default-badge.svg',
-          status: 'Not Started' as const
-        };
-      }
-    });
-
-    const enriched = await Promise.all(enrichPromises);
-    console.log(`✅ [SSR] Successfully enriched ${enriched.length} matches`);
-    console.log(`[SSR] Returning ${enriched.length} matches to client\n`);
-
-    return enriched;
+    return matches;
 
   } catch (error) {
     console.error('❌ [SSR] Error fetching matches:', error);

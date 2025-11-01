@@ -68,12 +68,28 @@ export default function Home({ initialMatches = [] }: HomeProps) {
       console.log(`[CLIENT] Sample match IDs:`, initialMatches.slice(0, 3).map(m => m.id));
     }
 
-    // If SSR provided matches, use them - NO REFETCH
+    // If SSR provided matches, use them immediately (STABLE!)
     if (initialMatches.length > 0) {
       console.log(`✅ [CLIENT] Using ${initialMatches.length} SSR matches (STABLE)`);
-      console.log(`[CLIENT] No fetch will occur - matches are embedded\n`);
+      console.log(`[CLIENT] Matches are embedded and displayed immediately\n`);
       lastFetchTimeRef.current = Date.now();
-      return; // CRITICAL: Return early, no event listeners, no fetching
+
+      // Background enrichment: Fetch full data from API to get real team names
+      console.log(`[CLIENT] Background: Enriching with team names from API...`);
+      fetch('/api/matches?limit=50', { cache: 'no-store' })
+        .then(res => res.ok ? res.json() : null)
+        .then(data => {
+          if (data?.matches && data.matches.length > 0) {
+            console.log(`✅ [CLIENT] Enriched ${data.matches.length} matches with team names`);
+            setMatches(data.matches);
+          }
+        })
+        .catch(err => {
+          console.warn('[CLIENT] Background enrichment failed (keeping basic data):', err);
+          // Keep basic SSR data if enrichment fails
+        });
+
+      return; // No polling, no visibility change
     }
 
     // Only if SSR failed - fetch on client
