@@ -94,13 +94,20 @@ async function enrichMatches(matches: { matchId: string; startTime: number }[], 
 
   console.log(`🌐 Enriching ${toEnrich.length} matches from Football-data.org (parallel)...`);
 
-  // PARALLEL FETCH - Much faster!
+  // PARALLEL FETCH with timeout protection
   const enrichPromises = toEnrich.map(async (match) => {
     try {
+      // 3 second timeout per match
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 3000);
+
       const response = await fetch(`${FOOTBALL_DATA_BASE}/matches/${match.matchId}`, {
         headers: { 'X-Auth-Token': FOOTBALL_DATA_API_KEY },
+        signal: controller.signal,
         next: { revalidate: 1800 } // Cache for 30 minutes
       });
+
+      clearTimeout(timeoutId);
 
       if (!response.ok) {
         console.log(`⚠️ Match ${match.matchId} not in API, using fallback`);
@@ -135,9 +142,16 @@ async function enrichMatches(matches: { matchId: string; startTime: number }[], 
       };
 
     } catch (error) {
-      console.error(`Error enriching match ${match.matchId}:`, error);
+      const errorMsg = error instanceof Error ? error.message : 'Unknown';
+      const isTimeout = errorMsg.includes('abort');
 
-      // Fallback on error
+      if (isTimeout) {
+        console.warn(`⏱️ Match ${match.matchId} enrichment timeout (>3s), using fallback`);
+      } else {
+        console.error(`❌ Match ${match.matchId} enrichment error: ${errorMsg}`);
+      }
+
+      // Fallback on error or timeout
       return {
         id: match.matchId,
         homeTeam: 'Home Team',
@@ -171,7 +185,7 @@ async function enrichMatches(matches: { matchId: string; startTime: number }[], 
 export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
-    const limit = Math.min(parseInt(searchParams.get('limit') || '5', 10), 20);
+    const limit = Math.min(parseInt(searchParams.get('limit') || '5', 10), 50);
 
     console.log(`\n📥 Fetching matches (limit: ${limit})\n`);
 
