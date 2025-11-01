@@ -41,12 +41,18 @@ export async function sendNotification(
   body: string,
   targetUrl?: string
 ): Promise<SendNotificationResult> {
+  console.log(`[SendNotif] 🚀 Sending notification to fid=${fid}, appFid=${appFid}`);
+
   // Get user's notification details from Redis
   const notificationDetails = await getNotificationDetails(fid, appFid);
 
   if (!notificationDetails) {
+    console.log(`[SendNotif] ❌ No token found for fid=${fid}, appFid=${appFid}`);
     return { state: 'no_token' };
   }
+
+  console.log(`[SendNotif] ✅ Token found: ${notificationDetails.token.substring(0, 20)}...`);
+  console.log(`[SendNotif] 🌐 Notification URL: ${notificationDetails.url}`);
 
   // Use provided targetUrl or default to home page
   const url = targetUrl || process.env.NEXT_PUBLIC_APP_URL || 'https://league.seershub.com';
@@ -62,7 +68,10 @@ export async function sendNotification(
     tokens: [notificationDetails.token],
   };
 
+  console.log(`[SendNotif] 📦 Payload: ${JSON.stringify(payload)}`);
+
   try {
+    const startTime = Date.now();
     const response = await fetch(notificationDetails.url, {
       method: 'POST',
       headers: {
@@ -70,27 +79,34 @@ export async function sendNotification(
       },
       body: JSON.stringify(payload),
     });
+    const duration = Date.now() - startTime;
+
+    console.log(`[SendNotif] 📡 Response status: ${response.status} (${duration}ms)`);
 
     if (response.status === 200) {
       const responseData: SendNotificationResponse = await response.json();
+      console.log(`[SendNotif] 📊 Response data: ${JSON.stringify(responseData)}`);
 
       if (responseData.result.rateLimitedTokens.length > 0) {
+        console.log(`[SendNotif] ⏱️ Rate limited!`);
         return { state: 'rate_limit' };
       }
 
       if (responseData.result.invalidTokens.length > 0) {
         // Token is invalid, should be removed from database
-        console.warn(`Invalid token for fid ${fid}, appFid ${appFid}`);
+        console.warn(`[SendNotif] ⚠️ Invalid token for fid ${fid}, appFid ${appFid}`);
         return { state: 'error', error: 'Invalid token' };
       }
 
+      console.log(`[SendNotif] ✅ Notification sent successfully!`);
       return { state: 'success' };
     } else {
       const errorData = await response.json().catch(() => ({}));
+      console.error(`[SendNotif] ❌ Error response: ${JSON.stringify(errorData)}`);
       return { state: 'error', error: errorData };
     }
   } catch (error) {
-    console.error('Error sending notification:', error);
+    console.error('[SendNotif] ❌ Exception:', error);
     return { state: 'error', error };
   }
 }
