@@ -44,20 +44,24 @@ interface Match {
  */
 async function getUpcomingRegisteredMatches(): Promise<{ matchId: string; startTime: number }[]> {
   const currentBlock = await publicClient.getBlockNumber();
-  const deploymentBlock = BigInt(process.env.NEXT_PUBLIC_DEPLOYMENT_BLOCK || '0');
+
+  // CRITICAL: Use separate deployment block for matches vs leaderboard
+  // Leaderboard needs ALL users from contract start
+  // Matches only needs RECENT valid matches to avoid old test data
+  const matchDeploymentBlock = BigInt(process.env.NEXT_PUBLIC_MATCH_DEPLOYMENT_BLOCK || process.env.NEXT_PUBLIC_DEPLOYMENT_BLOCK || '0');
 
   // CRITICAL FIX: Limit block range to prevent timeout
-  // Max 50K blocks (~7 days) to avoid Alchemy RPC timeout/rate limit
-  const maxBlockRange = 50000n;
+  // Max 100K blocks (~8 days) to avoid Alchemy RPC timeout/rate limit
+  const maxBlockRange = 100000n;
   let fromBlock: bigint;
 
-  if (deploymentBlock > 0n) {
-    fromBlock = deploymentBlock;
-    console.log(`[API] Using deployment block: ${deploymentBlock}`);
+  if (matchDeploymentBlock > 0n) {
+    fromBlock = matchDeploymentBlock;
+    console.log(`[API] Using match deployment block: ${matchDeploymentBlock}`);
   } else {
     fromBlock = currentBlock - maxBlockRange;
-    console.warn(`⚠️ [API] NEXT_PUBLIC_DEPLOYMENT_BLOCK not set! Using last ${maxBlockRange} blocks`);
-    console.warn(`⚠️ [API] Set NEXT_PUBLIC_DEPLOYMENT_BLOCK in Vercel for better performance`);
+    console.warn(`⚠️ [API] NEXT_PUBLIC_MATCH_DEPLOYMENT_BLOCK not set! Using last ${maxBlockRange} blocks`);
+    console.warn(`⚠️ [API] Set NEXT_PUBLIC_MATCH_DEPLOYMENT_BLOCK in Vercel to avoid old test matches`);
   }
 
   const blockRange = currentBlock - fromBlock;
