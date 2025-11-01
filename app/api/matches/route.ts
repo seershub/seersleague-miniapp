@@ -207,14 +207,15 @@ export async function GET(request: Request) {
     // Step 2: Enrich with Football-data.org
     const enriched = await enrichMatches(upcoming, limit);
 
-    // Step 3: Final safety filter - remove any that may have started during enrichment
-    const now = Math.floor(Date.now() / 1000);
-    const final = enriched.filter((_, idx) => upcoming[idx].startTime > now);
+    // REMOVED: Final safety filter that caused race condition
+    // The filter in getUpcomingRegisteredMatches() already handles upcoming matches
+    // Re-filtering here after enrichment caused matches to disappear if they started during enrichment
+    // Users should see matches even if they just started (they might have predictions on them)
 
     return NextResponse.json({
-      matches: final,
+      matches: enriched,
       total: upcoming.length,
-      returned: final.length,
+      returned: enriched.length,
       hasMore: upcoming.length > limit,
       registeredTotal: upcoming.length
     });
