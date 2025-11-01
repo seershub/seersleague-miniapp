@@ -60,101 +60,42 @@ export default function Home({ initialMatches = [] }: HomeProps) {
     }
   }, []);
 
-  // Matches Fetch (ONLY when needed)
+  // Matches Fetch (ONLY ONCE on mount)
   useEffect(() => {
-    console.log('[Matches] Effect initialized - checking SSR matches...');
+    console.log('[Matches] Component mounted, initialMatches:', initialMatches.length);
 
-    // If SSR provided matches, use them and don't fetch immediately
+    // If SSR provided matches, use them - NO REFETCH
     if (initialMatches.length > 0) {
-      console.log(`✅ Using ${initialMatches.length} SSR matches (stable, no refetch)`);
+      console.log(`✅ Using ${initialMatches.length} SSR matches (STABLE - no background fetch)`);
       lastFetchTimeRef.current = Date.now();
-    } else {
-      // Only fetch if no SSR matches
-      console.log('⚠️ No SSR matches, fetching from API...');
-
-      const fetchMatches = async () => {
-        try {
-          setLoading(true);
-          console.log('[Client] Fetching matches because SSR provided none...');
-
-          const response = await fetch('/api/matches?limit=50', {
-            cache: 'no-store'
-          });
-
-          if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
-          }
-
-          const data = await response.json();
-          const matchesArray: Match[] = data.matches || [];
-
-          console.log(`✅ Fetched ${matchesArray.length} matches from API`);
-
-          setMatches(matchesArray);
-          setFilteredMatches(matchesArray);
-          setError(null);
-          lastFetchTimeRef.current = Date.now();
-
-        } catch (err) {
-          console.error('❌ Error fetching matches:', err);
-          setError(err instanceof Error ? err.message : 'Failed to load matches');
-        } finally {
-          setLoading(false);
-        }
-      };
-
-      fetchMatches();
+      return; // CRITICAL: Return early, no event listeners, no fetching
     }
 
-    // Smart refresh: Only when user returns to tab after 5+ minutes
-    const handleVisibilityChange = async () => {
-      if (document.visibilityState === 'visible') {
-        const timeSinceLastFetch = Date.now() - lastFetchTimeRef.current;
-        const FIVE_MINUTES = 5 * 60 * 1000;
+    // Only if SSR failed - fetch on client
+    console.log('⚠️ No SSR matches - fetching from API...');
+    setLoading(true);
 
-        // If user was away for 5+ minutes, refresh matches
-        if (timeSinceLastFetch > FIVE_MINUTES) {
-          console.log('🔄 User returned after 5+ min, refreshing matches...');
-          setRefreshing(true);
+    fetch('/api/matches?limit=50', { cache: 'no-store' })
+      .then(res => {
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        return res.json();
+      })
+      .then(data => {
+        const matchesArray: Match[] = data.matches || [];
+        console.log(`✅ Fetched ${matchesArray.length} matches`);
+        setMatches(matchesArray);
+        setError(null);
+        lastFetchTimeRef.current = Date.now();
+      })
+      .catch(err => {
+        console.error('❌ Fetch error:', err);
+        setError(err instanceof Error ? err.message : 'Failed to load');
+      })
+      .finally(() => setLoading(false));
 
-          try {
-            const response = await fetch('/api/matches?limit=50', {
-              cache: 'no-store'
-            });
-
-            if (response.ok) {
-              const data = await response.json();
-              const matchesArray: Match[] = data.matches || [];
-
-              // Only update if there are changes
-              setMatches(prevMatches => {
-                if (JSON.stringify(prevMatches) !== JSON.stringify(matchesArray)) {
-                  console.log(`✅ Updated: ${matchesArray.length} matches`);
-                  setFilteredMatches(matchesArray);
-                  return matchesArray;
-                } else {
-                  console.log('✅ No changes detected');
-                  return prevMatches;
-                }
-              });
-
-              lastFetchTimeRef.current = Date.now();
-            }
-          } catch (err) {
-            console.error('❌ Background refresh failed:', err);
-          } finally {
-            setRefreshing(false);
-          }
-        }
-      }
-    };
-
-    document.addEventListener('visibilitychange', handleVisibilityChange);
-
-    return () => {
-      document.removeEventListener('visibilitychange', handleVisibilityChange);
-    };
-  }, [initialMatches.length]);
+    // NO POLLING, NO VISIBILITY CHANGE - Matches stay embedded!
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // ONLY RUN ONCE on mount
 
   return (
     <div className="min-h-screen bg-black">

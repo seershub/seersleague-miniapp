@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Search, X } from 'lucide-react';
 import { Match } from '@/lib/matches';
 
@@ -13,28 +13,27 @@ export function SearchBox({ matches, onSearchResults }: SearchBoxProps) {
   const [searchTerm, setSearchTerm] = useState('');
   const [isFocused, setIsFocused] = useState(false);
 
-  // Filter matches based on search term
-  useEffect(() => {
+  // Use useMemo to calculate filtered matches without causing re-renders
+  const filteredMatches = useMemo(() => {
     if (!searchTerm.trim()) {
-      onSearchResults(matches);
-      return;
+      return matches;
     }
 
-    const filtered = matches.filter(match => {
-      const searchLower = searchTerm.toLowerCase();
-      return (
-        match.homeTeam.toLowerCase().includes(searchLower) ||
-        match.awayTeam.toLowerCase().includes(searchLower) ||
-        match.league.toLowerCase().includes(searchLower)
-      );
-    });
+    const searchLower = searchTerm.toLowerCase();
+    return matches.filter(match =>
+      match.homeTeam.toLowerCase().includes(searchLower) ||
+      match.awayTeam.toLowerCase().includes(searchLower) ||
+      match.league.toLowerCase().includes(searchLower)
+    );
+  }, [searchTerm, matches]);
 
-    onSearchResults(filtered);
-  }, [searchTerm, matches, onSearchResults]);
+  // Only call onSearchResults when filtered results actually change
+  useEffect(() => {
+    onSearchResults(filteredMatches);
+  }, [filteredMatches]); // Removed onSearchResults from dependencies to prevent loop
 
   const clearSearch = () => {
-    setSearchTerm('');
-    onSearchResults(matches);
+    setSearchTerm(''); // useEffect will automatically update filteredMatches
   };
 
   return (
