@@ -27,10 +27,11 @@ async function generateLeaderboardFromContract(): Promise<{ leaderboard: Leaderb
     const currentBlock = await publicClient.getBlockNumber();
 
     // CRITICAL FIX: Limit block range to prevent RPC timeout
-    // Match disappearing fix proved 100K blocks can timeout
-    // Use 200K as fallback (safer than 5M but covers ~1.5 days)
+    // EMERGENCY UPDATE: 200K only covered 1.5 days → still showing 4 users
+    // Increased to 1M blocks (~7.5 days) to catch more users
+    // With retry mechanism, this should work reliably
     // PERMANENT SOLUTION: Set NEXT_PUBLIC_DEPLOYMENT_BLOCK in Vercel env
-    const maxFallbackRange = 200000n;
+    const maxFallbackRange = 1000000n; // 1M blocks = ~7.5 days on Base
     let fromBlock: bigint;
 
     if (deploymentBlock > 0n) {
