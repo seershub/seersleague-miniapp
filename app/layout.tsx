@@ -4,7 +4,7 @@ import { MiniKitProvider } from '@/components/MiniKitProvider';
 import { Toaster } from 'react-hot-toast';
 import Link from 'next/link';
 import Image from 'next/image';
-import { Home, Trophy, User } from 'lucide-react';
+import { Home, Trophy, User, Vault } from 'lucide-react';
 import Header from '@/components/Header';
 import { OnboardingModal } from '@/components/OnboardingModal';
 
@@ -87,23 +87,30 @@ export default function RootLayout({
             <nav className="fixed bottom-0 left-0 right-0 z-50 bg-black/95 backdrop-blur-xl border-t border-white/10">
               <div className="max-w-4xl mx-auto">
                 <div className="flex items-center justify-around h-16">
-                  <Link 
+                  <Link
                     href="/"
-                    className="flex flex-col items-center gap-1 px-4 py-2 text-gray-400 hover:text-blue-400 transition-colors"
+                    className="flex flex-col items-center gap-1 px-3 py-2 text-gray-400 hover:text-blue-400 transition-colors"
                   >
                     <Home className="w-5 h-5" />
                     <span className="text-xs font-medium">Home</span>
                   </Link>
-                  <Link 
+                  <Link
+                    href="/vault"
+                    className="flex flex-col items-center gap-1 px-3 py-2 text-gray-400 hover:text-yellow-400 transition-colors"
+                  >
+                    <Vault className="w-5 h-5" />
+                    <span className="text-xs font-medium">Vault</span>
+                  </Link>
+                  <Link
                     href="/leaderboard"
-                    className="flex flex-col items-center gap-1 px-4 py-2 text-gray-400 hover:text-blue-400 transition-colors"
+                    className="flex flex-col items-center gap-1 px-3 py-2 text-gray-400 hover:text-blue-400 transition-colors"
                   >
                     <Trophy className="w-5 h-5" />
                     <span className="text-xs font-medium">Leaderboard</span>
                   </Link>
-                  <Link 
+                  <Link
                     href="/profile"
-                    className="flex flex-col items-center gap-1 px-4 py-2 text-gray-400 hover:text-blue-400 transition-colors"
+                    className="flex flex-col items-center gap-1 px-3 py-2 text-gray-400 hover:text-blue-400 transition-colors"
                   >
                     <User className="w-5 h-5" />
                     <span className="text-xs font-medium">Profile</span>
