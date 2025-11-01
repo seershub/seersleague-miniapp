@@ -42,17 +42,15 @@ export async function getNotificationDetails(
   appFid: number
 ): Promise<NotificationDetails | null> {
   const key = getNotificationKey(fid, appFid);
-  const data = await redis.get<string>(key);
+
+  // Upstash Redis automatically parses JSON, so we don't need JSON.parse()
+  const data = await redis.get<NotificationDetails>(key);
 
   if (!data) {
     return null;
   }
 
-  try {
-    return JSON.parse(data);
-  } catch {
-    return null;
-  }
+  return data;
 }
 
 /**
