@@ -26,21 +26,27 @@ async function fetchMatchesServer(): Promise<Match[]> {
   while (retryCount < maxRetries) {
     try {
       const currentBlock = await publicClient.getBlockNumber();
-      const deploymentBlock = BigInt(process.env.NEXT_PUBLIC_DEPLOYMENT_BLOCK || '0');
+
+      // CRITICAL: Use separate deployment block for matches vs leaderboard
+      // Leaderboard needs ALL users from contract start (37043123)
+      // Matches only needs RECENT valid matches to avoid old test data
+      const matchDeploymentBlock = BigInt(process.env.NEXT_PUBLIC_MATCH_DEPLOYMENT_BLOCK || '0');
+      const leaderboardDeploymentBlock = BigInt(process.env.NEXT_PUBLIC_DEPLOYMENT_BLOCK || '0');
+      const deploymentBlock = matchDeploymentBlock > 0n ? matchDeploymentBlock : leaderboardDeploymentBlock;
 
       // CRITICAL FIX: Limit block range to prevent timeout
-      // Max 50K blocks (~7 days) even if deployment block not set
-      // This prevents Alchemy RPC timeout/rate limit issues
-      const maxBlockRange = 50000n;
+      // Max 100K blocks (~8 days) to get valid matches while avoiding old test data
+      const maxBlockRange = 100000n;
       let fromBlock: bigint;
 
       if (deploymentBlock > 0n) {
+        const blockSource = matchDeploymentBlock > 0n ? 'NEXT_PUBLIC_MATCH_DEPLOYMENT_BLOCK' : 'NEXT_PUBLIC_DEPLOYMENT_BLOCK';
         fromBlock = deploymentBlock;
-        console.log(`[SSR] Using deployment block: ${fromBlock}`);
+        console.log(`[SSR] Using ${blockSource}: ${fromBlock}`);
       } else {
         fromBlock = currentBlock - maxBlockRange;
-        console.warn(`⚠️ [SSR] NEXT_PUBLIC_DEPLOYMENT_BLOCK not set! Using last ${maxBlockRange} blocks`);
-        console.warn(`⚠️ [SSR] Set NEXT_PUBLIC_DEPLOYMENT_BLOCK in Vercel for better performance`);
+        console.warn(`⚠️ [SSR] No deployment block set! Using last ${maxBlockRange} blocks (~8 days)`);
+        console.warn(`⚠️ [SSR] Set NEXT_PUBLIC_MATCH_DEPLOYMENT_BLOCK in Vercel to avoid old test matches`);
       }
 
       const blockRange = currentBlock - fromBlock;
