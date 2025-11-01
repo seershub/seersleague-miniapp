@@ -10,18 +10,6 @@
       "0x2F8b89f74C0540B638CF808515dFabe565796aAA"
     ]
   },
-  "frame": {
-    "version": "next",
-    "name": "SeersLeague",
-    "iconUrl": "https://league.seershub.com/icon-512.png",
-    "homeUrl": "https://league.seershub.com",
-    "imageUrl": "https://league.seershub.com/icon-1024.png",
-    "buttonTitle": "Open SeersLeague",
-    "splashImageUrl": "https://league.seershub.com/splash.png",
-    "splashBackgroundColor": "#0052FF",
-    "webhookUrl": "https://league.seershub.com/api/webhook",
-    "notificationUrl": "https://league.seershub.com"
-  },
   "miniapp": {
     "version": "1",
     "name": "SeersLeague",
