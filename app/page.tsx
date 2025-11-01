@@ -76,7 +76,7 @@ async function fetchMatchesServer(): Promise<Match[]> {
             venue: 'TBA',
             homeTeamBadge: '/default-badge.svg',
             awayTeamBadge: '/default-badge.svg',
-            status: 'Not Started'
+            status: 'Not Started' as const
           };
         }
 
@@ -92,7 +92,7 @@ async function fetchMatchesServer(): Promise<Match[]> {
           venue: m.venue || 'TBA',
           homeTeamBadge: m.homeTeam?.crest || '/default-badge.svg',
           awayTeamBadge: m.awayTeam?.crest || '/default-badge.svg',
-          status: 'Not Started'
+          status: 'Not Started' as const
         };
       } catch {
         // Fallback on error
@@ -105,7 +105,7 @@ async function fetchMatchesServer(): Promise<Match[]> {
           venue: 'TBA',
           homeTeamBadge: '/default-badge.svg',
           awayTeamBadge: '/default-badge.svg',
-          status: 'Not Started'
+          status: 'Not Started' as const
         };
       }
     });
