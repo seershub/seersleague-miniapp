@@ -27,27 +27,15 @@ async function fetchMatchesServer(): Promise<Match[]> {
     try {
       const currentBlock = await publicClient.getBlockNumber();
 
-      // CRITICAL: Use separate deployment block for matches vs leaderboard
-      // Leaderboard needs ALL users from contract start (37043123)
-      // Matches only needs RECENT valid matches to avoid old test data
-      const matchDeploymentBlock = BigInt(process.env.NEXT_PUBLIC_MATCH_DEPLOYMENT_BLOCK || process.env.NEXT_PUBLIC_DEPLOYMENT_BLOCK || '0');
+      // CRITICAL: ALWAYS use RECENT blocks for matches (ignore deployment block)
+      // Leaderboard uses NEXT_PUBLIC_DEPLOYMENT_BLOCK for ALL users
+      // Matches MUST scan recent blocks to catch newly registered matches
+      // This ensures newly registered matches appear immediately
+      const maxBlockRange = 200000n; // Last ~24 hours on Base
+      const fromBlock = currentBlock - maxBlockRange;
 
-      // CRITICAL FIX: Limit block range to prevent timeout
-      // Max 100K blocks (~8 days) to get recent valid matches
-      // This avoids old test matches that cause mockup data
-      const maxBlockRange = 100000n;
-      let fromBlock: bigint;
-
-      if (matchDeploymentBlock > 0n) {
-        // Use match-specific deployment block if set
-        fromBlock = matchDeploymentBlock;
-        console.log(`[SSR] Using match deployment block: ${fromBlock}`);
-      } else {
-        // Fallback: scan last 100K blocks for recent matches
-        fromBlock = currentBlock - maxBlockRange;
-        console.warn(`⚠️ [SSR] NEXT_PUBLIC_MATCH_DEPLOYMENT_BLOCK not set! Using last ${maxBlockRange} blocks`);
-        console.warn(`⚠️ [SSR] Set NEXT_PUBLIC_MATCH_DEPLOYMENT_BLOCK in Vercel to avoid old test matches`);
-      }
+      console.log(`[SSR] Scanning RECENT blocks for matches: last ${maxBlockRange} blocks`);
+      console.log(`[SSR] From block ${fromBlock} to ${currentBlock}`);
 
       const blockRange = currentBlock - fromBlock;
       console.log(`[SSR] Scanning blocks ${fromBlock} to ${currentBlock} (${blockRange} blocks)`);

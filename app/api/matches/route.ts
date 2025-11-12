@@ -45,27 +45,14 @@ interface Match {
 async function getUpcomingRegisteredMatches(): Promise<{ matchId: string; startTime: number }[]> {
   const currentBlock = await publicClient.getBlockNumber();
 
-  // CRITICAL: Use separate deployment block for matches vs leaderboard
-  // Leaderboard needs ALL users from contract start
-  // Matches only needs RECENT valid matches to avoid old test data
-  const matchDeploymentBlock = BigInt(process.env.NEXT_PUBLIC_MATCH_DEPLOYMENT_BLOCK || process.env.NEXT_PUBLIC_DEPLOYMENT_BLOCK || '0');
+  // CRITICAL: ALWAYS scan RECENT blocks for matches (ignore deployment block)
+  // Leaderboard uses NEXT_PUBLIC_DEPLOYMENT_BLOCK for ALL users
+  // Matches MUST scan recent blocks to catch newly registered matches
+  const maxBlockRange = 200000n; // Last ~24 hours on Base
+  const fromBlock = currentBlock - maxBlockRange;
 
-  // CRITICAL FIX: Limit block range to prevent timeout
-  // Max 100K blocks (~8 days) to avoid Alchemy RPC timeout/rate limit
-  const maxBlockRange = 100000n;
-  let fromBlock: bigint;
-
-  if (matchDeploymentBlock > 0n) {
-    fromBlock = matchDeploymentBlock;
-    console.log(`[API] Using match deployment block: ${matchDeploymentBlock}`);
-  } else {
-    fromBlock = currentBlock - maxBlockRange;
-    console.warn(`⚠️ [API] NEXT_PUBLIC_MATCH_DEPLOYMENT_BLOCK not set! Using last ${maxBlockRange} blocks`);
-    console.warn(`⚠️ [API] Set NEXT_PUBLIC_MATCH_DEPLOYMENT_BLOCK in Vercel to avoid old test matches`);
-  }
-
-  const blockRange = currentBlock - fromBlock;
-  console.log(`[API] Scanning blocks ${fromBlock} to ${currentBlock} (${blockRange} blocks)`);
+  console.log(`[API] Scanning RECENT blocks for matches: last ${maxBlockRange} blocks`);
+  console.log(`[API] From block ${fromBlock} to ${currentBlock}`);
 
   // Single fetch - much faster for matches
   const events = await publicClient.getLogs({
