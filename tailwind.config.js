@@ -8,16 +8,16 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
-        // Modern gold palette
+        // Premium Gold Palette
         gold: {
           50: '#FFFBEB',
           100: '#FEF3C7',
-          200: '#FDE68A',
+          200: '#FFD93D',  // Primary Gold Light
           300: '#FCD34D',
           400: '#FBBF24',
-          500: '#F59E0B',
+          500: '#F5A623',  // Primary Gold
           600: '#D97706',
-          700: '#B45309',
+          700: '#C78600',  // Primary Gold Dark
           800: '#92400E',
           900: '#78350F',
         },
@@ -49,27 +49,42 @@ const config: Config = {
           900: '#18181B',
           950: '#09090B',
         },
+        // Premium Accent Colors
+        accent: {
+          success: '#00D26A',   // Success/Correct
+          error: '#FF4757',     // Error/Wrong
+          info: '#3B82F6',      // Info/Live
+          warning: '#FFB020',   // Warning
+          orange: '#FF6B35',    // Accent gradient end
+        },
       },
       backgroundImage: {
         'gradient-radial': 'radial-gradient(var(--tw-gradient-stops))',
         'gradient-conic': 'conic-gradient(from 180deg at 50% 50%, var(--tw-gradient-stops))',
-        'hero-gradient': 'linear-gradient(135deg, #0F172A 0%, #1E293B 50%, #334155 100%)',
-        'card-gradient': 'linear-gradient(145deg, #1E293B 0%, #334155 100%)',
-        'gold-gradient': 'linear-gradient(135deg, #F59E0B 0%, #D97706 100%)',
-        'gold-shine': 'linear-gradient(45deg, #F59E0B 0%, #FBBF24 50%, #F59E0B 100%)',
+        // Premium Background Gradients
+        'premium-dark': 'linear-gradient(180deg, #0A0A0F 0%, #12121A 50%, #0D0D14 100%)',
+        'hero-gradient': 'linear-gradient(135deg, #0A0A0F 0%, #12121A 50%, #0D0D14 100%)',
+        'card-gradient': 'linear-gradient(145deg, rgba(255,255,255,0.05) 0%, rgba(255,255,255,0.02) 100%)',
+        // Gold Gradients
+        'gold-gradient': 'linear-gradient(135deg, #F5A623 0%, #FF6B35 100%)',
+        'gold-shine': 'linear-gradient(45deg, #F5A623 0%, #FFD93D 50%, #F5A623 100%)',
+        'gold-subtle': 'linear-gradient(135deg, #F5A623 0%, #D97706 100%)',
       },
       boxShadow: {
-        'gold-glow': '0 0 20px rgba(245, 158, 11, 0.3)',
-        'gold-glow-lg': '0 0 40px rgba(245, 158, 11, 0.4)',
+        'gold-glow': '0 0 20px rgba(245, 166, 35, 0.3)',
+        'gold-glow-lg': '0 0 40px rgba(245, 166, 35, 0.4)',
+        'gold-glow-intense': '0 0 30px rgba(245, 166, 35, 0.5)',
         'card-shadow': '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
         'card-hover': '0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)',
         'inner-glow': 'inset 0 1px 0 0 rgba(255, 255, 255, 0.1)',
+        'premium': '0 4px 30px rgba(0, 0, 0, 0.3)',
       },
       animation: {
         'fade-in': 'fadeIn 0.5s ease-in-out',
         'slide-up': 'slideUp 0.6s ease-out',
         'bounce-gentle': 'bounceGentle 2s infinite',
         'pulse-glow': 'pulseGlow 2s infinite',
+        'glow': 'glow 2s ease-in-out infinite alternate',
         'float': 'float 3s ease-in-out infinite',
         'shimmer': 'shimmer 3s linear infinite',
         'shimmer-fast': 'shimmer 2s linear infinite',
@@ -107,6 +122,10 @@ const config: Config = {
         pulseGlow: {
           '0%, 100%': { boxShadow: '0 0 20px rgba(245, 158, 11, 0.3)' },
           '50%': { boxShadow: '0 0 40px rgba(245, 158, 11, 0.6)' },
+        },
+        glow: {
+          '0%': { boxShadow: '0 0 20px rgba(245, 166, 35, 0.3)' },
+          '100%': { boxShadow: '0 0 30px rgba(245, 166, 35, 0.6)' },
         },
         float: {
           '0%, 100%': { transform: 'translateY(0px)' },

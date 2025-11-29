@@ -87,14 +87,14 @@ export default function LeaderboardPage() {
   const getRankIcon = (rank: number) => {
     switch (rank) {
       case 1:
-        return <Trophy className="w-6 h-6 text-yellow-400" />;
+        return <Trophy className="w-6 h-6 text-gold-500" />;
       case 2:
-        return <Medal className="w-6 h-6 text-gray-300" />;
+        return <Medal className="w-6 h-6 text-gray-400" />;
       case 3:
-        return <Award className="w-6 h-6 text-amber-600" />;
+        return <Award className="w-6 h-6 text-amber-700" />;
       default:
         return (
-          <span className="text-gray-400 font-bold text-lg">#{rank}</span>
+          <span className="text-white/40 font-bold text-lg">#{rank}</span>
         );
     }
   };
@@ -102,8 +102,8 @@ export default function LeaderboardPage() {
   const getRankBadge = (rank: number) => {
     if (rank === 1) {
       return (
-        <div className="absolute -top-2 -right-2 w-8 h-8 bg-gradient-to-br from-yellow-400 to-yellow-600 rounded-full flex items-center justify-center shadow-lg shadow-yellow-500/50 animate-pulse">
-          <span className="text-xs font-bold text-black">👑</span>
+        <div className="absolute -top-2 -right-2 w-8 h-8 bg-gold-gradient rounded-full flex items-center justify-center shadow-gold-glow-intense animate-bounce-slow">
+          <span className="text-xs font-bold text-white">👑</span>
         </div>
       );
     }
@@ -115,17 +115,17 @@ export default function LeaderboardPage() {
       <div className="max-w-4xl mx-auto px-4 py-8 pb-24">
         {/* Header */}
         <header className="mb-8 text-center">
-          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full mb-4 bg-gradient-to-r from-yellow-500/10 to-amber-500/10 border border-yellow-500/20">
-            <Trophy className="w-5 h-5 text-yellow-400" />
-            <span className="text-sm font-medium text-yellow-400">Championship</span>
+          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full mb-4 glass-effect border border-gold-500/20">
+            <Trophy className="w-5 h-5 text-gold-500" />
+            <span className="text-sm font-semibold text-gold-500 uppercase tracking-wide">Championship</span>
           </div>
 
-          <h1 className="text-4xl sm:text-5xl font-bold mb-3">
-            <span className="bg-gradient-to-r from-yellow-400 via-amber-400 to-yellow-400 bg-clip-text text-transparent">
+          <h1 className="text-4xl sm:text-5xl font-bold mb-3 tracking-tight">
+            <span className="gold-text">
               Leaderboard
             </span>
           </h1>
-          <p className="text-gray-400 text-lg">
+          <p className="text-white/60 text-lg">
             Top prediction champions competing for glory
           </p>
 
@@ -138,29 +138,26 @@ export default function LeaderboardPage() {
 
         {/* Stats Overview */}
         <div className="grid grid-cols-3 gap-4 mb-8">
-          <div className="relative rounded-2xl overflow-hidden bg-gradient-to-br from-purple-500/10 to-pink-500/5 border border-purple-500/20 p-4">
-            <div className="absolute inset-0 bg-gradient-to-b from-purple-500/[0.02] to-transparent"></div>
-            <div className="relative z-10 text-center">
-              <div className="text-2xl sm:text-3xl font-bold text-purple-400">
+          <div className="relative glass-card hover:scale-105 transition-transform duration-300 p-4 sm:p-5">
+            <div className="text-center">
+              <div className="text-2xl sm:text-3xl font-bold text-gold-500 mb-1 tabular-nums">
                 {data?.totalPlayers || 0}
               </div>
-              <div className="text-xs sm:text-sm text-gray-400 mt-1">Total Players</div>
+              <div className="text-xs sm:text-sm text-white/40 font-medium">Total Players</div>
             </div>
           </div>
 
-          <div className="relative rounded-2xl overflow-hidden bg-gradient-to-br from-green-500/10 to-emerald-500/5 border border-green-500/20 p-4">
-            <div className="absolute inset-0 bg-gradient-to-b from-green-500/[0.02] to-transparent"></div>
-            <div className="relative z-10 text-center">
-              <TrendingUp className="w-6 h-6 text-green-400 mx-auto mb-1" />
-              <div className="text-xs sm:text-sm text-gray-400">Live Rankings</div>
+          <div className="relative glass-card hover:scale-105 transition-transform duration-300 p-4 sm:p-5">
+            <div className="text-center">
+              <TrendingUp className="w-6 h-6 sm:w-7 sm:h-7 text-accent-success mx-auto mb-1" />
+              <div className="text-xs sm:text-sm text-white/40 font-medium">Live Rankings</div>
             </div>
           </div>
 
-          <div className="relative rounded-2xl overflow-hidden bg-gradient-to-br from-yellow-500/10 to-amber-500/5 border border-yellow-500/20 p-4">
-            <div className="absolute inset-0 bg-gradient-to-b from-yellow-500/[0.02] to-transparent"></div>
-            <div className="relative z-10 text-center">
-              <Zap className="w-6 h-6 text-yellow-400 mx-auto mb-1" />
-              <div className="text-xs sm:text-sm text-gray-400">On-Chain</div>
+          <div className="relative glass-card hover:scale-105 transition-transform duration-300 p-4 sm:p-5">
+            <div className="text-center">
+              <Zap className="w-6 h-6 sm:w-7 sm:h-7 text-gold-500 mx-auto mb-1" />
+              <div className="text-xs sm:text-sm text-white/40 font-medium">On-Chain</div>
             </div>
           </div>
         </div>
@@ -212,22 +209,19 @@ export default function LeaderboardPage() {
         )}
 
         {/* Leaderboard */}
-        <div className="relative rounded-2xl overflow-hidden bg-gradient-to-br from-gray-900/50 to-gray-800/30 border border-gray-700/50">
-          <div className="absolute inset-0 bg-gradient-to-b from-yellow-500/[0.02] to-transparent"></div>
-
-          <div className="relative z-10 p-6">
-            <div className="flex items-center justify-between mb-6">
-              <h2 className="text-xl font-bold text-white">Top 65 Champions</h2>
-              <div className="flex items-center gap-2 px-3 py-1 rounded-full bg-yellow-500/10 border border-yellow-500/20">
-                <div className="w-2 h-2 bg-yellow-400 rounded-full animate-pulse"></div>
-                <span className="text-xs text-yellow-400 font-medium">Live</span>
-              </div>
+        <div className="relative glass-card p-6">
+          <div className="flex items-center justify-between mb-6">
+            <h2 className="text-xl font-bold text-white">Top 65 Champions</h2>
+            <div className="flex items-center gap-2 px-3 py-1.5 rounded-full glass-effect border border-accent-info/20">
+              <div className="w-2 h-2 bg-accent-info rounded-full animate-pulse"></div>
+              <span className="text-xs text-accent-info font-semibold uppercase tracking-wide">Live</span>
             </div>
+          </div>
 
             {loading ? (
               <div className="flex flex-col items-center justify-center py-12">
-                <div className="w-12 h-12 border-4 border-yellow-500/20 border-t-yellow-500 rounded-full animate-spin mb-4"></div>
-                <span className="text-gray-400">Loading champions...</span>
+                <div className="spinner w-12 h-12 mb-4"></div>
+                <span className="text-white/60">Loading champions...</span>
               </div>
             ) : !data || data.topPlayers.length === 0 ? (
               <div className="text-center py-12">
@@ -244,13 +238,16 @@ export default function LeaderboardPage() {
                     <div
                       key={entry.address}
                       className={`
-                        relative group
-                        rounded-xl p-4 transition-all duration-300
-                        ${entry.rank <= 3
-                          ? 'bg-gradient-to-r from-yellow-500/10 to-amber-500/5 border-2 border-yellow-500/30 hover:border-yellow-500/50'
+                        relative group rounded-xl p-4 transition-all duration-300
+                        ${entry.rank === 1
+                          ? 'bg-gradient-to-r from-gold-500/15 to-accent-orange/10 border-2 gold-border-glow hover:shadow-gold-glow-strong'
+                          : entry.rank === 2
+                          ? 'bg-gradient-to-r from-gray-400/10 to-gray-500/5 border-2 border-gray-400/30 hover:border-gray-400/50'
+                          : entry.rank === 3
+                          ? 'bg-gradient-to-r from-amber-700/10 to-amber-800/5 border-2 border-amber-700/30 hover:border-amber-700/50'
                           : isUserEntry
-                            ? 'bg-gradient-to-r from-blue-500/10 to-cyan-500/5 border-2 border-blue-500/30 hover:border-blue-500/50'
-                            : 'bg-gray-800/50 border border-gray-700/50 hover:bg-gray-800/70 hover:border-gray-600/50'
+                            ? 'bg-gradient-to-r from-accent-info/10 to-cyan-500/5 border-2 border-accent-info/30 hover:border-accent-info/50'
+                            : 'glass-effect border border-white/5 hover:border-white/10'
                         }
                       `}
                     >
@@ -284,10 +281,10 @@ export default function LeaderboardPage() {
                         {/* Stats */}
                         <div className="flex items-center gap-4 sm:gap-6 text-sm">
                           <div className="text-center">
-                            <div className={`font-bold ${entry.accuracy >= 80 ? 'text-green-400' : entry.accuracy >= 60 ? 'text-yellow-400' : 'text-gray-400'}`}>
+                            <div className={`font-bold tabular-nums ${entry.accuracy >= 70 ? 'text-accent-success' : entry.accuracy >= 50 ? 'text-accent-warning' : 'text-accent-error'}`}>
                               {entry.accuracy}%
                             </div>
-                            <div className="text-xs text-gray-500">Accuracy</div>
+                            <div className="text-xs text-white/40">Accuracy</div>
                           </div>
 
                           <div className="text-center hidden sm:block">

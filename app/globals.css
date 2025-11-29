@@ -16,7 +16,21 @@
 }
 
 @layer utilities {
-  /* Glass Morphism - Subtle Premium */
+  /* Premium Glass Morphism */
+  .glass-card {
+    background: rgba(255, 255, 255, 0.03);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 20px;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  .glass-card:hover {
+    border-color: rgba(245, 166, 35, 0.3);
+    box-shadow: 0 0 20px rgba(245, 166, 35, 0.2);
+  }
+
   .glass-effect {
     background: rgba(255, 255, 255, 0.02);
     backdrop-filter: blur(20px);
@@ -24,14 +38,14 @@
     border: 1px solid rgba(255, 255, 255, 0.08);
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   }
-  
+
   .glass-effect:hover {
     background: rgba(255, 255, 255, 0.04);
-    border-color: rgba(255, 255, 255, 0.16);
-    box-shadow: 0 20px 60px rgba(0, 82, 255, 0.1);
-    transform: translateY(-4px);
+    border-color: rgba(245, 166, 35, 0.2);
+    box-shadow: 0 20px 60px rgba(245, 166, 35, 0.1);
+    transform: translateY(-2px);
   }
-  
+
   .glass-effect-strong {
     background: rgba(255, 255, 255, 0.05);
     backdrop-filter: blur(20px);
@@ -39,33 +53,90 @@
     border: 1px solid rgba(255, 255, 255, 0.1);
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   }
-  
+
   .glass-effect-strong:hover {
     background: rgba(255, 255, 255, 0.08);
-    border-color: rgba(255, 255, 255, 0.2);
-    box-shadow: 0 20px 60px rgba(0, 82, 255, 0.15);
+    border-color: rgba(245, 166, 35, 0.3);
+    box-shadow: 0 20px 60px rgba(245, 166, 35, 0.15);
     transform: translateY(-2px);
+  }
+
+  /* Premium Gold Effects */
+  .gold-glow {
+    box-shadow: 0 0 20px rgba(245, 166, 35, 0.3);
+  }
+
+  .gold-glow-strong {
+    box-shadow: 0 0 30px rgba(245, 166, 35, 0.5);
+  }
+
+  .gold-text {
+    background: linear-gradient(135deg, #F5A623 0%, #FFD93D 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .gold-border-glow {
+    border: 1px solid rgba(245, 166, 35, 0.3);
+    box-shadow: 0 0 20px rgba(245, 166, 35, 0.2);
+  }
+
+  /* Premium Buttons */
+  .btn-primary {
+    background: linear-gradient(135deg, #F5A623 0%, #FF6B35 100%);
+    color: white;
+    font-weight: 600;
+    border-radius: 12px;
+    padding: 0.75rem 1.5rem;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    border: none;
+  }
+
+  .btn-primary:hover {
+    filter: brightness(1.1);
+    box-shadow: 0 0 20px rgba(245, 166, 35, 0.4);
+    transform: translateY(-2px);
+  }
+
+  .btn-primary:active {
+    transform: scale(0.98);
+  }
+
+  .btn-secondary {
+    background: transparent;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    color: rgba(255, 255, 255, 0.9);
+    border-radius: 12px;
+    padding: 0.75rem 1.5rem;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  .btn-secondary:hover {
+    border-color: rgba(245, 166, 35, 0.5);
+    background: rgba(245, 166, 35, 0.1);
   }
 }
 
+/* Premium Scrollbar */
 ::-webkit-scrollbar {
   width: 6px;
 }
 ::-webkit-scrollbar-track {
-  background: #1A1A1A;
+  background: #0A0A0F;
 }
 ::-webkit-scrollbar-thumb {
-  background: #34343D;
+  background: rgba(245, 166, 35, 0.3);
   border-radius: 3px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: #00D4FF;
+  background: rgba(245, 166, 35, 0.6);
 }
 
-/* Loading spinner */
+/* Premium Loading Spinner */
 .spinner {
-  border: 3px solid #334155;
-  border-top: 3px solid #00D4FF;
+  border: 3px solid rgba(245, 166, 35, 0.2);
+  border-top: 3px solid #F5A623;
   border-radius: 50%;
   width: 24px;
   height: 24px;
@@ -75,4 +146,21 @@
 @keyframes spin {
   0% { transform: rotate(0deg); }
   100% { transform: rotate(360deg); }
+}
+
+/* Skeleton Loading */
+.skeleton {
+  background: linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0.03) 0%,
+    rgba(255, 255, 255, 0.08) 50%,
+    rgba(255, 255, 255, 0.03) 100%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 2s infinite;
+}
+
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
 }

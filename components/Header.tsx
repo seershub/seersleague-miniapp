@@ -74,9 +74,9 @@ export default function Header() {
   };
 
   return (
-    <header className="sticky top-0 z-50 w-full h-16 flex items-center justify-between px-4 bg-gradient-to-b from-gray-900 to-black border-b border-gray-800">
-      
-      {/* Sol Taraf - Logo + Live Etiketi */}
+    <header className="sticky top-0 z-50 w-full h-16 flex items-center justify-between px-4 bg-black/80 backdrop-blur-xl border-b border-gold-500/10 shadow-premium">
+
+      {/* Sol Taraf - Logo + Live Badge */}
       <div className="flex items-center gap-3">
         {/* Logo */}
         <Link href="/" className="flex items-center">
@@ -88,40 +88,42 @@ export default function Header() {
             priority
             className="h-10 w-auto transition-all duration-300 hover:scale-105"
             style={{
-              filter: 'drop-shadow(0 0 8px rgba(252, 211, 77, 0.3))'
+              filter: 'drop-shadow(0 0 12px rgba(245, 166, 35, 0.4))'
             }}
           />
         </Link>
-        
-        {/* Live Etiketi */}
-        <div className="flex items-center gap-1.5 rounded-full bg-green-500/15 px-2.5 py-1 text-xs font-medium text-green-400">
+
+        {/* Live Badge with Pulse Animation */}
+        <div className="flex items-center gap-1.5 rounded-full bg-accent-info/15 px-3 py-1.5 border border-accent-info/30">
           <span className="relative flex h-2 w-2">
-            <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-green-400 opacity-75"></span>
-            <span className="relative inline-flex h-2 w-2 rounded-full bg-green-500"></span>
+            <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-accent-info opacity-75"></span>
+            <span className="relative inline-flex h-2 w-2 rounded-full bg-accent-info"></span>
           </span>
-          LIVE
+          <span className="text-xs font-semibold text-accent-info uppercase tracking-wider">LIVE</span>
         </div>
       </div>
-      
-      {/* Sağ Taraf - USDC Bakiyesi */}
-      <div className="flex items-center gap-2">
-        {isLoading && (
-          <span className="text-lg font-medium text-gray-500 animate-pulse">
-            $....
-          </span>
-        )}
 
-        {!isLoading && (
-          <span className="text-lg font-medium text-white">
-            ${usdcBalance}
-          </span>
+      {/* Sağ Taraf - USDC Bakiyesi (Elegant Pill) */}
+      <div className="flex items-center gap-2 glass-effect px-4 py-2 rounded-full border border-white/10">
+        {isLoading ? (
+          <div className="flex items-center gap-2">
+            <div className="w-5 h-5 rounded-full bg-gray-700 animate-pulse"></div>
+            <span className="text-base font-bold text-gray-400 animate-pulse tabular-nums">
+              $...
+            </span>
+          </div>
+        ) : (
+          <>
+            <img
+              src="https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/ethereum/assets/0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48/logo.png"
+              alt="USDC"
+              className="h-5 w-5 rounded-full"
+            />
+            <span className="text-base font-bold text-white tabular-nums">
+              ${usdcBalance}
+            </span>
+          </>
         )}
-
-        <img 
-          src="https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/ethereum/assets/0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48/logo.png" 
-          alt="USDC" 
-          className="h-5 w-5 rounded-full"
-        />
       </div>
     </header>
   );

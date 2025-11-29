@@ -73,29 +73,33 @@ export default function RootLayout({
             {/* Onboarding Modal */}
             <OnboardingModal />
 
-            <nav className="fixed bottom-0 left-0 right-0 z-50 bg-black/95 backdrop-blur-xl border-t border-white/10">
+            {/* Premium Bottom Navigation */}
+            <nav className="fixed bottom-0 left-0 right-0 z-50 bg-black/90 backdrop-blur-2xl border-t border-gold-500/10 shadow-premium pb-safe">
               <div className="max-w-4xl mx-auto">
-                <div className="flex items-center justify-around h-16">
-                  <Link 
+                <div className="flex items-center justify-around h-16 sm:h-20">
+                  <Link
                     href="/"
-                    className="flex flex-col items-center gap-1 px-4 py-2 text-gray-400 hover:text-blue-400 transition-colors"
+                    className="group flex flex-col items-center gap-1 px-4 py-2 transition-all duration-300 relative"
                   >
-                    <Home className="w-5 h-5" />
-                    <span className="text-xs font-medium">Home</span>
+                    <Home className="w-6 h-6 text-gray-400 group-hover:text-gold-500 transition-colors" />
+                    <span className="text-xs font-semibold text-gray-400 group-hover:text-gold-500 transition-colors">Home</span>
+                    <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-0 h-0.5 bg-gold-gradient group-hover:w-12 transition-all duration-300 rounded-full"></div>
                   </Link>
-                  <Link 
+                  <Link
                     href="/leaderboard"
-                    className="flex flex-col items-center gap-1 px-4 py-2 text-gray-400 hover:text-blue-400 transition-colors"
+                    className="group flex flex-col items-center gap-1 px-4 py-2 transition-all duration-300 relative"
                   >
-                    <Trophy className="w-5 h-5" />
-                    <span className="text-xs font-medium">Leaderboard</span>
+                    <Trophy className="w-6 h-6 text-gray-400 group-hover:text-gold-500 transition-colors" />
+                    <span className="text-xs font-semibold text-gray-400 group-hover:text-gold-500 transition-colors">Leaderboard</span>
+                    <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-0 h-0.5 bg-gold-gradient group-hover:w-12 transition-all duration-300 rounded-full"></div>
                   </Link>
-                  <Link 
+                  <Link
                     href="/profile"
-                    className="flex flex-col items-center gap-1 px-4 py-2 text-gray-400 hover:text-blue-400 transition-colors"
+                    className="group flex flex-col items-center gap-1 px-4 py-2 transition-all duration-300 relative"
                   >
-                    <User className="w-5 h-5" />
-                    <span className="text-xs font-medium">Profile</span>
+                    <User className="w-6 h-6 text-gray-400 group-hover:text-gold-500 transition-colors" />
+                    <span className="text-xs font-semibold text-gray-400 group-hover:text-gold-500 transition-colors">Profile</span>
+                    <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-0 h-0.5 bg-gold-gradient group-hover:w-12 transition-all duration-300 rounded-full"></div>
                   </Link>
                 </div>
               </div>

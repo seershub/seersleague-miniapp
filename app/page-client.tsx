@@ -119,40 +119,43 @@ export default function Home({ initialMatches = [] }: HomeProps) {
             <WalletConnect />
           </section>
 
-          {/* FLEXIBLE PREDICTIONS INFO - SINGLE INSTANCE */}
+          {/* PREMIUM FLEXIBLE PREDICTIONS INFO */}
           <section className="mb-8">
-            <div className="bg-gradient-to-r from-yellow-500/10 to-amber-500/5 border border-yellow-500/20 rounded-xl p-5">
+            <div className="glass-card p-6 border border-gold-500/20">
               <div className="flex flex-col space-y-3">
                 {/* Title Row */}
-                <div className="flex items-center space-x-2">
-                  <span className="text-2xl">🎯</span>
-                  <span className="text-lg font-bold text-white">Flexible Predictions</span>
+                <div className="flex items-center space-x-3">
+                  <div className="w-10 h-10 rounded-full bg-gold-gradient flex items-center justify-center">
+                    <span className="text-xl">🎯</span>
+                  </div>
+                  <span className="text-xl font-bold text-white">Flexible Predictions</span>
                 </div>
 
                 {/* Description */}
-                <p className="text-sm md:text-base text-gray-300 leading-relaxed pl-9">
+                <p className="text-sm md:text-base text-white/70 leading-relaxed">
                   Select any matches you want to predict.
-                  <span className="block mt-1">
-                    <span className="text-green-400 font-semibold">First 5 predictions are free</span>, then <span className="text-yellow-400 font-semibold">0.5 USDC</span> per match.
+                  <span className="block mt-2">
+                    <span className="text-accent-success font-bold">First 5 predictions are FREE</span>, then <span className="gold-text font-bold">0.5 USDC</span> per match.
                   </span>
                 </p>
               </div>
             </div>
           </section>
 
-          {/* MATCHES SECTION */}
+          {/* PREMIUM MATCHES SECTION */}
         <section className="mb-8">
           <div className="text-center mb-8">
-              <div className="inline-flex items-center gap-2 glass-effect px-4 py-2 rounded-full mb-6 border border-yellow-400/20">
-                <div className="w-4 h-4 bg-yellow-400 rounded-full animate-pulse" />
-                <span className="text-sm font-medium text-yellow-400">Live Competitions</span>
+              {/* Live Badge */}
+              <div className="inline-flex items-center gap-2 glass-effect px-4 py-2.5 rounded-full mb-6 border border-accent-info/20">
+                <div className="w-3 h-3 bg-accent-info rounded-full animate-pulse" />
+                <span className="text-sm font-semibold text-accent-info uppercase tracking-wide">Live Competitions</span>
               </div>
-              
-              <h2 className="text-3xl sm:text-4xl font-bold mb-4 text-white">
-                <strong className="bg-gradient-to-r from-yellow-500 to-amber-500 text-white px-3 py-1 rounded mr-2">Today</strong>
-                Matches
+
+              {/* Hero Title */}
+              <h2 className="text-4xl sm:text-5xl font-bold mb-4 text-white tracking-tight">
+                <span className="gold-text">Today's</span> Matches
               </h2>
-            <p className="text-gray-400 text-lg max-w-2xl mx-auto">
+            <p className="text-white/60 text-lg max-w-2xl mx-auto leading-relaxed">
               Join live prediction competitions. Make your picks, compete with others, win USDC rewards instantly.
             </p>
 
@@ -169,7 +172,7 @@ export default function Home({ initialMatches = [] }: HomeProps) {
           {loading ? (
             <div className="grid gap-4 sm:gap-6 max-w-4xl mx-auto">
               {[1,2,3,4,5].map(i => (
-                <div key={i} className="h-48 bg-gray-800 rounded-2xl animate-pulse border border-gray-700" />
+                <div key={i} className="h-48 glass-card skeleton" />
               ))}
             </div>
           ) : (
@@ -182,7 +185,7 @@ export default function Home({ initialMatches = [] }: HomeProps) {
                 <div className="text-center mt-8">
                   <button
                     onClick={() => setShowAll(!showAll)}
-                    className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-xl font-semibold transition-colors"
+                    className="btn-primary hover:scale-105 transition-transform duration-300"
                   >
                     {showAll ? 'Show Less' : `Show All ${filteredMatches.length} Matches`}
                   </button>
@@ -192,9 +195,9 @@ export default function Home({ initialMatches = [] }: HomeProps) {
           )}
 
           {error && (
-            <div className="bg-red-900/20 border border-red-500/30 rounded-2xl p-6 mb-4">
-              <p className="text-red-400 font-semibold">Error: {error}</p>
-              <p className="text-gray-400 text-sm mt-2">
+            <div className="glass-card border-accent-error/30 p-6 mb-4">
+              <p className="text-accent-error font-bold">⚠️ Error: {error}</p>
+              <p className="text-white/60 text-sm mt-2">
                 Please check your connection and try again
               </p>
             </div>
@@ -202,25 +205,25 @@ export default function Home({ initialMatches = [] }: HomeProps) {
 
           {!loading && !error && filteredMatches.length === 0 && (
             <div className="text-center py-16">
-              <div className="w-20 h-20 bg-gray-800 rounded-full flex items-center justify-center mx-auto mb-4">
+              <div className="w-20 h-20 glass-card rounded-full flex items-center justify-center mx-auto mb-4">
                 <span className="text-4xl">⚽</span>
               </div>
-              <p className="text-gray-400 text-lg">No matches found</p>
-              <p className="text-gray-500 text-sm mt-2">Try adjusting your search or check back later</p>
+              <p className="text-white/60 text-lg font-semibold">No matches found</p>
+              <p className="text-white/40 text-sm mt-2">Try adjusting your search or check back later</p>
             </div>
           )}
         </section>
 
         {/* CHAIN WARNING */}
         {chainId && chainId !== '0x2105' && (
-          <div className="bg-yellow-900/20 border border-yellow-500/30 rounded-2xl p-6 mb-4">
+          <div className="glass-card border-accent-warning/30 p-6 mb-4">
             <div className="flex items-center gap-3">
-              <div className="w-6 h-6 bg-yellow-500 rounded-full flex items-center justify-center">
-                <span className="text-black text-sm font-bold">!</span>
+              <div className="w-8 h-8 bg-accent-warning rounded-full flex items-center justify-center">
+                <span className="text-black text-lg font-bold">!</span>
               </div>
               <div>
-                <p className="text-yellow-200 font-semibold">Network Warning</p>
-                <p className="text-yellow-300 text-sm">
+                <p className="text-accent-warning font-bold">⚠️ Network Warning</p>
+                <p className="text-white/60 text-sm mt-1">
                   You're not on Base Mainnet. Current: {chainId} (Expected: 0x2105)
                 </p>
               </div>

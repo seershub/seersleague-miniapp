@@ -32,22 +32,22 @@ export function MatchCard({ match, selectedOutcome, onOutcomeSelect, disabled = 
   const prizePool = entryFee * participants;
 
   return (
-    <div className="glass-effect-strong rounded-xl sm:rounded-2xl overflow-hidden hover:scale-[1.02] transition-all duration-300 group border border-white/5 w-full">
+    <div className="glass-card overflow-hidden hover:border-gold-500/30 hover:shadow-gold-glow transition-all duration-300 group w-full">
       {/* Match Header */}
-          <div className="bg-gradient-to-r from-yellow-500/10 to-amber-500/5 px-3 sm:px-4 md:px-6 py-3 border-b border-white/5">
+      <div className="bg-gradient-to-r from-gold-500/10 to-accent-orange/5 px-3 sm:px-4 md:px-6 py-3 border-b border-white/5">
         {/* Mobile: Stacked Layout */}
         <div className="flex flex-col gap-2 sm:hidden">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <div className="w-6 h-6 rounded-full bg-yellow-500/20 flex items-center justify-center">
-                <span className="text-xs font-bold text-yellow-400">⚽</span>
+              <div className="w-6 h-6 rounded-full bg-gold-500/20 flex items-center justify-center border border-gold-500/30">
+                <span className="text-xs font-bold text-gold-500">⚽</span>
               </div>
               <span className="text-xs font-semibold uppercase tracking-wider text-white">
                 {match.league}
               </span>
             </div>
-            <div className="glass-effect px-2.5 py-1 rounded-full flex items-center gap-1">
-              <DollarSign className="w-3 h-3 text-green-400" />
+            <div className="glass-effect px-2.5 py-1 rounded-full flex items-center gap-1 border border-accent-success/20">
+              <DollarSign className="w-3 h-3 text-accent-success" />
               <span className="text-xs font-bold text-white">{entryFee}</span>
             </div>
           </div>
@@ -66,8 +66,8 @@ export function MatchCard({ match, selectedOutcome, onOutcomeSelect, disabled = 
         {/* Desktop: Single Row */}
         <div className="hidden sm:flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-7 h-7 rounded-full bg-blue-500/20 flex items-center justify-center">
-              <span className="text-xs font-bold text-blue-400">⚽</span>
+            <div className="w-7 h-7 rounded-full bg-gold-500/20 flex items-center justify-center border border-gold-500/30">
+              <span className="text-xs font-bold text-gold-500">⚽</span>
             </div>
             <span className="text-xs font-semibold uppercase tracking-wider text-white">
               {match.league}
@@ -170,7 +170,7 @@ export function MatchCard({ match, selectedOutcome, onOutcomeSelect, disabled = 
           </div>
         </div>
 
-        {/* Prediction Buttons */}
+        {/* Prediction Buttons - Premium Design */}
         <div className="mt-4 sm:mt-6 md:mt-8">
           <div className="grid grid-cols-3 gap-3">
             <button
@@ -179,10 +179,10 @@ export function MatchCard({ match, selectedOutcome, onOutcomeSelect, disabled = 
                 onOutcomeSelect(1);
               }}
               disabled={disabled}
-              className={`py-3 rounded-xl font-bold text-sm transition-all duration-300 ${
-                selectedOutcome === 1 
-                  ? 'bg-gradient-to-r from-yellow-500 to-amber-500 text-white shadow-lg shadow-yellow-500/30 scale-105' 
-                  : 'bg-gray-800 border-2 border-gray-700 text-gray-300 hover:text-white hover:border-yellow-500/50 hover:bg-gray-700'
+              className={`py-3 px-6 rounded-xl font-bold text-sm transition-all duration-300 ${
+                selectedOutcome === 1
+                  ? 'bg-gold-gradient text-white shadow-gold-glow-intense scale-105'
+                  : 'bg-transparent border border-white/20 text-white/60 hover:text-white hover:border-gold-500/50 hover:bg-gold-500/10'
               } ${disabled ? 'opacity-50 cursor-not-allowed' : ''}`}
             >
               Home
@@ -193,10 +193,10 @@ export function MatchCard({ match, selectedOutcome, onOutcomeSelect, disabled = 
                 onOutcomeSelect(2);
               }}
               disabled={disabled}
-              className={`py-3 rounded-xl font-bold text-sm transition-all duration-300 ${
-                selectedOutcome === 2 
-                  ? 'bg-gradient-to-r from-yellow-500 to-amber-500 text-white shadow-lg shadow-yellow-500/30 scale-105' 
-                  : 'bg-gray-800 border-2 border-gray-700 text-gray-300 hover:text-white hover:border-yellow-500/50 hover:bg-gray-700'
+              className={`py-3 px-6 rounded-xl font-bold text-sm transition-all duration-300 ${
+                selectedOutcome === 2
+                  ? 'bg-gold-gradient text-white shadow-gold-glow-intense scale-105'
+                  : 'bg-transparent border border-white/20 text-white/60 hover:text-white hover:border-gold-500/50 hover:bg-gold-500/10'
               } ${disabled ? 'opacity-50 cursor-not-allowed' : ''}`}
             >
               Draw
@@ -207,10 +207,10 @@ export function MatchCard({ match, selectedOutcome, onOutcomeSelect, disabled = 
                 onOutcomeSelect(3);
               }}
               disabled={disabled}
-              className={`py-3 rounded-xl font-bold text-sm transition-all duration-300 ${
-                selectedOutcome === 3 
-                  ? 'bg-gradient-to-r from-yellow-500 to-amber-500 text-white shadow-lg shadow-yellow-500/30 scale-105' 
-                  : 'bg-gray-800 border-2 border-gray-700 text-gray-300 hover:text-white hover:border-yellow-500/50 hover:bg-gray-700'
+              className={`py-3 px-6 rounded-xl font-bold text-sm transition-all duration-300 ${
+                selectedOutcome === 3
+                  ? 'bg-gold-gradient text-white shadow-gold-glow-intense scale-105'
+                  : 'bg-transparent border border-white/20 text-white/60 hover:text-white hover:border-gold-500/50 hover:bg-gold-500/10'
               } ${disabled ? 'opacity-50 cursor-not-allowed' : ''}`}
             >
               Away
@@ -220,13 +220,13 @@ export function MatchCard({ match, selectedOutcome, onOutcomeSelect, disabled = 
       </div>
 
       {/* Footer Info */}
-          <div className="bg-gradient-to-r from-yellow-500/5 to-transparent px-3 sm:px-4 md:px-6 py-3 flex flex-col sm:flex-row items-center justify-between gap-2 border-t border-white/5">
-            <div className="flex items-center gap-2 text-xs text-gray-400">
-              <div className="w-2 h-2 rounded-full bg-yellow-400 animate-pulse" />
-              <span className="text-xs">Powered by Base Network</span>
-            </div>
+      <div className="bg-gradient-to-r from-gold-500/5 to-transparent px-3 sm:px-4 md:px-6 py-3 flex flex-col sm:flex-row items-center justify-between gap-2 border-t border-white/5">
+        <div className="flex items-center gap-2 text-xs text-gray-400">
+          <div className="w-2 h-2 rounded-full bg-gold-500 animate-pulse" />
+          <span className="text-xs">Powered by Base Network</span>
+        </div>
         <div className="flex items-center gap-2 text-xs">
-          <Zap className="w-3.5 h-3.5 text-orange-400" />
+          <Zap className="w-3.5 h-3.5 text-accent-warning" />
           <span className="text-gray-400">Instant settlement</span>
         </div>
       </div>
