@@ -218,27 +218,27 @@ export default function LeaderboardPage() {
             </div>
           </div>
 
-            {loading ? (
-              <div className="flex flex-col items-center justify-center py-12">
-                <div className="spinner w-12 h-12 mb-4"></div>
-                <span className="text-white/60">Loading champions...</span>
-              </div>
-            ) : !data || data.topPlayers.length === 0 ? (
-              <div className="text-center py-12">
-                <Trophy className="w-16 h-16 text-gray-600 mx-auto mb-4" />
-                <p className="text-gray-400 text-lg mb-2">No players yet</p>
-                <p className="text-gray-500 text-sm">Be the first to make predictions!</p>
-              </div>
-            ) : (
-              <div className="space-y-3">
-                {data.topPlayers.map((entry) => {
-                  const isUserEntry = userAddress && entry.address.toLowerCase() === userAddress.toLowerCase();
+          {loading ? (
+            <div className="flex flex-col items-center justify-center py-12">
+              <div className="spinner w-12 h-12 mb-4"></div>
+              <span className="text-white/60">Loading champions...</span>
+            </div>
+          ) : !data || data.topPlayers.length === 0 ? (
+            <div className="text-center py-12">
+              <Trophy className="w-16 h-16 text-gray-600 mx-auto mb-4" />
+              <p className="text-gray-400 text-lg mb-2">No players yet</p>
+              <p className="text-gray-500 text-sm">Be the first to make predictions!</p>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {data.topPlayers.map((entry) => {
+                const isUserEntry = userAddress && entry.address.toLowerCase() === userAddress.toLowerCase();
 
-                  return (
-                    <div
-                      key={entry.address}
-                      className={`
-                        relative group rounded-xl p-4 transition-all duration-300
+                return (
+                  <div
+                    key={entry.address}
+                    className={`
+                      relative group rounded-xl p-4 transition-all duration-300
                         ${entry.rank === 1
                           ? 'bg-gradient-to-r from-gold-500/15 to-accent-orange/10 border-2 gold-border-glow hover:shadow-gold-glow-strong'
                           : entry.rank === 2
@@ -249,64 +249,64 @@ export default function LeaderboardPage() {
                             ? 'bg-gradient-to-r from-accent-info/10 to-cyan-500/5 border-2 border-accent-info/30 hover:border-accent-info/50'
                             : 'glass-effect border border-white/5 hover:border-white/10'
                         }
-                      `}
-                    >
-                      {getRankBadge(entry.rank)}
+                    `}
+                  >
+                    {getRankBadge(entry.rank)}
 
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-4 flex-1">
-                          {/* Rank */}
-                          <div className="flex items-center justify-center w-12">
-                            {getRankIcon(entry.rank)}
-                          </div>
-
-                          {/* User Info */}
-                          <div className="flex-1">
-                            <div className="flex items-center gap-2">
-                              <div className="font-bold text-white">
-                                {entry.address.slice(0, 6)}...{entry.address.slice(-4)}
-                              </div>
-                              {isUserEntry && (
-                                <span className="px-2 py-0.5 text-xs bg-blue-500/20 text-blue-400 rounded-full border border-blue-500/30">
-                                  You
-                                </span>
-                              )}
-                            </div>
-                            <div className="text-xs text-gray-400 mt-0.5">
-                              {entry.correctPredictions}/{entry.totalPredictions} predictions
-                            </div>
-                          </div>
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-4 flex-1">
+                        {/* Rank */}
+                        <div className="flex items-center justify-center w-12">
+                          {getRankIcon(entry.rank)}
                         </div>
 
-                        {/* Stats */}
-                        <div className="flex items-center gap-4 sm:gap-6 text-sm">
-                          <div className="text-center">
-                            <div className={`font-bold tabular-nums ${entry.accuracy >= 70 ? 'text-accent-success' : entry.accuracy >= 50 ? 'text-accent-warning' : 'text-accent-error'}`}>
-                              {entry.accuracy}%
+                        {/* User Info */}
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2">
+                            <div className="font-bold text-white">
+                              {entry.address.slice(0, 6)}...{entry.address.slice(-4)}
                             </div>
-                            <div className="text-xs text-white/40">Accuracy</div>
+                            {isUserEntry && (
+                              <span className="px-2 py-0.5 text-xs bg-blue-500/20 text-blue-400 rounded-full border border-blue-500/30">
+                                You
+                              </span>
+                            )}
                           </div>
-
-                          <div className="text-center hidden sm:block">
-                            <div className="font-bold text-green-400 flex items-center gap-1">
-                              {entry.currentStreak > 0 && '🔥'} {entry.currentStreak}
-                            </div>
-                            <div className="text-xs text-gray-500">Streak</div>
-                          </div>
-
-                          <div className="text-center hidden sm:block">
-                            <div className="font-bold text-purple-400">
-                              {entry.longestStreak}
-                            </div>
-                            <div className="text-xs text-gray-500">Best</div>
+                          <div className="text-xs text-gray-400 mt-0.5">
+                            {entry.correctPredictions}/{entry.totalPredictions} predictions
                           </div>
                         </div>
                       </div>
+
+                      {/* Stats */}
+                      <div className="flex items-center gap-4 sm:gap-6 text-sm">
+                        <div className="text-center">
+                          <div className={`font-bold tabular-nums ${entry.accuracy >= 70 ? 'text-accent-success' : entry.accuracy >= 50 ? 'text-accent-warning' : 'text-accent-error'}`}>
+                            {entry.accuracy}%
+                          </div>
+                          <div className="text-xs text-white/40">Accuracy</div>
+                        </div>
+
+                        <div className="text-center hidden sm:block">
+                          <div className="font-bold text-green-400 flex items-center gap-1">
+                            {entry.currentStreak > 0 && '🔥'} {entry.currentStreak}
+                          </div>
+                          <div className="text-xs text-gray-500">Streak</div>
+                        </div>
+
+                        <div className="text-center hidden sm:block">
+                          <div className="font-bold text-purple-400">
+                            {entry.longestStreak}
+                          </div>
+                          <div className="text-xs text-gray-500">Best</div>
+                        </div>
+                      </div>
                     </div>
-                  );
-                })}
-              </div>
-            )}
+                  </div>
+                );
+              })}
+            </div>
+          )}
           </div>
         </div>
       </div>

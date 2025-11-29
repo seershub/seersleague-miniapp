@@ -204,9 +204,8 @@ export default function ProfilePage() {
                     </div>
                   ) : null}
                     
-                    <div className="text-sm text-gray-400 font-mono mt-1">
-                      {userAddress.slice(0, 6)}...{userAddress.slice(-4)}
-                    </div>
+                  <div className="text-sm text-gray-400 font-mono mt-1">
+                    {userAddress.slice(0, 6)}...{userAddress.slice(-4)}
                   </div>
                 </div>
               </div>
@@ -282,7 +281,6 @@ export default function ProfilePage() {
                     </p>
                   </div>
                 )}
-                </div>
               </div>
             </div>
 
@@ -300,14 +298,14 @@ export default function ProfilePage() {
                   <div className="spinner w-10 h-10 mb-4"></div>
                   <span className="text-white/60 text-sm">Loading history...</span>
                 </div>
-                ) : history.length === 0 ? (
-                  <div className="text-center py-12">
-                    <Calendar className="w-16 h-16 text-gray-600 mx-auto mb-4" />
-                    <p className="text-gray-400 text-lg mb-2">No predictions yet</p>
-                    <p className="text-gray-500 text-sm">Start making predictions to build your history!</p>
-                  </div>
-                ) : (
-                  <div className="max-h-96 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-600 scrollbar-track-gray-800">
+              ) : history.length === 0 ? (
+                <div className="text-center py-12">
+                  <Calendar className="w-16 h-16 text-gray-600 mx-auto mb-4" />
+                  <p className="text-gray-400 text-lg mb-2">No predictions yet</p>
+                  <p className="text-gray-500 text-sm">Start making predictions to build your history!</p>
+                </div>
+              ) : (
+                <div className="max-h-96 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-600 scrollbar-track-gray-800">
                     <div className="space-y-2">
                       {history.map((entry, index) => {
                         // Determine which team user picked
@@ -409,8 +407,7 @@ export default function ProfilePage() {
                     })}
                   </div>
                 </div>
-                )}
-              </div>
+              )}
             </div>
           </>
         )}
