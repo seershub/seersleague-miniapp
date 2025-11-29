@@ -1,16 +1,17 @@
 import hre from "hardhat";
+const { ethers } = hre;
 
 async function main() {
   console.log("🚀 [DEPLOY V2 COMPLETE] Starting SeersLeague V2 Complete deployment...");
 
-  const signers = await hre.ethers.getSigners();
+  const signers = await ethers.getSigners();
   const deployer = signers[0];
   console.log("Deploying contracts with the account:", deployer.address);
   console.log("Account balance:", (await deployer.provider.getBalance(deployer.address)).toString());
 
   // Deploy SeersLeagueV2Complete
   console.log("📦 Deploying SeersLeagueV2Complete...");
-  const SeersLeagueV2Complete = await hre.ethers.getContractFactory("SeersLeagueV2Complete");
+  const SeersLeagueV2Complete = await ethers.getContractFactory("SeersLeagueV2Complete");
   const seersLeagueV2Complete = await SeersLeagueV2Complete.deploy();
   await seersLeagueV2Complete.waitForDeployment();
 
