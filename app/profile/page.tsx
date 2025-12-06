@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { User, Trophy, Target, TrendingUp, Zap, Calendar, CheckCircle, XCircle, Clock } from 'lucide-react';
+import { User, Trophy, Target, TrendingUp, Zap, Calendar, CheckCircle, XCircle, Clock, Flame, DollarSign } from 'lucide-react';
 import { useMiniKit } from '@/components/MiniKitProvider';
 
 interface UserProfile {
@@ -38,7 +38,6 @@ export default function ProfilePage() {
   const [historyLoading, setHistoryLoading] = useState(true);
   const [userAddress, setUserAddress] = useState<string | null>(null);
 
-  // Get user address from MiniKit
   useEffect(() => {
     const getUserAddress = async () => {
       if (isReady && sdk) {
@@ -56,9 +55,6 @@ export default function ProfilePage() {
     getUserAddress();
   }, [isReady, sdk]);
 
-  // Farcaster user info is now available from MiniKitProvider via 'user' prop
-
-  // Fetch user profile
   useEffect(() => {
     const fetchProfile = async () => {
       if (!userAddress) return;
@@ -80,7 +76,6 @@ export default function ProfilePage() {
     fetchProfile();
   }, [userAddress]);
 
-  // Fetch prediction history
   useEffect(() => {
     const fetchHistory = async () => {
       if (!userAddress) return;
@@ -102,31 +97,15 @@ export default function ProfilePage() {
     fetchHistory();
   }, [userAddress]);
 
-  const getOutcomeLabel = (outcome: number) => {
-    switch (outcome) {
-      case 1: return 'Home Win';
-      case 2: return 'Draw';
-      case 3: return 'Away Win';
-      default: return 'Unknown';
-    }
-  };
-
-  const getOutcomeColor = (outcome: number) => {
-    switch (outcome) {
-      case 1: return 'text-blue-400';
-      case 2: return 'text-yellow-400';
-      case 3: return 'text-purple-400';
-      default: return 'text-gray-400';
-    }
-  };
-
   if (!userAddress) {
     return (
-      <main className="min-h-screen bg-black">
+      <main className="min-h-screen">
         <div className="max-w-4xl mx-auto px-4 py-8 pb-24">
-          <div className="text-center py-12">
-            <User className="w-16 h-16 text-gray-600 mx-auto mb-4" />
-            <p className="text-gray-400 text-lg">Please connect your wallet</p>
+          <div className="text-center py-16">
+            <div className="w-16 h-16 rounded-2xl bg-[rgba(24,24,30,0.8)] border border-[rgba(55,55,65,0.5)] flex items-center justify-center mx-auto mb-4">
+              <User className="w-8 h-8 text-[rgb(var(--text-muted))]" />
+            </div>
+            <p className="text-[rgb(var(--text-secondary))]">Please connect your wallet</p>
           </div>
         </div>
       </main>
@@ -134,321 +113,225 @@ export default function ProfilePage() {
   }
 
   return (
-    <main className="min-h-screen bg-black">
-      <div className="max-w-4xl mx-auto px-4 py-8 pb-24">
+    <main className="min-h-screen">
+      <div className="max-w-4xl mx-auto px-4 py-6 pb-24">
         {/* Header */}
-        <header className="mb-8 text-center">
-          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full mb-4 bg-gradient-to-r from-blue-500/10 to-purple-500/10 border border-blue-500/20">
-            <User className="w-5 h-5 text-blue-400" />
-            <span className="text-sm font-medium text-blue-400">Your Profile</span>
+        <header className="mb-6 text-center animate-fade-up">
+          <div className="badge inline-flex mb-4">
+            <User className="w-4 h-4 text-[rgb(var(--brand-cyan))]" />
+            <span className="text-[rgb(var(--brand-cyan))]">Your Profile</span>
           </div>
 
-          <h1 className="text-4xl sm:text-5xl font-bold mb-3">
-            <span className="bg-gradient-to-r from-blue-400 via-purple-400 to-pink-400 bg-clip-text text-transparent">
-              Profile
-            </span>
+          <h1 className="text-3xl font-bold">
+            <span className="gradient-cyan-text">Profile</span>
           </h1>
         </header>
 
         {loading ? (
           <div className="flex flex-col items-center justify-center py-12">
-            <div className="w-12 h-12 border-4 border-blue-500/20 border-t-blue-500 rounded-full animate-spin mb-4"></div>
-            <span className="text-gray-400">Loading profile...</span>
+            <div className="spinner mb-4" />
+            <span className="text-[rgb(var(--text-muted))] text-sm">Loading profile...</span>
           </div>
         ) : (
           <>
             {/* User Identity Card */}
-            <div className="relative rounded-2xl overflow-hidden bg-gradient-to-br from-gray-900/50 to-gray-800/30 border border-gray-700/50 mb-6">
-              <div className="absolute inset-0 bg-gradient-to-b from-blue-500/[0.02] to-transparent"></div>
-              
-              <div className="relative z-10 p-6">
-                <div className="flex items-center gap-4">
-                  {/* Profile Picture */}
-                  <div className="w-20 h-20 rounded-full bg-gradient-to-br from-blue-500 to-purple-500 p-1">
-                    {user?.pfpUrl ? (
-                      <img 
-                        src={user.pfpUrl} 
-                        alt="Profile" 
-                        className="w-full h-full rounded-full object-cover"
-                      />
-                    ) : (
-                      <div className="w-full h-full rounded-full bg-gray-800 flex items-center justify-center">
-                        <User className="w-10 h-10 text-gray-400" />
-                      </div>
-                    )}
-                  </div>
-
-                  {/* User Info */}
-                  <div className="flex-1">
-                    {user?.username && (
-                      <div className="flex items-center gap-2 mb-1">
-                        <span className="text-xl font-bold text-white">@{user.username}</span>
-                        <span className="px-2 py-0.5 text-xs bg-purple-500/20 text-purple-400 rounded-full border border-purple-500/30">
-                          Farcaster
-                        </span>
-                      </div>
-                    )}
-                    
-                    {!user?.username && user?.displayName && (
-                      <div className="flex items-center gap-2 mb-1">
-                        <span className="text-xl font-bold text-white">{user.displayName}</span>
-                        <span className="px-2 py-0.5 text-xs bg-purple-500/20 text-purple-400 rounded-full border border-purple-500/30">
-                          Farcaster
-                        </span>
-                      </div>
-                    )}
-                    
-                    {profile?.baseName ? (
-                      <div className="flex items-center gap-2">
-                        <span className="text-lg font-semibold text-blue-400">{profile.baseName}</span>
-                        <span className="px-2 py-0.5 text-xs bg-blue-500/20 text-blue-400 rounded-full border border-blue-500/30">
-                          Base Name
-                        </span>
-                      </div>
-                    ) : null}
-                    
-                    <div className="text-sm text-gray-400 font-mono mt-1">
-                      {userAddress.slice(0, 6)}...{userAddress.slice(-4)}
+            <div className="glass-card p-4 mb-6 animate-fade-up-delay-1">
+              <div className="flex items-center gap-4">
+                <div className="w-16 h-16 rounded-full bg-gradient-to-br from-[rgb(var(--brand-cyan))] to-[rgb(var(--brand-gold))] p-0.5">
+                  {user?.pfpUrl ? (
+                    <img
+                      src={user.pfpUrl}
+                      alt="Profile"
+                      className="w-full h-full rounded-full object-cover"
+                    />
+                  ) : (
+                    <div className="w-full h-full rounded-full bg-[rgb(var(--bg-secondary))] flex items-center justify-center">
+                      <User className="w-7 h-7 text-[rgb(var(--text-muted))]" />
                     </div>
+                  )}
+                </div>
+
+                <div className="flex-1 min-w-0">
+                  {user?.username && (
+                    <div className="flex items-center gap-2 mb-1">
+                      <span className="text-lg font-semibold text-white truncate">@{user.username}</span>
+                      <span className="badge-cyan text-[10px] flex-shrink-0">Farcaster</span>
+                    </div>
+                  )}
+
+                  {!user?.username && user?.displayName && (
+                    <div className="flex items-center gap-2 mb-1">
+                      <span className="text-lg font-semibold text-white truncate">{user.displayName}</span>
+                      <span className="badge-cyan text-[10px] flex-shrink-0">Farcaster</span>
+                    </div>
+                  )}
+
+                  {profile?.baseName && (
+                    <div className="flex items-center gap-2 mb-1">
+                      <span className="text-sm font-medium text-[rgb(var(--brand-gold))]">{profile.baseName}</span>
+                    </div>
+                  )}
+
+                  <div className="text-xs text-[rgb(var(--text-muted))] font-mono">
+                    {userAddress.slice(0, 6)}...{userAddress.slice(-4)}
                   </div>
                 </div>
               </div>
             </div>
 
             {/* Stats Grid */}
-            <div className="grid grid-cols-2 gap-4 mb-6">
+            <div className="grid grid-cols-2 gap-3 mb-6 animate-fade-up-delay-2">
               {/* Accuracy */}
-              <div className="relative rounded-2xl overflow-hidden bg-gradient-to-br from-green-500/10 to-emerald-500/5 border border-green-500/20 p-4">
-                <div className="absolute inset-0 bg-gradient-to-b from-green-500/[0.02] to-transparent"></div>
-                <div className="relative z-10">
-                  <div className="flex items-center gap-2 mb-2">
-                    <Target className="w-5 h-5 text-green-400" />
-                    <span className="text-xs text-gray-400">Accuracy</span>
-                  </div>
-                  <div className="text-3xl font-bold text-green-400">
-                    {profile?.stats.accuracy || 0}%
-                  </div>
-                  <div className="text-xs text-gray-500 mt-1">
-                    {profile?.stats.correctPredictions || 0}/{profile?.stats.totalPredictions || 0} correct
-                  </div>
+              <div className="stat-card">
+                <div className="flex items-center gap-2 mb-2">
+                  <Target className="w-4 h-4 text-[rgb(var(--brand-green))]" />
+                  <span className="text-xs text-[rgb(var(--text-muted))]">Accuracy</span>
+                </div>
+                <div className="text-2xl font-bold text-[rgb(var(--brand-green))]">
+                  {profile?.stats.accuracy || 0}%
+                </div>
+                <div className="text-xs text-[rgb(var(--text-muted))] mt-0.5">
+                  {profile?.stats.correctPredictions || 0}/{profile?.stats.totalPredictions || 0} correct
                 </div>
               </div>
 
               {/* Current Streak */}
-              <div className="relative rounded-2xl overflow-hidden bg-gradient-to-br from-orange-500/10 to-red-500/5 border border-orange-500/20 p-4">
-                <div className="absolute inset-0 bg-gradient-to-b from-orange-500/[0.02] to-transparent"></div>
-                <div className="relative z-10">
-                  <div className="flex items-center gap-2 mb-2">
-                    <Zap className="w-5 h-5 text-orange-400" />
-                    <span className="text-xs text-gray-400">Current Streak</span>
-                  </div>
-                  <div className="text-3xl font-bold text-orange-400">
-                    🔥 {profile?.stats.currentStreak || 0}
-                  </div>
-                  <div className="text-xs text-gray-500 mt-1">
-                    Best: {profile?.stats.longestStreak || 0}
-                  </div>
+              <div className="stat-card">
+                <div className="flex items-center gap-2 mb-2">
+                  <Flame className="w-4 h-4 text-orange-400" />
+                  <span className="text-xs text-[rgb(var(--text-muted))]">Current Streak</span>
+                </div>
+                <div className="text-2xl font-bold text-orange-400 flex items-center gap-1">
+                  {profile?.stats.currentStreak || 0}
+                </div>
+                <div className="text-xs text-[rgb(var(--text-muted))] mt-0.5">
+                  Best: {profile?.stats.longestStreak || 0}
                 </div>
               </div>
 
               {/* Total Predictions */}
-              <div className="relative rounded-2xl overflow-hidden bg-gradient-to-br from-purple-500/10 to-pink-500/5 border border-purple-500/20 p-4">
-                <div className="absolute inset-0 bg-gradient-to-b from-purple-500/[0.02] to-transparent"></div>
-                <div className="relative z-10">
-                  <div className="flex items-center gap-2 mb-2">
-                    <Trophy className="w-5 h-5 text-purple-400" />
-                    <span className="text-xs text-gray-400">Total Predictions</span>
-                  </div>
-                  <div className="text-3xl font-bold text-purple-400">
-                    {profile?.stats.totalPredictions || 0}
-                  </div>
-                  <div className="text-xs text-gray-500 mt-1">
-                    All time
-                  </div>
+              <div className="stat-card">
+                <div className="flex items-center gap-2 mb-2">
+                  <Trophy className="w-4 h-4 text-[rgb(var(--brand-cyan))]" />
+                  <span className="text-xs text-[rgb(var(--text-muted))]">Total Predictions</span>
                 </div>
+                <div className="text-2xl font-bold text-[rgb(var(--brand-cyan))]">
+                  {profile?.stats.totalPredictions || 0}
+                </div>
+                <div className="text-xs text-[rgb(var(--text-muted))] mt-0.5">All time</div>
               </div>
 
               {/* USDC Winnings */}
-              <div className="relative rounded-2xl overflow-hidden bg-gradient-to-br from-yellow-500/10 to-amber-500/5 border border-yellow-500/20 p-4">
-                <div className="absolute inset-0 bg-gradient-to-b from-yellow-500/[0.02] to-transparent"></div>
-                <div className="relative z-10">
-                  <div className="flex items-center gap-2 mb-2">
-                    <Trophy className="w-5 h-5 text-yellow-400" />
-                    <span className="text-xs text-gray-400">USDC Winnings</span>
-                  </div>
-                  <div className="text-3xl font-bold text-yellow-400">
-                    $0.00
-                  </div>
-                  <div className="text-xs text-gray-500 mt-1">
-                    Coming soon
-                  </div>
+              <div className="stat-card">
+                <div className="flex items-center gap-2 mb-2">
+                  <DollarSign className="w-4 h-4 text-[rgb(var(--brand-gold))]" />
+                  <span className="text-xs text-[rgb(var(--text-muted))]">Winnings</span>
                 </div>
+                <div className="text-2xl font-bold text-[rgb(var(--brand-gold))]">$0.00</div>
+                <div className="text-xs text-[rgb(var(--text-muted))] mt-0.5">Coming soon</div>
               </div>
 
               {/* Free Predictions */}
-              <div className="relative rounded-2xl overflow-hidden bg-gradient-to-br from-blue-500/10 to-cyan-500/5 border border-blue-500/20 p-4 col-span-2">
-                <div className="absolute inset-0 bg-gradient-to-b from-blue-500/[0.02] to-transparent"></div>
-                <div className="relative z-10">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <div className="flex items-center gap-2 mb-1">
-                        <TrendingUp className="w-5 h-5 text-blue-400" />
-                        <span className="text-sm text-gray-400">Free Predictions</span>
-                      </div>
-                      <div className="text-2xl font-bold text-blue-400">
-                        {profile?.stats.remainingFreePredictions || 0} remaining
-                      </div>
+              <div className="stat-card col-span-2">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <div className="flex items-center gap-2 mb-1">
+                      <TrendingUp className="w-4 h-4 text-[rgb(var(--brand-gold))]" />
+                      <span className="text-xs text-[rgb(var(--text-muted))]">Free Predictions</span>
                     </div>
-                    <div className="text-right">
-                      <div className="text-sm text-gray-400">Used</div>
-                      <div className="text-xl font-bold text-gray-300">
-                        {profile?.stats.freePredictionsUsed || 0}/5
-                      </div>
+                    <div className="text-xl font-bold text-[rgb(var(--brand-gold))]">
+                      {profile?.stats.remainingFreePredictions || 0} remaining
                     </div>
                   </div>
-                  {(profile?.stats.remainingFreePredictions || 0) === 0 && (
-                    <div className="mt-3 pt-3 border-t border-blue-500/20">
-                      <p className="text-xs text-blue-300">
-                        💰 Premium mode: 0.5 USDC per prediction
-                      </p>
+                  <div className="text-right">
+                    <div className="text-xs text-[rgb(var(--text-muted))]">Used</div>
+                    <div className="text-lg font-bold text-white">
+                      {profile?.stats.freePredictionsUsed || 0}/5
                     </div>
-                  )}
+                  </div>
                 </div>
               </div>
             </div>
 
             {/* Claim Button */}
-            <div className="mb-6">
+            <div className="mb-6 animate-fade-up-delay-3">
               <button
                 disabled
-                className="w-full relative rounded-2xl overflow-hidden bg-gradient-to-r from-blue-500/10 to-cyan-500/10 border-2 border-blue-500/30 p-4 cursor-not-allowed opacity-50"
+                className="w-full glass-card p-4 cursor-not-allowed opacity-50"
               >
                 <div className="flex items-center justify-center gap-3">
-                  <Trophy className="w-6 h-6 text-blue-400" />
-                  <span className="text-lg font-bold text-blue-400">Claim Winnings</span>
-                  <span className="px-3 py-1 rounded-full bg-blue-500/20 text-blue-400 text-sm font-medium">
-                    Coming Soon
-                  </span>
+                  <Trophy className="w-5 h-5 text-[rgb(var(--brand-gold))]" />
+                  <span className="font-semibold text-[rgb(var(--brand-gold))]">Claim Winnings</span>
+                  <span className="badge-gold text-xs">Coming Soon</span>
                 </div>
-                <div className="text-xs text-gray-500 text-center mt-2">
-                  Prize distribution will be enabled after the first season ends
+                <div className="text-xs text-[rgb(var(--text-muted))] text-center mt-2">
+                  Prize distribution enabled after first season ends
                 </div>
               </button>
             </div>
 
             {/* Prediction History */}
-            <div className="relative rounded-2xl overflow-hidden bg-gradient-to-br from-gray-900/50 to-gray-800/30 border border-gray-700/50">
-              <div className="absolute inset-0 bg-gradient-to-b from-purple-500/[0.02] to-transparent"></div>
-              
-              <div className="relative z-10 p-6">
-                <div className="flex items-center justify-between mb-6">
-                  <h2 className="text-xl font-bold text-white flex items-center gap-2">
-                    <Calendar className="w-5 h-5 text-purple-400" />
-                    Prediction History
-                  </h2>
-                </div>
+            <div className="glass-card overflow-hidden">
+              <div className="p-4 border-b border-[rgba(255,255,255,0.04)]">
+                <h2 className="text-lg font-semibold text-white flex items-center gap-2">
+                  <Calendar className="w-5 h-5 text-[rgb(var(--brand-cyan))]" />
+                  Prediction History
+                </h2>
+              </div>
 
+              <div className="p-4">
                 {historyLoading ? (
                   <div className="flex flex-col items-center justify-center py-12">
-                    <div className="w-10 h-10 border-4 border-purple-500/20 border-t-purple-500 rounded-full animate-spin mb-4"></div>
-                    <span className="text-gray-400 text-sm">Loading history...</span>
+                    <div className="spinner mb-4" />
+                    <span className="text-[rgb(var(--text-muted))] text-sm">Loading history...</span>
                   </div>
                 ) : history.length === 0 ? (
                   <div className="text-center py-12">
-                    <Calendar className="w-16 h-16 text-gray-600 mx-auto mb-4" />
-                    <p className="text-gray-400 text-lg mb-2">No predictions yet</p>
-                    <p className="text-gray-500 text-sm">Start making predictions to build your history!</p>
+                    <Calendar className="w-12 h-12 text-[rgb(var(--text-muted))] mx-auto mb-3 opacity-50" />
+                    <p className="text-[rgb(var(--text-secondary))]">No predictions yet</p>
+                    <p className="text-[rgb(var(--text-muted))] text-sm mt-1">Start making predictions!</p>
                   </div>
                 ) : (
-                  <div className="max-h-96 overflow-y-auto overflow-x-hidden scrollbar-thin scrollbar-thumb-gray-600 scrollbar-track-gray-800">
-                    <div className="space-y-2 pr-1">
-                      {history.map((entry, index) => {
-                        // Determine which team user picked
-                        const userPickedHome = entry.userPrediction === 1;
-                        const userPickedDraw = entry.userPrediction === 2;
-                        const userPickedAway = entry.userPrediction === 3;
+                  <div className="max-h-80 overflow-y-auto scrollbar-thin space-y-2">
+                    {history.map((entry, index) => {
+                      const userPickedHome = entry.userPrediction === 1;
+                      const userPickedDraw = entry.userPrediction === 2;
+                      const userPickedAway = entry.userPrediction === 3;
 
-                        return (
-                          <div
-                            key={`${entry.matchId}-${index}`}
-                            className="relative rounded-lg p-3 bg-gray-800/30 border border-gray-700/30 hover:bg-gray-800/50 hover:border-gray-600/50 transition-all"
-                          >
-                            {/* Compact Header Row */}
-                            <div className="flex items-center justify-between gap-2 mb-2">
-                              <span className="text-xs text-gray-500 uppercase tracking-wide">{entry.league}</span>
+                      return (
+                        <div
+                          key={`${entry.matchId}-${index}`}
+                          className="p-3 rounded-xl bg-[rgba(24,24,30,0.5)] border border-[rgba(255,255,255,0.03)] hover:bg-[rgba(32,32,40,0.6)] transition-colors"
+                        >
+                          <div className="flex items-center justify-between gap-2 mb-2">
+                            <span className="text-[10px] text-[rgb(var(--text-muted))] uppercase tracking-wide">{entry.league}</span>
 
-                              {/* Status Badge */}
-                              {entry.isCorrect !== null ? (
-                                <span className={`px-2 py-0.5 rounded text-xs font-medium ${
-                                  entry.isCorrect
-                                    ? 'bg-green-500/20 text-green-400'
-                                    : 'bg-red-500/20 text-red-400'
-                              }`}>
-                                {entry.isCorrect ? '✓ Correct' : '✗ Wrong'}
+                            {entry.isCorrect !== null ? (
+                              <span className={`flex items-center gap-1 px-2 py-0.5 rounded text-xs font-medium ${entry.isCorrect
+                                  ? 'bg-[rgba(34,197,94,0.1)] text-[rgb(var(--brand-green))]'
+                                  : 'bg-[rgba(239,68,68,0.1)] text-[rgb(var(--brand-red))]'
+                                }`}>
+                                {entry.isCorrect ? <CheckCircle className="w-3 h-3" /> : <XCircle className="w-3 h-3" />}
+                                {entry.isCorrect ? 'Correct' : 'Wrong'}
                               </span>
                             ) : (
-                              <span className="px-2 py-0.5 rounded text-xs font-medium bg-yellow-500/20 text-yellow-400">
-                                Pending
-                              </span>
+                              <span className="badge-gold text-xs">Pending</span>
                             )}
                           </div>
 
-                          {/* Horizontal Match Display */}
-                          <div className="flex items-center gap-1.5 overflow-hidden">
-                            {/* Home Team */}
-                            <div className={`flex-1 flex items-center gap-1.5 p-2 rounded min-w-0 ${
-                              userPickedHome
-                                ? 'bg-blue-500/10 border border-blue-500/30'
-                                : 'bg-transparent'
-                            }`}>
-                              {userPickedHome && <CheckCircle className="w-3.5 h-3.5 text-blue-400 flex-shrink-0" />}
-                              <span className={`text-xs font-medium truncate ${
-                                userPickedHome ? 'text-blue-400' : 'text-gray-400'
-                              }`} title={entry.homeTeam}>
-                                {entry.homeTeam}
-                              </span>
-                            </div>
-
-                            {/* VS / Draw Indicator */}
-                            <div className="flex-shrink-0">
-                              {userPickedDraw ? (
-                                <div className="px-2 py-1 rounded bg-yellow-500/10 border border-yellow-500/30 flex items-center gap-1">
-                                  <CheckCircle className="w-3 h-3 text-yellow-400" />
-                                  <span className="text-xs font-medium text-yellow-400">Draw</span>
-                                </div>
-                              ) : (
-                                <span className="text-xs text-gray-600">vs</span>
-                              )}
-                            </div>
-
-                            {/* Away Team */}
-                            <div className={`flex-1 flex items-center justify-end gap-1.5 p-2 rounded min-w-0 ${
-                              userPickedAway
-                                ? 'bg-purple-500/10 border border-purple-500/30'
-                                : 'bg-transparent'
-                            }`}>
-                              <span className={`text-xs font-medium truncate ${
-                                userPickedAway ? 'text-purple-400' : 'text-gray-400'
-                              }`} title={entry.awayTeam}>
-                                {entry.awayTeam}
-                              </span>
-                              {userPickedAway && <CheckCircle className="w-3.5 h-3.5 text-purple-400 flex-shrink-0" />}
-                            </div>
+                          <div className="flex items-center gap-2 text-sm">
+                            <span className={`font-medium ${userPickedHome ? 'text-[rgb(var(--brand-cyan))]' : 'text-[rgb(var(--text-muted))]'}`}>
+                              {entry.homeTeam}
+                            </span>
+                            <span className={`text-xs ${userPickedDraw ? 'text-[rgb(var(--brand-gold))] font-medium' : 'text-[rgb(var(--text-muted))]'}`}>
+                              vs
+                            </span>
+                            <span className={`font-medium ${userPickedAway ? 'text-[rgb(var(--brand-cyan))]' : 'text-[rgb(var(--text-muted))]'}`}>
+                              {entry.awayTeam}
+                            </span>
                           </div>
 
-                          {/* Result Footer (if available) */}
-                          {entry.actualResult !== null && (
-                            <div className="mt-2 pt-2 border-t border-gray-700/30 text-xs text-gray-500">
-                              Result: <span className="font-medium text-gray-400">
-                                {entry.actualResult === 1 ? entry.homeTeam :
-                                 entry.actualResult === 2 ? 'Draw' :
-                                 entry.awayTeam} won
-                              </span>
-                            </div>
-                          )}
-
-                          {/* Timestamp */}
-                          <div className="flex items-center gap-1 mt-2 text-xs text-gray-600">
+                          <div className="flex items-center gap-1 mt-2 text-xs text-[rgb(var(--text-muted))]">
                             <Clock className="w-3 h-3" />
                             {new Date(entry.timestamp * 1000).toLocaleDateString('en-US', {
                               month: 'short',
@@ -461,7 +344,6 @@ export default function ProfilePage() {
                       );
                     })}
                   </div>
-                </div>
                 )}
               </div>
             </div>

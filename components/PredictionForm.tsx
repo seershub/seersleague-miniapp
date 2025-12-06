@@ -3,13 +3,12 @@
 import { useState, useEffect } from 'react';
 import { Match } from '@/lib/matches';
 import { MatchCard } from './MatchCard';
-// PaymentModal removed - using batch transactions
 import { CONTRACTS, SEERSLEAGUE_ABI, PREDICTION_FEE, UserStats, formatUSDC, USDC_ABI } from '@/lib/contract-interactions';
 import { useMiniKit } from './MiniKitProvider';
 import { encodeFunctionData, parseUnits } from 'viem';
 import { publicClient } from '@/lib/viem-config';
-// Removed wagmi imports - using Farcaster SDK only
 import toast from 'react-hot-toast';
+import { Check, Plus, Sparkles } from 'lucide-react';
 
 interface PredictionFormProps {
   matches: Match[];
@@ -20,11 +19,9 @@ export function PredictionForm({ matches }: PredictionFormProps) {
   const [address, setAddress] = useState<string | null>(null);
   const [isConnected, setIsConnected] = useState(false);
 
-  // State for USDC allowance and balance
   const [currentAllowance, setCurrentAllowance] = useState<bigint | null>(null);
   const [usdcBalance, setUsdcBalance] = useState<bigint | null>(null);
 
-  // Fetch USDC allowance and balance
   useEffect(() => {
     const fetchUSDCData = async () => {
       if (!address) {
@@ -34,7 +31,6 @@ export function PredictionForm({ matches }: PredictionFormProps) {
       }
 
       try {
-        // Fetch allowance
         const allowance = await publicClient.readContract({
           address: CONTRACTS.USDC,
           abi: USDC_ABI,
@@ -43,7 +39,6 @@ export function PredictionForm({ matches }: PredictionFormProps) {
         }) as bigint;
         setCurrentAllowance(allowance);
 
-        // Fetch USDC balance
         const balance = await publicClient.readContract({
           address: CONTRACTS.USDC,
           abi: USDC_ABI,
@@ -67,34 +62,28 @@ export function PredictionForm({ matches }: PredictionFormProps) {
 
     fetchUSDCData();
   }, [address]);
-  
+
   const [selectedMatches, setSelectedMatches] = useState<number[]>([]);
-  const [predictions, setPredictions] = useState<{[matchId: number]: 1 | 2 | 3}>({});
-  // PaymentModal state removed - using batch transactions
+  const [predictions, setPredictions] = useState<{ [matchId: number]: 1 | 2 | 3 }>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [userStats, setUserStats] = useState<UserStats | null>(null);
   const [isPending, setIsPending] = useState(false);
-  
-  // Get user address and stats
+
   useEffect(() => {
     const getUserData = async () => {
       console.log('PredictionForm: Getting user data...', { isReady, sdk: !!sdk });
-      
+
       if (isReady && sdk) {
         try {
-          // Check if wallet provider is available
           if (sdk.wallet && sdk.wallet.ethProvider) {
             console.log('PredictionForm: Requesting accounts...');
-            // Get user address
             const accounts = await sdk.wallet.ethProvider.request({ method: 'eth_accounts' });
             console.log('PredictionForm: Accounts received:', accounts);
-            
+
             if (accounts && accounts.length > 0) {
               setAddress(accounts[0]);
               setIsConnected(true);
               console.log('PredictionForm: User connected:', accounts[0]);
-              
-              // Get user stats from contract
               await getUserStats(accounts[0]);
             } else {
               console.log('PredictionForm: No accounts found');
@@ -113,20 +102,18 @@ export function PredictionForm({ matches }: PredictionFormProps) {
         setIsConnected(false);
       }
     };
-    
+
     if (isReady) {
-      // Add delay to ensure wallet is ready
       const timer = setTimeout(getUserData, 1000);
       return () => clearTimeout(timer);
     }
   }, [isReady, sdk]);
-  
+
   const getUserStats = async (userAddress: string) => {
     if (!sdk) return;
     try {
       console.log('PredictionForm: Fetching user stats for:', userAddress);
 
-      // Direct blockchain call - works with Alchemy API key
       const stats = await publicClient.readContract({
         address: CONTRACTS.SEERSLEAGUE,
         abi: SEERSLEAGUE_ABI,
@@ -152,7 +139,6 @@ export function PredictionForm({ matches }: PredictionFormProps) {
       setUserStats(userStatsData);
     } catch (error) {
       console.error('PredictionForm: Error fetching user stats:', error);
-      // Set default stats on error
       setUserStats({
         correctPredictions: 0,
         totalPredictions: 0,
@@ -162,17 +148,14 @@ export function PredictionForm({ matches }: PredictionFormProps) {
       });
     }
   };
-  
+
   const toggleMatchSelection = (matchId: number) => {
     if (predictions[matchId] !== undefined) {
-      // Remove prediction
       const newPredictions = { ...predictions };
       delete newPredictions[matchId];
       setPredictions(newPredictions);
-      
       setSelectedMatches(prev => prev.filter(id => id !== matchId));
     } else {
-      // Add match to selection (but user still needs to select outcome)
       setSelectedMatches(prev => [...prev, matchId]);
     }
   };
@@ -182,8 +165,7 @@ export function PredictionForm({ matches }: PredictionFormProps) {
       ...prev,
       [matchId]: outcome
     }));
-    
-    // Automatically add to selected matches when outcome is selected
+
     setSelectedMatches(prev => {
       if (!prev.includes(matchId)) {
         return [...prev, matchId];
@@ -191,7 +173,7 @@ export function PredictionForm({ matches }: PredictionFormProps) {
       return prev;
     });
   };
-  
+
   const handleSubmit = async () => {
     console.log('Submit attempt:', { isConnected, address, isFormValid });
 
@@ -205,19 +187,16 @@ export function PredictionForm({ matches }: PredictionFormProps) {
       return;
     }
 
-    // Validate at least one prediction is made
     if (Object.keys(predictions).length === 0) {
       toast.error('Please select at least one match to predict');
       return;
     }
 
-    // Calculate fee
     const predictionCount = Object.keys(predictions).length;
     const remainingFree = userStats ? Math.max(0, 5 - userStats.freePredictionsUsed) : 0;
     const predictionsToPayFor = Math.max(0, predictionCount - remainingFree);
     const totalFee = BigInt(predictionsToPayFor) * PREDICTION_FEE;
 
-    // Check USDC balance if payment is needed
     if (totalFee > 0) {
       if (usdcBalance === null) {
         toast.error('Loading USDC balance...');
@@ -225,7 +204,7 @@ export function PredictionForm({ matches }: PredictionFormProps) {
       }
 
       if (usdcBalance < totalFee) {
-        toast.error(`Insufficient USDC balance! You need ${formatUSDC(totalFee)} USDC but have ${formatUSDC(usdcBalance)} USDC`);
+        toast.error(`Insufficient USDC balance! Need ${formatUSDC(totalFee)} USDC`);
         return;
       }
 
@@ -235,80 +214,56 @@ export function PredictionForm({ matches }: PredictionFormProps) {
       });
     }
 
-    // Submit predictions directly - fee calculation is handled inside submitPredictions
     await submitPredictions();
   };
-  
+
   const submitPredictions = async (skipModal: boolean = false) => {
     if (!sdk || !address) {
       toast.error('Wallet not connected');
       return;
     }
 
-    // Show loading toast immediately
     const loadingToast = toast.loading('Submitting predictions...');
 
     try {
       setIsSubmitting(true);
       setIsPending(true);
 
-      // Prepare match IDs and outcomes for predictions only
       const matchIds = Object.keys(predictions).map(id => BigInt(parseInt(id)));
       const outcomes = Object.keys(predictions).map(matchId => predictions[parseInt(matchId)]);
 
-      // Calculate total fee needed (align with contract logic using on-chain stats)
       const predictionCount = Object.keys(predictions).length;
       const remainingFreePredictions = userStats ? Math.max(0, 5 - userStats.freePredictionsUsed) : 0;
       const predictionsToPayFor = Math.max(0, predictionCount - remainingFreePredictions);
       const totalFee = BigInt(predictionsToPayFor) * PREDICTION_FEE;
 
-      console.log('🔍 DEBUG: Fee calculation details:', {
-        predictionCount,
-        userStats: userStats ? {
-          freePredictionsUsed: userStats.freePredictionsUsed,
-          totalPredictions: userStats.totalPredictions
-        } : 'no stats',
-        remainingFreePredictions,
-        predictionsToPayFor,
-        totalFee: totalFee.toString(),
-        totalFeeAsNumber: Number(totalFee)
-      });
-
-      console.log('Submitting predictions to contract:', {
-        matchIds,
-        outcomes,
-        address,
+      console.log('🔍 Fee calculation:', {
         predictionCount,
         remainingFreePredictions,
         predictionsToPayFor,
         totalFee: totalFee.toString()
       });
 
-      // Skip old payment modal - using batch transactions now
+      console.log('Submitting predictions:', { matchIds, outcomes, address, totalFee: totalFee.toString() });
 
-      // EIP-5792 Batch Transaction: Approve + Predict in one signature
       if (totalFee > 0) {
         await submitBatchPredictions(matchIds, outcomes, totalFee);
       } else {
-        // Free predictions - no approval needed
         await submitFreePredictions(matchIds, outcomes);
       }
-      
-      // Success handling
+
       toast.dismiss(loadingToast);
       toast.success('Predictions submitted successfully!');
-      
-      // Update user stats
+
       setUserStats(prev => prev ? {
         ...prev,
         totalPredictions: prev.totalPredictions + predictionCount,
         freePredictionsUsed: Math.min(prev.freePredictionsUsed + predictionCount, 5)
       } : null);
-      
-      // Clear selections
+
       setSelectedMatches([]);
       setPredictions({});
-      
+
     } catch (error: any) {
       console.error('Submission error:', error);
       toast.dismiss(loadingToast);
@@ -319,52 +274,38 @@ export function PredictionForm({ matches }: PredictionFormProps) {
     }
   };
 
-  // EIP-5792 Batch Transaction Functions using Farcaster SDK
   const submitBatchPredictions = async (matchIds: bigint[], outcomes: (1 | 2 | 3)[], totalFee: bigint) => {
     if (!address || !sdk) return;
 
     try {
       console.log('🚀 Starting EIP-5792 batch transaction...');
 
-      // Prepare prediction transaction
       const predictData = encodeFunctionData({
         abi: SEERSLEAGUE_ABI,
         functionName: 'submitPredictions',
         args: [matchIds, outcomes]
       });
 
-      // Check if we need approval
       const needsApproval = !currentAllowance || currentAllowance < totalFee;
 
       if (needsApproval) {
         console.log('📦 Sending batch: approve + predict (EIP-5792)');
 
-        // IMPORTANT: Approve for exact amount needed (not unlimited)
-        // Farcaster uses SEQUENTIAL execution (not atomic)
         const approveData = encodeFunctionData({
           abi: USDC_ABI,
           functionName: 'approve',
           args: [CONTRACTS.SEERSLEAGUE, totalFee]
         });
 
-        // EIP-5792: Send both transactions in a single batch with one signature
         const batchId = await sdk.wallet.ethProvider.request({
           method: 'wallet_sendCalls',
           params: [{
             version: '1.0',
-            chainId: '0x2105', // Base mainnet
+            chainId: '0x2105',
             from: address as `0x${string}`,
             calls: [
-              {
-                to: CONTRACTS.USDC,
-                data: approveData,
-                value: '0x0'
-              },
-              {
-                to: CONTRACTS.SEERSLEAGUE,
-                data: predictData,
-                value: '0x0'
-              }
+              { to: CONTRACTS.USDC, data: approveData, value: '0x0' },
+              { to: CONTRACTS.SEERSLEAGUE, data: predictData, value: '0x0' }
             ]
           }]
         });
@@ -373,7 +314,6 @@ export function PredictionForm({ matches }: PredictionFormProps) {
       } else {
         console.log('✅ Sufficient allowance, sending prediction only');
 
-        // Allowance already sufficient, just send prediction
         await sdk.wallet.ethProvider.request({
           method: 'eth_sendTransaction',
           params: [{
@@ -387,7 +327,6 @@ export function PredictionForm({ matches }: PredictionFormProps) {
         console.log('✅ Prediction transaction submitted');
       }
 
-      // Refresh USDC data after successful transaction
       const [newAllowance, newBalance] = await Promise.all([
         publicClient.readContract({
           address: CONTRACTS.USDC,
@@ -414,15 +353,15 @@ export function PredictionForm({ matches }: PredictionFormProps) {
 
   const submitFreePredictions = async (matchIds: bigint[], outcomes: (1 | 2 | 3)[]) => {
     if (!address || !sdk) return;
-    
+
     try {
-      console.log('Submitting free predictions (no approval needed)');
+      console.log('Submitting free predictions');
       const predictData = encodeFunctionData({
         abi: SEERSLEAGUE_ABI,
         functionName: 'submitPredictions',
         args: [matchIds, outcomes]
       });
-      
+
       await sdk.wallet.ethProvider.request({
         method: 'eth_sendTransaction',
         params: [{
@@ -437,55 +376,53 @@ export function PredictionForm({ matches }: PredictionFormProps) {
       throw error;
     }
   };
-  
+
   const isFormValid = Object.keys(predictions).length > 0;
   const remainingFreePredictions = userStats ? Math.max(0, 5 - userStats.freePredictionsUsed) : 5;
   const predictionsToPayFor = Math.max(0, Object.keys(predictions).length - remainingFreePredictions);
   const totalFee = BigInt(predictionsToPayFor) * PREDICTION_FEE;
-  
+
   if (!isConnected) {
     return (
       <div className="text-center py-8">
-        <p className="text-gray-400 mb-4">Please connect your wallet to make predictions</p>
+        <p className="text-[rgb(var(--text-muted))]">Please connect your wallet to make predictions</p>
       </div>
     );
   }
-  
+
   return (
     <div className="space-y-4">
-      
+
       {/* Payment Summary */}
       {Object.keys(predictions).length > 0 && (
-        <div className="bg-gradient-to-r from-green-500/10 to-emerald-500/5 border border-green-500/20 rounded-xl p-4">
+        <div className="glass-card p-4 border-[rgba(34,197,94,0.2)]">
           <div className="flex items-center justify-between mb-2">
-            <span className="font-semibold text-white">Selected Matches: {Object.keys(predictions).length}</span>
-            <span className="text-green-400 font-bold">
-              {predictionsToPayFor > 0 ? `Fee: ${formatUSDC(totalFee)} USDC` : 'FREE'}
+            <span className="font-medium text-white">Selected: {Object.keys(predictions).length}</span>
+            <span className="font-semibold text-[rgb(var(--brand-green))]">
+              {predictionsToPayFor > 0 ? `${formatUSDC(totalFee)} USDC` : 'FREE'}
             </span>
           </div>
-          {/* USDC Balance Display */}
           {usdcBalance !== null && predictionsToPayFor > 0 && (
-            <div className="flex items-center justify-between text-sm pt-2 border-t border-green-500/10">
-              <span className="text-gray-400">Your USDC Balance:</span>
-              <span className={`font-semibold ${usdcBalance >= totalFee ? 'text-green-400' : 'text-red-400'}`}>
+            <div className="flex items-center justify-between text-sm pt-2 border-t border-[rgba(34,197,94,0.1)]">
+              <span className="text-[rgb(var(--text-muted))]">Your Balance:</span>
+              <span className={`font-medium ${usdcBalance >= totalFee ? 'text-[rgb(var(--brand-green))]' : 'text-[rgb(var(--brand-red))]'}`}>
                 {formatUSDC(usdcBalance)} USDC
-                {usdcBalance < totalFee && ' ⚠️ Insufficient'}
               </span>
             </div>
           )}
         </div>
       )}
-      
+
       {/* Match Cards */}
       <div className="space-y-4">
         {matches.map((match) => {
           const matchId = parseInt(match.id);
           const selectedOutcome = predictions[matchId];
           const isSelected = selectedOutcome !== undefined;
-          
+
           return (
             <div key={match.id} className="space-y-3">
-              {/* Match Selection Toggle - Modern Design */}
+              {/* Match Selection Toggle */}
               <div className="relative">
                 <input
                   type="checkbox"
@@ -501,52 +438,46 @@ export function PredictionForm({ matches }: PredictionFormProps) {
                     flex items-center justify-between px-4 py-3 rounded-xl cursor-pointer
                     transition-all duration-300 group
                     ${isSelected
-                      ? 'bg-gradient-to-r from-green-500/20 to-emerald-500/10 border-2 border-green-500/40'
-                      : 'bg-gradient-to-r from-gray-800/50 to-gray-800/30 border-2 border-gray-700/40 hover:border-yellow-500/30'
+                      ? 'bg-[rgba(34,197,94,0.08)] border border-[rgba(34,197,94,0.25)]'
+                      : 'bg-[rgba(24,24,30,0.6)] border border-[rgba(55,55,65,0.4)] hover:border-[rgba(245,158,11,0.3)]'
                     }
                     ${(isSubmitting || isPending) ? 'opacity-50 cursor-not-allowed' : ''}
                   `}
                 >
                   <div className="flex items-center gap-3">
-                    {/* Custom Checkbox Icon */}
+                    {/* Checkbox Icon */}
                     <div className={`
                       flex items-center justify-center w-6 h-6 rounded-lg
                       transition-all duration-300
                       ${isSelected
-                        ? 'bg-green-500 shadow-lg shadow-green-500/50'
-                        : 'bg-gray-700 group-hover:bg-gray-600'
+                        ? 'bg-[rgb(var(--brand-green))]'
+                        : 'bg-[rgba(55,55,65,0.8)] group-hover:bg-[rgba(75,75,85,0.8)]'
                       }
                     `}>
                       {isSelected ? (
-                        <svg className="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
-                        </svg>
+                        <Check className="w-4 h-4 text-black" strokeWidth={3} />
                       ) : (
-                        <svg className="w-4 h-4 text-gray-400 group-hover:text-yellow-400 transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-                        </svg>
+                        <Plus className="w-4 h-4 text-[rgb(var(--text-muted))] group-hover:text-[rgb(var(--brand-gold))] transition-colors" />
                       )}
                     </div>
 
-                    {/* Label Text */}
                     <span className={`
-                      font-semibold transition-colors
-                      ${isSelected ? 'text-green-400' : 'text-gray-300 group-hover:text-white'}
+                      font-medium transition-colors text-sm
+                      ${isSelected ? 'text-[rgb(var(--brand-green))]' : 'text-[rgb(var(--text-secondary))] group-hover:text-white'}
                     `}>
-                      {isSelected ? 'Prediction Selected' : 'Click to Predict This Match'}
+                      {isSelected ? 'Prediction Selected' : 'Click to Predict'}
                     </span>
                   </div>
 
-                  {/* Status Badge */}
                   {isSelected && (
                     <div className="flex items-center gap-2">
-                      <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
-                      <span className="text-xs font-medium text-green-400 uppercase tracking-wide">Active</span>
+                      <div className="w-1.5 h-1.5 bg-[rgb(var(--brand-green))] rounded-full animate-pulse" />
+                      <span className="text-xs font-medium text-[rgb(var(--brand-green))] uppercase tracking-wide">Active</span>
                     </div>
                   )}
                 </label>
               </div>
-              
+
               {/* Match Card */}
               <MatchCard
                 match={match}
@@ -558,69 +489,56 @@ export function PredictionForm({ matches }: PredictionFormProps) {
           );
         })}
       </div>
-      
+
       {/* Submit Button */}
-      <div className="text-center">
+      <div className="pt-2">
         <button
           onClick={handleSubmit}
           disabled={!isFormValid || isSubmitting || isPending}
-          className="relative w-full group"
+          className={`
+            w-full relative overflow-hidden rounded-2xl transition-all duration-300
+            ${isFormValid
+              ? 'bg-gradient-to-r from-[rgb(var(--brand-gold))] to-[rgb(var(--brand-gold-light))] hover:shadow-[0_10px_40px_rgba(245,158,11,0.25)] hover:-translate-y-0.5'
+              : 'bg-[rgba(55,55,65,0.5)] cursor-not-allowed'
+            }
+          `}
         >
-          {/* Main button container */}
-          <div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-blue-500 to-cyan-500 p-[1px]">
-            
-            {/* Inner button */}
-            <div className="relative bg-gray-900 rounded-2xl px-6 py-4 flex items-center justify-between
-                            group-hover:bg-transparent transition-all duration-300">
-              
-              {/* Left side - Icon + Text */}
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-500/20 to-cyan-500/20 
-                             flex items-center justify-center border border-blue-500/30">
-                  <span className="text-lg">🎯</span>
-                </div>
-                
-                <div className="text-left">
-                  <div className="text-sm font-semibold text-white group-hover:text-white transition-colors">
-                    Make Prediction
-                  </div>
-                  <div className="text-xs text-white/50">
-                    Join the competition
-                  </div>
-                </div>
+          <div className="flex items-center justify-between px-5 py-4">
+            <div className="flex items-center gap-3">
+              <div className={`
+                w-10 h-10 rounded-xl flex items-center justify-center
+                ${isFormValid ? 'bg-black/10' : 'bg-white/5'}
+              `}>
+                <Sparkles className={`w-5 h-5 ${isFormValid ? 'text-black' : 'text-[rgb(var(--text-muted))]'}`} />
               </div>
-              
-              {/* Right side - Entry fee */}
-              <div className="flex items-center gap-2">
-                <span className="text-cyan-400">✨</span>
-                <div className="px-4 py-2 rounded-xl bg-gradient-to-r from-green-500/20 to-blue-500/20 
-                                border border-green-500/30">
-                  <span className="text-sm font-bold text-white">
-                    {totalFee > 0 ? `${formatUSDC(totalFee)} USDC` : 'FREE'}
-                  </span>
+              <div className="text-left">
+                <div className={`text-sm font-semibold ${isFormValid ? 'text-black' : 'text-[rgb(var(--text-muted))]'}`}>
+                  Make Prediction
+                </div>
+                <div className={`text-xs ${isFormValid ? 'text-black/60' : 'text-[rgb(var(--text-muted))]'}`}>
+                  Submit to blockchain
                 </div>
               </div>
             </div>
-            
-            {/* Animated shine effect */}
-            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent
-                            animate-pulse" />
+
+            <div className={`
+              px-4 py-2 rounded-xl text-sm font-bold
+              ${isFormValid
+                ? 'bg-black/10 text-black'
+                : 'bg-white/5 text-[rgb(var(--text-muted))]'
+              }
+            `}>
+              {totalFee > 0 ? formatUSDC(totalFee) + ' USDC' : 'FREE'}
+            </div>
           </div>
-          
-          {/* Glow effect */}
-          <div className="absolute inset-0 -z-10 rounded-2xl bg-gradient-to-r from-blue-500/50 to-cyan-500/50 
-                         blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
         </button>
-        
+
         {!isFormValid && (
-          <p className="text-sm text-gray-400 mt-3">
-            Please select at least one match and choose outcomes
+          <p className="text-xs text-[rgb(var(--text-muted))] mt-3 text-center">
+            Select at least one match and choose an outcome
           </p>
         )}
       </div>
-      
-      {/* Payment Modal */}
-      {/* PaymentModal removed - using batch transactions */}
     </div>
   );
 }

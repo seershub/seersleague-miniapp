@@ -7,7 +7,7 @@ import { SearchBox } from '@/components/SearchBox';
 import { useMiniKit } from '@/components/MiniKitProvider';
 import { sdk } from '@farcaster/miniapp-sdk';
 import { Match } from '@/lib/matches';
-import { Wallet } from 'lucide-react';
+import { Sparkles, Zap } from 'lucide-react';
 
 interface HomeProps {
   initialMatches?: Match[];
@@ -16,7 +16,7 @@ interface HomeProps {
 export default function Home({ initialMatches = [] }: HomeProps) {
   const [matches, setMatches] = useState<Match[]>(initialMatches);
   const [filteredMatches, setFilteredMatches] = useState<Match[]>(initialMatches);
-  const [loading, setLoading] = useState(false); // Don't show loading if SSR provided matches
+  const [loading, setLoading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [chainId, setChainId] = useState<string | null>(null);
@@ -24,7 +24,7 @@ export default function Home({ initialMatches = [] }: HomeProps) {
   const { isReady } = useMiniKit();
   const lastFetchTimeRef = useRef<number>(Date.now());
 
-  // SDK Initialization (separate effect)
+  // SDK Initialization
   useEffect(() => {
     const initializeSDK = async () => {
       try {
@@ -45,7 +45,7 @@ export default function Home({ initialMatches = [] }: HomeProps) {
     }
   }, [isReady]);
 
-  // Chain ID Check (separate effect)
+  // Chain ID Check
   useEffect(() => {
     if (typeof window !== 'undefined' && (window as any).ethereum) {
       (window as any).ethereum.request({ method: 'eth_chainId' })
@@ -60,7 +60,7 @@ export default function Home({ initialMatches = [] }: HomeProps) {
     }
   }, []);
 
-  // Matches Fetch (ONLY ONCE on mount)
+  // Matches Fetch
   useEffect(() => {
     console.log(`\n=== [CLIENT] Component Mounted ===`);
     console.log(`[CLIENT] initialMatches received: ${initialMatches.length}`);
@@ -68,13 +68,11 @@ export default function Home({ initialMatches = [] }: HomeProps) {
       console.log(`[CLIENT] Sample match IDs:`, initialMatches.slice(0, 3).map(m => m.id));
     }
 
-    // If SSR provided matches, use them immediately (STABLE!)
     if (initialMatches.length > 0) {
       console.log(`✅ [CLIENT] Using ${initialMatches.length} SSR matches (STABLE)`);
-      console.log(`[CLIENT] Matches are embedded and displayed immediately\n`);
       lastFetchTimeRef.current = Date.now();
 
-      // Background enrichment: Fetch full data from API to get real team names
+      // Background enrichment
       console.log(`[CLIENT] Background: Enriching with team names from API...`);
       fetch('/api/matches?limit=50', { cache: 'no-store' })
         .then(res => res.ok ? res.json() : null)
@@ -82,40 +80,33 @@ export default function Home({ initialMatches = [] }: HomeProps) {
           if (data?.matches && Array.isArray(data.matches) && data.matches.length > 0) {
             console.log(`✅ [CLIENT] API returned ${data.matches.length} enriched matches`);
 
-            // CRITICAL FIX: MERGE enriched data with SSR matches to prevent disappearing
-            // Create a map of enriched matches by ID for fast lookup
             const enrichedMap = new Map<string, Match>();
             data.matches.forEach((match: Match) => {
               enrichedMap.set(match.id, match);
             });
 
-            // Merge: Keep ALL SSR matches, update with enriched data where available
             const mergedMatches = initialMatches.map(ssrMatch => {
               const enrichedMatch = enrichedMap.get(ssrMatch.id);
               if (enrichedMatch) {
-                // Found enriched data for this match - use it
                 console.log(`[CLIENT] ✓ Enriched: ${enrichedMatch.homeTeam} vs ${enrichedMatch.awayTeam}`);
                 return enrichedMatch;
               } else {
-                // No enriched data (match may have started during enrichment) - keep SSR data
                 console.log(`[CLIENT] ○ Keeping SSR data for match ${ssrMatch.id}`);
                 return ssrMatch;
               }
             });
 
-            console.log(`✅ [CLIENT] Merged ${mergedMatches.length} matches (preserved all SSR matches)`);
+            console.log(`✅ [CLIENT] Merged ${mergedMatches.length} matches`);
             setMatches(mergedMatches);
           }
         })
         .catch(err => {
-          console.warn('[CLIENT] Background enrichment failed (keeping basic data):', err);
-          // Keep basic SSR data if enrichment fails
+          console.warn('[CLIENT] Background enrichment failed:', err);
         });
 
-      return; // No polling, no visibility change
+      return;
     }
 
-    // Only if SSR failed - fetch on client
     console.log('⚠️ [CLIENT] No SSR matches - fetching from API...');
     setLoading(true);
 
@@ -136,84 +127,93 @@ export default function Home({ initialMatches = [] }: HomeProps) {
         setError(err instanceof Error ? err.message : 'Failed to load');
       })
       .finally(() => setLoading(false));
-
-    // NO POLLING, NO VISIBILITY CHANGE - Matches stay embedded!
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []); // ONLY RUN ONCE on mount
+  }, []);
 
   return (
-    <div className="min-h-screen bg-black">
-        <div className="max-w-4xl mx-auto px-4 py-8">
-          
-          {/* WALLET STATUS - MINIMAL */}
-          <section className="mb-8">
-            <WalletConnect />
-          </section>
+    <div className="min-h-screen">
+      <div className="max-w-4xl mx-auto px-4 py-6">
 
-          {/* FLEXIBLE PREDICTIONS INFO - SINGLE INSTANCE */}
-          <section className="mb-8">
-            <div className="bg-gradient-to-r from-yellow-500/10 to-amber-500/5 border border-yellow-500/20 rounded-xl p-5">
-              <div className="flex flex-col space-y-3">
-                {/* Title Row */}
-                <div className="flex items-center space-x-2">
-                  <span className="text-2xl">🎯</span>
-                  <span className="text-lg font-bold text-white">Flexible Predictions</span>
-                </div>
+        {/* Wallet Status */}
+        <section className="mb-6 animate-fade-up">
+          <WalletConnect />
+        </section>
 
-                {/* Description */}
-                <p className="text-sm md:text-base text-gray-300 leading-relaxed pl-9">
-                  Select any matches you want to predict.
-                  <span className="block mt-1">
-                    <span className="text-green-400 font-semibold">First 5 predictions are free</span>, then <span className="text-yellow-400 font-semibold">0.5 USDC</span> per match.
-                  </span>
+        {/* Flexible Predictions Info */}
+        <section className="mb-8 animate-fade-up-delay-1">
+          <div className="glass-card p-5">
+            <div className="flex items-start gap-4">
+              <div className="flex-shrink-0 w-10 h-10 rounded-xl bg-gradient-to-br from-[rgba(245,158,11,0.2)] to-[rgba(245,158,11,0.05)] flex items-center justify-center border border-[rgba(245,158,11,0.2)]">
+                <Sparkles className="w-5 h-5 text-[rgb(var(--brand-gold))]" />
+              </div>
+              <div className="flex-1">
+                <h3 className="text-base font-semibold text-white mb-1">Flexible Predictions</h3>
+                <p className="text-sm text-[rgb(var(--text-secondary))] leading-relaxed">
+                  Select any matches you want to predict.{' '}
+                  <span className="text-[rgb(var(--brand-green))] font-medium">First 5 free</span>, then{' '}
+                  <span className="text-[rgb(var(--brand-gold))] font-medium">0.5 USDC</span> per match.
                 </p>
               </div>
             </div>
-          </section>
+          </div>
+        </section>
 
-          {/* MATCHES SECTION */}
-        <section className="mb-8">
+        {/* Matches Section */}
+        <section className="mb-8 animate-fade-up-delay-2">
+          {/* Section Header */}
           <div className="text-center mb-8">
-              <div className="inline-flex items-center gap-2 glass-effect px-4 py-2 rounded-full mb-6 border border-yellow-400/20">
-                <div className="w-4 h-4 bg-yellow-400 rounded-full animate-pulse" />
-                <span className="text-sm font-medium text-yellow-400">Live Competitions</span>
-              </div>
-              
-              <h2 className="text-3xl sm:text-4xl font-bold mb-4 text-white">
-                <strong className="bg-gradient-to-r from-yellow-500 to-amber-500 text-white px-3 py-1 rounded mr-2">Today</strong>
-                Matches
-              </h2>
-            <p className="text-gray-400 text-lg max-w-2xl mx-auto">
-              Join live prediction competitions. Make your picks, compete with others, win USDC rewards instantly.
-            </p>
-
-            {/* SEARCH SECTION */}
-            <div className="max-w-2xl mx-auto mb-8">
-              <SearchBox
-                matches={matches}
-                onSearchResults={setFilteredMatches}
-              />
+            <div className="badge-gold mb-4 inline-flex">
+              <div className="w-2 h-2 rounded-full bg-[rgb(var(--brand-gold))] animate-pulse" />
+              <span>Live Competitions</span>
             </div>
+
+            <h2 className="text-2xl sm:text-3xl font-bold mb-3 text-white">
+              <span className="gradient-gold-text">Today's</span> Matches
+            </h2>
+            <p className="text-[rgb(var(--text-secondary))] text-sm max-w-md mx-auto">
+              Make predictions, compete with others, win USDC rewards on-chain.
+            </p>
           </div>
 
-          {/* MATCHES GRID */}
+          {/* Search */}
+          <div className="max-w-xl mx-auto mb-8">
+            <SearchBox
+              matches={matches}
+              onSearchResults={setFilteredMatches}
+            />
+          </div>
+
+          {/* Matches Grid */}
           {loading ? (
-            <div className="grid gap-4 sm:gap-6 max-w-4xl mx-auto">
-              {[1,2,3,4,5].map(i => (
-                <div key={i} className="h-48 bg-gray-800 rounded-2xl animate-pulse border border-gray-700" />
+            <div className="grid gap-4 max-w-4xl mx-auto">
+              {[1, 2, 3, 4, 5].map(i => (
+                <div
+                  key={i}
+                  className="h-52 rounded-2xl animate-pulse"
+                  style={{
+                    background: 'linear-gradient(145deg, rgba(24,24,30,0.6) 0%, rgba(17,17,21,0.8) 100%)',
+                    border: '1px solid rgba(55,55,65,0.3)'
+                  }}
+                />
               ))}
             </div>
           ) : (
-            <div className="grid gap-4 sm:gap-6 max-w-4xl mx-auto">
-              {(showAll ? filteredMatches : filteredMatches.slice(0, 5)).map((match) => (
-                <PredictionForm key={match.id} matches={[match]} />
+            <div className="grid gap-4 max-w-4xl mx-auto">
+              {(showAll ? filteredMatches : filteredMatches.slice(0, 5)).map((match, index) => (
+                <div
+                  key={match.id}
+                  className="animate-fade-up"
+                  style={{ animationDelay: `${index * 0.05}s` }}
+                >
+                  <PredictionForm matches={[match]} />
+                </div>
               ))}
 
               {filteredMatches.length > 5 && (
-                <div className="text-center mt-8">
+                <div className="text-center mt-6">
                   <button
                     onClick={() => setShowAll(!showAll)}
-                    className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-xl font-semibold transition-colors"
+                    className="btn-secondary"
                   >
                     {showAll ? 'Show Less' : `Show All ${filteredMatches.length} Matches`}
                   </button>
@@ -222,37 +222,39 @@ export default function Home({ initialMatches = [] }: HomeProps) {
             </div>
           )}
 
+          {/* Error State */}
           {error && (
-            <div className="bg-red-900/20 border border-red-500/30 rounded-2xl p-6 mb-4">
-              <p className="text-red-400 font-semibold">Error: {error}</p>
-              <p className="text-gray-400 text-sm mt-2">
-                Please check your connection and try again
+            <div className="glass-card p-6 border-[rgba(239,68,68,0.3)]">
+              <p className="text-[rgb(var(--brand-red))] font-medium mb-1">Error: {error}</p>
+              <p className="text-[rgb(var(--text-muted))] text-sm">
+                Please check your connection and try again.
               </p>
             </div>
           )}
 
+          {/* Empty State */}
           {!loading && !error && filteredMatches.length === 0 && (
             <div className="text-center py-16">
-              <div className="w-20 h-20 bg-gray-800 rounded-full flex items-center justify-center mx-auto mb-4">
-                <span className="text-4xl">⚽</span>
+              <div className="w-16 h-16 rounded-2xl bg-[rgba(24,24,30,0.8)] border border-[rgba(55,55,65,0.5)] flex items-center justify-center mx-auto mb-4">
+                <Zap className="w-8 h-8 text-[rgb(var(--text-muted))]" />
               </div>
-              <p className="text-gray-400 text-lg">No matches found</p>
-              <p className="text-gray-500 text-sm mt-2">Try adjusting your search or check back later</p>
+              <p className="text-white font-medium mb-1">No matches found</p>
+              <p className="text-[rgb(var(--text-muted))] text-sm">Try adjusting your search or check back later</p>
             </div>
           )}
         </section>
 
-        {/* CHAIN WARNING */}
+        {/* Chain Warning */}
         {chainId && chainId !== '0x2105' && (
-          <div className="bg-yellow-900/20 border border-yellow-500/30 rounded-2xl p-6 mb-4">
+          <div className="glass-card p-4 border-[rgba(245,158,11,0.3)] animate-fade-up">
             <div className="flex items-center gap-3">
-              <div className="w-6 h-6 bg-yellow-500 rounded-full flex items-center justify-center">
-                <span className="text-black text-sm font-bold">!</span>
+              <div className="w-8 h-8 rounded-full bg-[rgba(245,158,11,0.15)] flex items-center justify-center">
+                <span className="text-[rgb(var(--brand-gold))] text-sm font-bold">!</span>
               </div>
               <div>
-                <p className="text-yellow-200 font-semibold">Network Warning</p>
-                <p className="text-yellow-300 text-sm">
-                  You're not on Base Mainnet. Current: {chainId} (Expected: 0x2105)
+                <p className="text-[rgb(var(--brand-gold))] font-medium text-sm">Network Warning</p>
+                <p className="text-[rgb(var(--text-muted))] text-xs">
+                  Not on Base Mainnet. Current: {chainId}
                 </p>
               </div>
             </div>

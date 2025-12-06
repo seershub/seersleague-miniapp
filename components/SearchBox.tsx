@@ -1,93 +1,60 @@
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
-import { Search, X } from 'lucide-react';
+import { useState, useEffect } from 'react';
 import { Match } from '@/lib/matches';
+import { Search, X } from 'lucide-react';
 
 interface SearchBoxProps {
   matches: Match[];
-  onSearchResults: (filteredMatches: Match[]) => void;
+  onSearchResults: (results: Match[]) => void;
 }
 
 export function SearchBox({ matches, onSearchResults }: SearchBoxProps) {
-  const [searchTerm, setSearchTerm] = useState('');
-  const [isFocused, setIsFocused] = useState(false);
+  const [query, setQuery] = useState('');
 
-  // Use useMemo to calculate filtered matches without causing re-renders
-  const filteredMatches = useMemo(() => {
-    if (!searchTerm.trim()) {
-      return matches;
+  useEffect(() => {
+    if (!query.trim()) {
+      onSearchResults(matches);
+      return;
     }
 
-    const searchLower = searchTerm.toLowerCase();
-    return matches.filter(match =>
-      match.homeTeam.toLowerCase().includes(searchLower) ||
-      match.awayTeam.toLowerCase().includes(searchLower) ||
-      match.league.toLowerCase().includes(searchLower)
+    const searchTerm = query.toLowerCase().trim();
+    const filtered = matches.filter(match =>
+      match.homeTeam.toLowerCase().includes(searchTerm) ||
+      match.awayTeam.toLowerCase().includes(searchTerm) ||
+      match.league.toLowerCase().includes(searchTerm)
     );
-  }, [searchTerm, matches]);
 
-  // Only call onSearchResults when filtered results actually change
-  useEffect(() => {
-    onSearchResults(filteredMatches);
-  }, [filteredMatches]); // Removed onSearchResults from dependencies to prevent loop
+    onSearchResults(filtered);
+  }, [query, matches, onSearchResults]);
 
-  const clearSearch = () => {
-    setSearchTerm(''); // useEffect will automatically update filteredMatches
+  const handleClear = () => {
+    setQuery('');
+    onSearchResults(matches);
   };
 
   return (
-    <div className="relative max-w-2xl mx-auto mb-8">
-      {/* Search Input */}
-      <div className={`relative transition-all duration-300 ${
-        isFocused ? 'scale-105' : 'scale-100'
-      }`}>
-        <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-          <Search className={`w-5 h-5 transition-colors duration-200 ${
-            isFocused ? 'text-yellow-400' : 'text-gray-500'
-          }`} />
-        </div>
-        
-        <input
-          type="text"
-          placeholder="Search teams or leagues..."
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          onFocus={() => setIsFocused(true)}
-          onBlur={() => setIsFocused(false)}
-          className={`w-full pl-12 pr-12 py-4 bg-gray-900/50 border-2 rounded-2xl text-white placeholder-gray-400 focus:outline-none transition-all duration-300 ${
-            isFocused 
-              ? 'border-yellow-500/50 bg-gray-900/70 shadow-lg shadow-yellow-500/20' 
-              : 'border-yellow-400/50 hover:border-yellow-400/70'
-          }`}
-        />
-        
-        {searchTerm && (
-          <button
-            onClick={clearSearch}
-            className="absolute inset-y-0 right-0 pr-4 flex items-center text-gray-400 hover:text-white transition-colors duration-200"
-          >
-            <X className="w-5 h-5" />
-          </button>
-        )}
+    <div className="relative">
+      <div className="absolute left-4 top-1/2 -translate-y-1/2 pointer-events-none">
+        <Search className="w-4 h-4 text-[rgb(var(--text-muted))]" />
       </div>
 
-      {/* Search Results Count */}
-      {searchTerm && (
-        <div className="mt-3 text-center">
-          <span className="text-sm text-gray-400">
-            {matches.filter(match => {
-              const searchLower = searchTerm.toLowerCase();
-              return (
-                match.homeTeam.toLowerCase().includes(searchLower) ||
-                match.awayTeam.toLowerCase().includes(searchLower) ||
-                match.league.toLowerCase().includes(searchLower)
-              );
-            }).length} matches found
-          </span>
-        </div>
-      )}
+      <input
+        type="text"
+        value={query}
+        onChange={(e) => setQuery(e.target.value)}
+        placeholder="Search teams or leagues..."
+        className="input-search pl-11 pr-10"
+      />
 
+      {query && (
+        <button
+          onClick={handleClear}
+          className="absolute right-3 top-1/2 -translate-y-1/2 p-1.5 rounded-lg hover:bg-[rgba(255,255,255,0.05)] transition-colors"
+        >
+          <X className="w-4 h-4 text-[rgb(var(--text-muted))]" />
+        </button>
+      )}
     </div>
   );
 }

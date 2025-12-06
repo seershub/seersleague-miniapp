@@ -31,19 +31,17 @@ export default function Header() {
         setIsLoading(true);
         const wallet = await sdk.wallet;
         if (wallet?.ethProvider) {
-          // Get USDC balance using eth_call
           const balance = await wallet.ethProvider.request({
             method: 'eth_call',
             params: [
               {
                 to: USDC_CONTRACT_ADDRESS,
-                data: `0x70a08231000000000000000000000000${address.slice(2)}` // balanceOf(address)
+                data: `0x70a08231000000000000000000000000${address.slice(2)}`
               },
               'latest'
             ]
           });
-          
-          // Convert from wei to USDC (6 decimals)
+
           const balanceInUSDC = parseInt(balance, 16) / Math.pow(10, 6);
           setUsdcBalance(balanceInUSDC.toFixed(2));
         }
@@ -62,66 +60,52 @@ export default function Header() {
     return null;
   }
 
-  const formatAddress = (addr: string) => {
-    if (!addr) return '';
-    return `${addr.slice(0, 6)}...${addr.slice(-4)}`;
-  };
-
-  const formatBalance = (bal: string | undefined) => {
-    if (!bal) return '$0.00';
-    const num = parseFloat(bal);
-    return `$${num.toFixed(2)}`;
-  };
-
   return (
-    <header className="sticky top-0 z-50 w-full h-16 flex items-center justify-between px-4 bg-gradient-to-b from-gray-900 to-black border-b border-gray-800">
-      
-      {/* Sol Taraf - Logo + Live Etiketi */}
-      <div className="flex items-center gap-3">
-        {/* Logo */}
-        <Link href="/" className="flex items-center">
-          <Image
-            src="/logomuz.png"
-            alt="SeersLeague"
-            width={200}
-            height={50}
-            priority
-            className="h-10 w-auto transition-all duration-300 hover:scale-105"
-            style={{
-              filter: 'drop-shadow(0 0 8px rgba(252, 211, 77, 0.3))'
-            }}
-          />
-        </Link>
-        
-        {/* Live Etiketi */}
-        <div className="flex items-center gap-1.5 rounded-full bg-green-500/15 px-2.5 py-1 text-xs font-medium text-green-400">
-          <span className="relative flex h-2 w-2">
-            <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-green-400 opacity-75"></span>
-            <span className="relative inline-flex h-2 w-2 rounded-full bg-green-500"></span>
-          </span>
-          LIVE
+    <header className="sticky top-0 z-50 w-full">
+      {/* Gradient border bottom */}
+      <div className="absolute bottom-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-[rgba(245,158,11,0.3)] to-transparent" />
+
+      <div className="h-16 flex items-center justify-between px-4 glass">
+        {/* Left - Logo + Live Badge */}
+        <div className="flex items-center gap-3">
+          <Link href="/" className="flex items-center">
+            <Image
+              src="/logomuz.png"
+              alt="SeersLeague"
+              width={180}
+              height={45}
+              priority
+              className="h-9 w-auto transition-transform duration-300 hover:scale-105"
+            />
+          </Link>
+
+          {/* Live Badge - No emoji */}
+          <div className="badge-live">
+            <span className="relative flex h-2 w-2">
+              <span className="absolute inline-flex h-full w-full rounded-full bg-[rgb(var(--brand-green))] opacity-75 animate-ping" />
+              <span className="relative inline-flex h-2 w-2 rounded-full bg-[rgb(var(--brand-green))]" />
+            </span>
+            <span className="font-semibold tracking-wide">LIVE</span>
+          </div>
         </div>
-      </div>
-      
-      {/* Sağ Taraf - USDC Bakiyesi */}
-      <div className="flex items-center gap-2">
-        {isLoading && (
-          <span className="text-lg font-medium text-gray-500 animate-pulse">
-            $....
-          </span>
-        )}
 
-        {!isLoading && (
-          <span className="text-lg font-medium text-white">
-            ${usdcBalance}
-          </span>
-        )}
-
-        <img 
-          src="https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/ethereum/assets/0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48/logo.png" 
-          alt="USDC" 
-          className="h-5 w-5 rounded-full"
-        />
+        {/* Right - USDC Balance */}
+        <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-[rgba(24,24,30,0.8)] border border-[rgba(55,55,65,0.6)]">
+          {isLoading ? (
+            <span className="text-base font-semibold text-[rgb(var(--text-muted))] animate-pulse">
+              $...
+            </span>
+          ) : (
+            <span className="text-base font-semibold text-white">
+              ${usdcBalance}
+            </span>
+          )}
+          <img
+            src="https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/ethereum/assets/0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48/logo.png"
+            alt="USDC"
+            className="h-5 w-5 rounded-full"
+          />
+        </div>
       </div>
     </header>
   );

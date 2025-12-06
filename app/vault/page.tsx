@@ -36,13 +36,12 @@ export default function VaultPage() {
 
   useEffect(() => {
     fetchVaultData();
-    const interval = setInterval(fetchVaultData, 30000); // Refresh every 30s
+    const interval = setInterval(fetchVaultData, 30000);
     return () => clearInterval(interval);
   }, []);
 
   const fetchVaultData = async () => {
     try {
-      // Fetch balance and activity in parallel
       const [balanceRes, activityRes] = await Promise.all([
         fetch('/api/vault/balance'),
         fetch('/api/vault/activity')
@@ -82,162 +81,148 @@ export default function VaultPage() {
   };
 
   return (
-    <div className="min-h-screen bg-black text-white">
-      <div className="max-w-4xl mx-auto px-4 py-8">
+    <div className="min-h-screen">
+      <div className="max-w-4xl mx-auto px-4 py-6 pb-24">
 
         {/* Page Header */}
-        <div className="text-center mb-8">
-          <div className="inline-flex items-center gap-2 glass-effect px-4 py-2 rounded-full mb-4 border border-yellow-400/20">
-            <VaultIcon className="w-4 h-4 text-yellow-400" />
-            <span className="text-sm font-medium text-yellow-400">Treasury Vault</span>
+        <div className="text-center mb-6 animate-fade-up">
+          <div className="badge-gold mb-4 inline-flex">
+            <VaultIcon className="w-4 h-4" />
+            <span>Treasury Vault</span>
           </div>
 
-          <h1 className="text-3xl sm:text-4xl font-bold mb-2 bg-gradient-to-r from-yellow-400 to-amber-500 bg-clip-text text-transparent">
-            SeersLeague Vault
+          <h1 className="text-3xl font-bold mb-2">
+            <span className="gradient-gold-text">SeersLeague Vault</span>
           </h1>
-          <p className="text-gray-400">
+          <p className="text-[rgb(var(--text-secondary))] text-sm">
             All prediction fees are collected here
           </p>
         </div>
 
         {/* Vault Balance Card */}
-        <div className="mb-8">
-          <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-yellow-500/10 via-amber-500/5 to-transparent border border-yellow-400/20 p-8">
-            {/* Animated background effect */}
-            <div className="absolute inset-0 bg-gradient-to-r from-yellow-500/5 to-transparent animate-pulse" />
-
-            <div className="relative z-10">
-              {/* USDC Logo and Balance */}
-              <div className="flex items-center justify-between mb-6">
-                <div className="flex items-center gap-4">
-                  <div className="w-16 h-16 rounded-full bg-white/10 backdrop-blur-sm border border-white/20 flex items-center justify-center overflow-hidden">
-                    <Image
-                      src="https://www.seershub.com/usdc-logo.png"
-                      alt="USDC"
-                      width={40}
-                      height={40}
-                      className="object-contain"
-                    />
-                  </div>
-                  <div>
-                    <p className="text-sm text-gray-400 mb-1">Total Balance</p>
-                    {loading ? (
-                      <div className="h-10 w-32 bg-gray-800 animate-pulse rounded" />
-                    ) : (
-                      <div className="flex items-baseline gap-2">
-                        <span className="text-4xl font-bold text-white">
-                          {balance?.balance.toLocaleString('en-US', {
-                            minimumFractionDigits: 2,
-                            maximumFractionDigits: 2
-                          })}
-                        </span>
-                        <span className="text-xl text-gray-400">USDC</span>
-                      </div>
-                    )}
-                  </div>
+        <div className="mb-6 animate-fade-up-delay-1">
+          <div className="glass-card p-6 border-[rgba(245,158,11,0.15)]">
+            <div className="flex items-center justify-between mb-6">
+              <div className="flex items-center gap-4">
+                <div className="w-14 h-14 rounded-2xl bg-[rgba(245,158,11,0.1)] border border-[rgba(245,158,11,0.2)] flex items-center justify-center">
+                  <Image
+                    src="https://www.seershub.com/usdc-logo.png"
+                    alt="USDC"
+                    width={32}
+                    height={32}
+                    className="object-contain"
+                  />
                 </div>
-
-                {/* Trending Icon */}
-                <div className="hidden sm:flex items-center gap-2 px-4 py-2 rounded-full bg-green-500/10 border border-green-500/20">
-                  <TrendingUp className="w-4 h-4 text-green-400" />
-                  <span className="text-sm font-medium text-green-400">Growing</span>
+                <div>
+                  <p className="text-xs text-[rgb(var(--text-muted))] mb-1">Total Balance</p>
+                  {loading ? (
+                    <div className="h-8 w-24 bg-[rgba(55,55,65,0.5)] animate-pulse rounded" />
+                  ) : (
+                    <div className="flex items-baseline gap-2">
+                      <span className="text-3xl font-bold text-white">
+                        {balance?.balance.toLocaleString('en-US', {
+                          minimumFractionDigits: 2,
+                          maximumFractionDigits: 2
+                        })}
+                      </span>
+                      <span className="text-base text-[rgb(var(--text-muted))]">USDC</span>
+                    </div>
+                  )}
                 </div>
               </div>
 
-              {/* Vault Address */}
-              <div className="space-y-3">
-                <div className="flex items-center justify-between p-4 rounded-xl bg-black/30 border border-white/10">
-                  <div>
-                    <p className="text-xs text-gray-500 mb-1">Vault Address</p>
-                    <p className="font-mono text-sm text-white">{VAULT_ENS}</p>
-                  </div>
-                  <button
-                    onClick={copyAddress}
-                    className="p-2 rounded-lg bg-white/5 hover:bg-white/10 transition-colors"
-                  >
-                    {copied ? (
-                      <Check className="w-4 h-4 text-green-400" />
-                    ) : (
-                      <Copy className="w-4 h-4 text-gray-400" />
-                    )}
-                  </button>
-                </div>
+              <div className="hidden sm:flex badge-green">
+                <TrendingUp className="w-4 h-4" />
+                <span>Growing</span>
+              </div>
+            </div>
 
-                <a
-                  href={`https://basescan.org/address/${VAULT_ADDRESS}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="flex items-center justify-center gap-2 p-3 rounded-xl bg-blue-500/10 border border-blue-500/20 hover:bg-blue-500/20 transition-colors text-blue-400 text-sm font-medium"
+            <div className="space-y-3">
+              <div className="flex items-center justify-between p-3 rounded-xl bg-[rgba(17,17,21,0.6)] border border-[rgba(255,255,255,0.04)]">
+                <div>
+                  <p className="text-[10px] text-[rgb(var(--text-muted))] mb-0.5">Vault Address</p>
+                  <p className="font-mono text-sm text-white">{VAULT_ENS}</p>
+                </div>
+                <button
+                  onClick={copyAddress}
+                  className="p-2 rounded-lg bg-[rgba(255,255,255,0.03)] hover:bg-[rgba(255,255,255,0.06)] transition-colors"
                 >
-                  <span>View on BaseScan</span>
-                  <ExternalLink className="w-4 h-4" />
-                </a>
+                  {copied ? (
+                    <Check className="w-4 h-4 text-[rgb(var(--brand-green))]" />
+                  ) : (
+                    <Copy className="w-4 h-4 text-[rgb(var(--text-muted))]" />
+                  )}
+                </button>
               </div>
+
+              <a
+                href={`https://basescan.org/address/${VAULT_ADDRESS}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center justify-center gap-2 p-3 rounded-xl bg-[rgba(0,245,255,0.05)] border border-[rgba(0,245,255,0.15)] hover:bg-[rgba(0,245,255,0.08)] transition-colors text-[rgb(var(--brand-cyan))] text-sm font-medium"
+              >
+                <span>View on BaseScan</span>
+                <ExternalLink className="w-4 h-4" />
+              </a>
             </div>
           </div>
         </div>
 
         {/* Recent Activity */}
-        <div>
+        <div className="animate-fade-up-delay-2">
           <div className="flex items-center gap-2 mb-4">
-            <Activity className="w-5 h-5 text-gray-400" />
-            <h2 className="text-xl font-bold">Recent Activity</h2>
+            <Activity className="w-5 h-5 text-[rgb(var(--text-muted))]" />
+            <h2 className="text-lg font-semibold text-white">Recent Activity</h2>
           </div>
 
-          <div className="space-y-2">
+          <div className="glass-card overflow-hidden">
             {loading ? (
-              Array.from({ length: 5 }).map((_, i) => (
-                <div key={i} className="h-16 bg-gray-900/50 animate-pulse rounded-xl" />
-              ))
+              <div className="p-4 space-y-2">
+                {Array.from({ length: 5 }).map((_, i) => (
+                  <div key={i} className="h-14 bg-[rgba(55,55,65,0.3)] animate-pulse rounded-xl" />
+                ))}
+              </div>
             ) : activity.length === 0 ? (
-              <div className="text-center py-12 text-gray-500">
-                <Activity className="w-12 h-12 mx-auto mb-2 opacity-50" />
-                <p>No recent activity</p>
+              <div className="text-center py-12">
+                <Activity className="w-10 h-10 text-[rgb(var(--text-muted))] mx-auto mb-3 opacity-50" />
+                <p className="text-[rgb(var(--text-muted))]">No recent activity</p>
               </div>
             ) : (
-              <div className="space-y-2 max-h-[500px] overflow-y-auto">
+              <div className="p-4 space-y-2 max-h-96 overflow-y-auto scrollbar-thin">
                 {activity.map((item, index) => (
                   <div
                     key={item.id}
-                    className="flex items-center gap-4 p-4 rounded-xl bg-gradient-to-r from-gray-900/50 to-transparent border border-gray-800 hover:border-gray-700 transition-all animate-fadeIn"
-                    style={{
-                      animationDelay: `${index * 50}ms`,
-                      animationFillMode: 'backwards'
-                    }}
+                    className="flex items-center gap-3 p-3 rounded-xl bg-[rgba(24,24,30,0.5)] border border-[rgba(255,255,255,0.03)] hover:bg-[rgba(32,32,40,0.6)] transition-colors animate-fade-up"
+                    style={{ animationDelay: `${index * 50}ms` }}
                   >
-                    {/* Avatar */}
-                    <div className="w-10 h-10 rounded-full overflow-hidden border-2 border-gray-700 flex-shrink-0">
+                    <div className="w-9 h-9 rounded-full overflow-hidden border border-[rgba(255,255,255,0.06)] flex-shrink-0">
                       <Image
                         src={item.user.avatar}
                         alt="User"
-                        width={40}
-                        height={40}
+                        width={36}
+                        height={36}
                         className="object-cover"
                       />
                     </div>
 
-                    {/* Activity Info */}
                     <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 mb-1">
-                        <span className="font-medium text-white">
+                      <div className="flex items-center gap-1.5 mb-0.5">
+                        <span className="font-medium text-white text-sm truncate">
                           {item.user.ensName || item.user.maskedAddress}
                         </span>
-                        <span className="text-gray-500 text-sm">
+                        <span className="text-[rgb(var(--text-muted))] text-xs">
                           {item.action.toLowerCase()}
                         </span>
                       </div>
-                      <div className="flex items-center gap-2 text-xs text-gray-500">
+                      <div className="flex items-center gap-2 text-xs text-[rgb(var(--text-muted))]">
                         <span>{item.amount}</span>
                         <span>•</span>
                         <span>{formatTimeAgo(item.timestamp)}</span>
                       </div>
                     </div>
 
-                    {/* Amount Badge */}
-                    <div className="hidden sm:block px-3 py-1 rounded-full bg-yellow-500/10 border border-yellow-500/20">
-                      <span className="text-sm font-medium text-yellow-400">
-                        {item.amount}
-                      </span>
+                    <div className="hidden sm:block badge-gold text-xs">
+                      {item.amount}
                     </div>
                   </div>
                 ))}
@@ -247,23 +232,6 @@ export default function VaultPage() {
         </div>
 
       </div>
-
-      <style jsx>{`
-        @keyframes fadeIn {
-          from {
-            opacity: 0;
-            transform: translateY(10px);
-          }
-          to {
-            opacity: 1;
-            transform: translateY(0);
-          }
-        }
-
-        .animate-fadeIn {
-          animation: fadeIn 0.3s ease-out;
-        }
-      `}</style>
     </div>
   );
 }
